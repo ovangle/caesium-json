@@ -1,0 +1,41 @@
+#! /usr/env/bin python3
+
+import os
+import re
+
+# Don't remove files from these directories
+IGNORE_DIRECTORIES = ['node_modules', 'src', 'test', 'typings', 'tools']
+
+REMOVE_PATTERN = re.compile(r'(.d.ts)|(.js(.map)?)$');
+
+def log_removal(fdesc):
+    print('removing {0}'.format(fdesc))
+
+def is_ignored(dirpath):
+    return any(
+        dirpath.startswith(os.path.join('.', dirname))
+        for dirname in IGNORE_DIRECTORIES
+    )
+
+def remove_dist_files():
+    for (dirpath, dirnames, filenames) in os.walk('.', topdown=False):
+        if is_ignored(dirpath):
+            continue
+        for filename in filenames:
+            if REMOVE_PATTERN.search(filename):
+                fdesc = os.path.join(dirpath, filename)
+                log_removal(fdesc)
+                os.remove(fdesc)
+        for dirname in dirnames:
+            path = os.path.join(dirpath, dirname)
+            if not os.listdir(path):
+                log_removal(path)
+                os.rmdir(path)
+
+if __name__ == '__main__':
+    remove_dist_files()
+
+
+
+
+

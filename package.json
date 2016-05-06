@@ -1,0 +1,34 @@
+{
+  "name": "caesium-model",
+  "version": "0.0.1",
+  "description": "Framework for dealing with the server-client interface in caesium projects",
+  "keywords": [
+    "center_stage",
+    "rest",
+    "api",
+    "rpc"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "live-server --open=test/index.html",
+    "prepare": "cp -r dist/src/* .",
+    "clean": "python3 tools/clean"
+  },
+  "author": "Thomas Stephenson",
+  "licence": "MIT",
+  "peerDependencies": {
+    "es6-shim": "^0.35.0",
+    "zone.js": "0.6.6",
+    "reflect-metadata": "0.1.2",
+    "rxjs": "5.0.0-beta.2",
+    "angular2": "2.0.0-beta.14",
+    "immutable": "^3.7.6",
+    "caesium-core": "^0.0.1"
+  },
+  "devDependencies": {
+    "jasmine-core": "2.4.1",
+    "live-server": "^0.8.2",
+    "systemjs": "^0.19.27",
+    "typescript": "^1.6.2"
+  }
+}
