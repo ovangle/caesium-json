@@ -22,10 +22,14 @@ export interface JsonRequestOptions extends BaseRequestOptions {
 }
 
 export interface AccessorRequestOptions<TResponse> extends BaseRequestOptions {
-    responseDecoder: Converter<JsonObject,TResponse>;
+    /// The decoder for the response body. 
+    /// If not provided, a default will be added to the request options by the model manager.
+    responseDecoder?: Converter<JsonObject,TResponse>;
 }
 
 export interface MutatorRequestOptions<TBody,TResponse> extends AccessorRequestOptions<TResponse> {
+    /// The encoder for the request body
+    /// If not provided, a default will be added to the request options by the model manager
     bodyEncoder: Converter<TBody,JsonObject>;
 }
 
