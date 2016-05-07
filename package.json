@@ -1,6 +1,6 @@
 {
   "name": "caesium-model",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Framework for dealing with the server-client interface in caesium projects",
   "keywords": [
     "center_stage",
