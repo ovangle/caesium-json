@@ -46,6 +46,10 @@ export class ModelManager<T extends ModelBase> {
         return model<U>(this.__metadata.modelType);
     }
 
+    get modelCodec(): Codec<T,JsonObject> {
+        return this._getDefaultJsonCodec<T>();
+    }
+
     private _setRequestOptionDefaults<TBody extends ModelBase,TResponse extends ModelBase>(
         options: BaseRequestOptions
     ) {
