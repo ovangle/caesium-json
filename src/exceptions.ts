@@ -1,18 +1,20 @@
-
-export class ArgumentError extends Error { }
-
-export class DecoratorError extends Error { }
-
-export class EncodingException extends Error { 
-    constructor(public message: any) { 
+export class BaseException extends Error {
+    constructor(public message: any) {
         super(message);
     }
-    
-    toString() { return `EncodingException: ${this.message}`; }
-} 
 
-export class InvalidMetadata extends Error { }
+    toString() { return this.message }
+}
 
-export class ModelResolutionError extends Error {}
+export class EncodingException extends BaseException {
+    toString() { return `EncodingException: ${this.message}` }
+}
 
-export class ModelMutationException extends Error { }
+export class InvalidMetadata extends BaseException {
+    toString() { return `InvalidMetadata: ${this.message}` }
+}
+
+export class ModelResolutionError extends BaseException {
+    toString() { return `ModelResolutionError: ${this.message}`}
+}
+
