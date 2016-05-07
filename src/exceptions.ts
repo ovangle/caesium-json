@@ -6,6 +6,10 @@ export class BaseException extends Error {
     toString() { return this.message }
 }
 
+export class ArgumentError extends BaseException {
+    toString() { return `ArgumentError: ${this.message}` }
+}
+
 export class EncodingException extends BaseException {
     toString() { return `EncodingException: ${this.message}` }
 }

@@ -1,7 +1,10 @@
 import {Observable} from 'rxjs/Observable';
 import {Subscriber} from 'rxjs/Subscriber';
+import {isBlank} from 'caesium-core/lang';
 import {isCodec, getEncoder, getDecoder, Codec} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';
+
+import {ArgumentError} from '../exceptions';
 
 import {
     JsonObject,
@@ -60,6 +63,8 @@ export abstract class AccessorRequest<TBody,TResponse> extends BaseRequest<TBody
 
     constructor(options: AccessorRequestOptions<TResponse>, kind: string, http: ModelHttp) {
         super(options, kind, http);
+        if (isBlank(options.responseDecoder))
+            throw new ArgumentError('responseDecoder must be provided');
         if (isCodec(options.responseDecoder)) {
             var codec = (options.responseDecoder as Codec<TResponse,JsonObject>);
             this.responseDecoder = getDecoder(codec);
@@ -82,6 +87,8 @@ export abstract class MutatorRequest<TBody,TResponse> extends AccessorRequest<TB
 
     constructor(options: MutatorRequestOptions<TBody, TResponse>, kind: string, http: ModelHttp) {
         super(options, kind, http);
+        if (isBlank(options.bodyEncoder))
+            throw new ArgumentError('bodyEncoder must be provided');
         if (isCodec(options.bodyEncoder)) {
             var codec = options.bodyEncoder as Codec<TBody,JsonObject>;
             this.bodyEncoder = getEncoder(codec);
