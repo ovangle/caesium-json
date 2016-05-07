@@ -30,7 +30,7 @@ export interface AccessorRequestOptions<TResponse> extends BaseRequestOptions {
 export interface MutatorRequestOptions<TBody,TResponse> extends AccessorRequestOptions<TResponse> {
     /// The encoder for the request body
     /// If not provided, a default will be added to the request options by the model manager
-    bodyEncoder: Converter<TBody,JsonObject>;
+    bodyEncoder?: Converter<TBody,JsonObject>;
 }
 
 export interface AbstractResponse {
