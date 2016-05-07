@@ -1,0 +1,48 @@
+#! /usr/bin/env python3
+
+import re
+import os
+import shutil
+
+DIST_DIR = os.path.join('.', 'dist')
+DISTSRC_DIR = os.path.join(DIST_DIR, 'src')
+SOURCE_MAP = re.compile(r'.*\.js.map$')
+
+def remove_source_maps():
+	"""Remove all source maps from the dist/* directory"""
+	"""
+	for (dirpath, dirnames, filenames) in os.walk(DIST_SRC):
+		source_maps = (f for f in filenames if SOURCE_MAP.match(f)
+		for filename in source_maps:
+			filepath = os.path.join(dirpath, filename)
+			print('removing {0}'.format(filepath))
+			"""
+
+def ignore_src_maps(dirpath, filenames):			
+	return filter(
+		lambda fname: SOURCE_MAP.match(fname),
+		filenames
+	)
+	
+
+def copy_dist_src_to_project_root():
+	"""Copy the dist/src directory to the project root, ignoring source maps"""
+	ignore_fnames = set(ignore_src_maps(DISTSRC_DIR, os.listdir(DISTSRC_DIR)))
+	for fname in os.listdir(DISTSRC_DIR):
+		fpath = os.path.join(DISTSRC_DIR, fname)
+		if fname in ignore_fnames:
+			continue
+		elif os.path.isdir(fpath):
+			shutil.copytree(
+				fpath, 
+				os.path.join('.', fname), 
+				ignore=ignore_src_maps
+			)
+		else:
+			shutil.copyfile(fpath, fname)
+
+
+if __name__ == '__main__':
+	copy_dist_src_to_project_root()
+
+

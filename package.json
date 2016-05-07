@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "test": "live-server --open=test/index.html",
-    "prepare": "cp -r dist/src/* .",
+    "prepare": "python3 tools/prepare",
     "clean": "python3 tools/clean"
   },
   "author": "Thomas Stephenson",
@@ -23,7 +23,7 @@
     "rxjs": "5.0.0-beta.2",
     "angular2": "2.0.0-beta.14",
     "immutable": "^3.7.6",
-    "caesium-core": "^0.0.1"
+    "caesium-core": "^0.1.0"
   },
   "devDependencies": {
     "jasmine-core": "2.4.1",
