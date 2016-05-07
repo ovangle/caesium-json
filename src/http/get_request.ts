@@ -16,7 +16,6 @@ export class Get<T> extends AccessorRequest<void,T> {
 
     constructor(options: GetOptions<T>, kind: string, http: ModelHttp) {
         super(options, kind, http);
-        this.responseDecoder = options.responseDecoder;
     }
 
     execute(): Promise<SingleItemResponse<T>> {

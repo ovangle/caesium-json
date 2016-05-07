@@ -1,7 +1,7 @@
 import {Observable} from 'rxjs/Observable';
 import {Subscriber} from 'rxjs/Subscriber';
+import {isCodec, getEncoder, getDecoder, Codec} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';
-import {JsonRequestOptions} from './interfaces';
 
 import {
     JsonObject,
@@ -60,7 +60,11 @@ export abstract class AccessorRequest<TBody,TResponse> extends BaseRequest<TBody
 
     constructor(options: AccessorRequestOptions<TResponse>, kind: string, http: ModelHttp) {
         super(options, kind, http);
-        this.responseDecoder = options.responseDecoder;
+        if (isCodec(options.responseDecoder)) {
+            var codec = (options.responseDecoder as Codec<TResponse,JsonObject>);
+            this.responseDecoder = getDecoder(codec);
+        }
+        this.responseDecoder = options.responseDecoder as Converter<JsonObject,TResponse>;
     }
 
     protected handleResponse(rawResponse: JsonResponse): SingleItemResponse<TResponse> {
@@ -78,7 +82,11 @@ export abstract class MutatorRequest<TBody,TResponse> extends AccessorRequest<TB
 
     constructor(options: MutatorRequestOptions<TBody, TResponse>, kind: string, http: ModelHttp) {
         super(options, kind, http);
-        this.bodyEncoder = options.bodyEncoder;
+        if (isCodec(options.bodyEncoder)) {
+            var codec = options.bodyEncoder as Codec<TBody,JsonObject>;
+            this.bodyEncoder = getEncoder(codec);
+        }
+        this.bodyEncoder = options.bodyEncoder as Converter<TBody,JsonObject>;
     }
 
     abstract setRequestBody(body: TBody): Promise<SingleItemResponse<TResponse>>;

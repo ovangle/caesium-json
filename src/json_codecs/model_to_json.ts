@@ -1,5 +1,5 @@
 import {Type, isBlank} from 'caesium-core/lang';
-import {Codec, composeCodecs} from 'caesium-core/codec';
+import {Codec, composeCodecs, getEncoder, getDecoder} from 'caesium-core/codec';
 
 import {JsonObject} from './interfaces';
 import {ModelMetadata} from '../model/metadata';
@@ -41,18 +41,10 @@ export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject>
     var propCodecs = propertyCodecs(metadata);
 
     var modelPropertyEncoder = objectToJson<T>(
-        (propName: string) => {
-            //TODO: Should have a getEncoder function in caesium-core/codec.
-            var propCodec = propCodecs.get(propName);
-            return propCodec.encode.bind(propCodec);
-        }
+        (propName: string) => getEncoder(propCodecs.get(propName))
     );
     var modelPropertyDecoder = jsonToObject<T>(
-        (propName: string) => {
-            //TODO: Should have a getDecoder function in caesium-core/codec.
-            var propCodec = propCodecs.get(propName);
-            return propCodec.decode.bind(propCodec);
-        },
+        (propName: string) => getDecoder(propCodecs.get(propName)),
         createModelFactory<T>(metadata)
     );
     return composeCodecs<T,JsonObject,JsonObject>(

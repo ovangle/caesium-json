@@ -1,7 +1,6 @@
-import {Observable} from 'rxjs/Observable';
-
 import {RequestMethod} from 'angular2/http';
 
+import {Codec} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';
 import {JsonObject, JsonQuery, StringMap} from '../json_codecs/interfaces';
 
@@ -24,13 +23,13 @@ export interface JsonRequestOptions extends BaseRequestOptions {
 export interface AccessorRequestOptions<TResponse> extends BaseRequestOptions {
     /// The decoder for the response body. 
     /// If not provided, a default will be added to the request options by the model manager.
-    responseDecoder?: Converter<JsonObject,TResponse>;
+    responseDecoder?: Codec<TResponse,JsonObject> | Converter<JsonObject,TResponse>;
 }
 
 export interface MutatorRequestOptions<TBody,TResponse> extends AccessorRequestOptions<TResponse> {
     /// The encoder for the request body
     /// If not provided, a default will be added to the request options by the model manager
-    bodyEncoder?: Converter<TBody,JsonObject>;
+    bodyEncoder?: Codec<TBody,JsonObject> | Converter<TBody,JsonObject>;
 }
 
 export interface AbstractResponse {
