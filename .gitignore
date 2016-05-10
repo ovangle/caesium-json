@@ -5,3 +5,5 @@ typings/
 **/*.d.ts
 **/*.js
 **/*.js.map
+
+npm-debug.log
