@@ -27,8 +27,6 @@ export function bodyEncoder<T>(requestBody: RequestBody<T>): Converter<T,JsonObj
 export type ResponseFilter = (response: JsonResponse) => boolean;
 
 export interface BaseResponseHandler<T> {
-
-
     /**
      * Call the response handler with the (possibly parsed)
      * response body.
@@ -39,6 +37,10 @@ export interface BaseResponseHandler<T> {
      * @param body
      */
     call(body: T): any;
+    /**
+     * The `this` inside the `call` handler.
+     */
+    thisArg: any;
 }
 
 export interface DefaultResponseHandler extends ResponseHandler<JsonObject|JsonQuery> {}
@@ -51,11 +53,6 @@ export interface ResponseHandler<T> extends BaseResponseHandler<T> {
      */
     selector: number | ResponseFilter;
     decoder: Codec<T,JsonObject> | Converter<T,JsonObject>;
-    onData: (data: T) => any;
-    /**
-     * The `this` inside the `onData` handler.
-     */
-    thisArg: any;
 }
 
 export function filterStatus(status: number): ResponseFilter {
