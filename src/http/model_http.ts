@@ -15,7 +15,7 @@ export const API_HOST_HREF = new OpaqueToken("cs_api_host_href");
 function buildUrlParams(params: StringMap): URLSearchParams {
     var searchParams = new URLSearchParams();
     forEachOwnProperty(params, (value, param) => {
-        searchParams[param] = value;
+        searchParams.set(param, value);
     });
     return searchParams;
 }

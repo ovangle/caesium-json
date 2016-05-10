@@ -41,7 +41,7 @@ function _resolveModelMetadata(type: Type): ModelMetadata {
 
 function _resolvePropertyMetadata(type: Type): Immutable.Map<string,PropertyMetadata> {
     var propMetadata = reflector.propMetadata(type);
-    var ownProperties = [];
+    var ownProperties: Array<[string, PropertyMetadata]> = [];
     forEachOwnProperty(propMetadata, (value, attr) => {
         var propMetadata = value.find((meta: any) => meta instanceof PropertyMetadata);
         propMetadata.contribute(attr);

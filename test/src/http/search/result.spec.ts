@@ -34,7 +34,7 @@ const PAGE_SIZE = 2;
 
 function rawResponsePage(parameters: SearchParameterMap, pageId: number): JsonResponse {
     var firstIndex = 2 * (pageId - 1);
-    var searchData;
+    var searchData: Array<{a: string}>;
     if (parameters.has('a')) {
         var param_a = parameters.get('a');
         searchData = data.filter((item) => isSubstring(item.a, param_a));
@@ -120,7 +120,7 @@ function searchResponsePageTests() {
 }
 
 function _searchResponseTests() {
-    function mkPage<T>(paramMap, pageId): SearchResponsePage<T> {
+    function mkPage<T>(paramMap: SearchParameterMap, pageId: number): SearchResponsePage<T> {
         return new SearchResponsePage<T>(
             rawResponsePage(paramMap, pageId),
             identityConverter,
@@ -128,7 +128,7 @@ function _searchResponseTests() {
         )
     }
 
-    function mkPendingPage<T>(paramMap, pageId, delay): Promise<SearchResponsePage<T>> {
+    function mkPendingPage<T>(paramMap: SearchParameterMap, pageId: number, delay: number): Promise<SearchResponsePage<T>> {
         return delayedRawResponsePage(paramMap, pageId, delay).then((rawPage) => {
             return new SearchResponsePage<T>(
                 rawPage,

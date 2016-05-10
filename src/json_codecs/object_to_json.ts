@@ -25,7 +25,7 @@ import {snakeCaseToCamelCase, camelCaseToSnakeCase} from './string_case_converte
 export function objectToJson<T>(
     valueEncoder: (propName: string) => Converter<any,any>
 ): Converter<T,JsonObject> {
-    function _encodePropertyValue(propName: string, value: any): any {
+    function _encodePropertyValue(propName: string, value: any): {name: string, value: any} {
         var encoder = valueEncoder(propName);
         var key = camelCaseToSnakeCase(propName);
         return {name: key, value: encoder(value)};
@@ -35,7 +35,7 @@ export function objectToJson<T>(
         if (isBlank(input))
             return input as any;
 
-        var record = {};
+        var record: {[propName: string]: any} = {};
         forEachOwnProperty(input, (value, propName) => {
             var encoded = _encodePropertyValue(propName, value);
 
@@ -67,7 +67,7 @@ export function jsonToObject<T>(
         if (isBlank(record))
             return record as any;
 
-        var obj = {};
+        var obj: {[propName: string]: any} = {};
         forEachOwnProperty(record, (value, key) => {
             var encoded = _encodeEntryValue(key, value);
             obj[encoded.name] = encoded.value;

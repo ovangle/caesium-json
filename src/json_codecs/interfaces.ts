@@ -16,11 +16,11 @@ export function isArray(obj: any) {
     return Array.isArray(obj);
 }
 
-export function isNumber(obj) {
+export function isNumber(obj: any) {
     return typeof obj === "number";
 }
 
-export function isBoolean(obj) {
+export function isBoolean(obj: any) {
     return typeof obj === "boolean";
 }
 

@@ -5,12 +5,12 @@ import {SearchParameter, Operator, Refiner} from './parameter';
 import {StringMap} from '../../json_codecs/interfaces';
 
 /// The default accessor is to interpret the parameter name as a property name
-function _defaultAccessor(propName): (model) => any {
+function _defaultAccessor(propName: string): (model: any) => any {
     return (model) => model[propName];
 }
 
 /// The default matcher for comparing parameter values is just `===`
-function _eqMatcher(modelValue, paramValue) {
+function _eqMatcher(modelValue: any, paramValue: any) {
     return modelValue === paramValue;
 }
 

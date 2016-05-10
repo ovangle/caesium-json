@@ -36,12 +36,12 @@ const MODEL_KIND = 'test::MyModel';
 const SEARCH_ENDPOINT = 'search';
 const SEARCH_PAGE_SIZE = 2;
 
-function isSubstring(modelValue, paramValue) {
+function isSubstring(modelValue: string, paramValue: string) {
     return modelValue.includes(paramValue);
 }
 
 class MockModelHttp implements ModelHttp {
-    http = null;
+    http: any = null;
     apiHostHref:'http://host';
 
     _handleRequest:Function;

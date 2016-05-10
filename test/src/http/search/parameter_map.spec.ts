@@ -23,7 +23,7 @@ export function parameterMapTests() {
         });
 
         it('should be possible to get the operator from a param definition, or the default if one was not provided', () => {
-            var myOperator = (paramValue, otherValue) => false;
+            var myOperator = (paramValue: any, otherValue: any) => false;
 
             var paramMap = new SearchParameterMap({
                 a: {encoder: identityConverter, matcher: myOperator},
@@ -36,7 +36,7 @@ export function parameterMapTests() {
         });
 
         it('should be possible to get the operator from a parameter, or a default if one was not provided on the definition', () => {
-            var myRefiner = (previousParamValue, currentParamValue) => previousParamValue === currentParamValue;
+            var myRefiner = (previousParamValue: any, currentParamValue: any) => previousParamValue === currentParamValue;
             var paramMap = new SearchParameterMap({
                 a: {encoder: identityConverter, refiner: myRefiner},
                 b: {encoder: identityConverter}

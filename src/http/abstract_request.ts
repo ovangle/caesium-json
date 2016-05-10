@@ -36,7 +36,7 @@ export abstract class BaseRequest {
         this.endpoint = options.endpoint;
         this.http = http;
         this._responseSubscribers = Immutable.List<Subscriber<AbstractResponse>>();
-        this.responseChange = Observable.create((subscriber) => {
+        this.responseChange = Observable.create((subscriber: Subscriber<AbstractResponse>) => {
             this.onResultChangeSubscription(subscriber);
         });
     }
@@ -49,7 +49,7 @@ export abstract class BaseRequest {
             });
     }
 
-    protected onResultChangeSubscription(subscriber): void {
+    protected onResultChangeSubscription(subscriber: Subscriber<AbstractResponse>): void {
         this._responseSubscribers = this._responseSubscribers.push(subscriber);
     }
 

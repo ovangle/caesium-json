@@ -55,7 +55,7 @@ export function copyModel<T extends ModelBase>(
     var factory = createModelFactory<T>(modelMeta);
 
     mutations = mutations || [];
-    var mutationMap = {};
+    var mutationMap: {[propName: string]: any} = {};
     mutations.forEach((mutation) => {
         modelMeta.checkHasProperty(mutation.property);
         mutationMap[mutation.property] = mutation.value;
