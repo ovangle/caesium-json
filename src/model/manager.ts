@@ -22,7 +22,7 @@ export class ModelManager<T extends ModelBase> {
     http: ModelHttp;
 
     private get __metadata(): ManagerMetadata {
-        return ManagerMetadata.forType((this as any).prototype);
+        return ManagerMetadata.forType(Object.getPrototypeOf(this).constructor);
     }
 
     constructor(http: ModelHttp) {
