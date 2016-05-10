@@ -9,7 +9,6 @@ import {model} from "../json_codecs/model_to_json";
 import {JsonObject} from '../json_codecs/interfaces';
 import {
     ModelHttp,
-    BaseRequestOptions,
     GetOptions, Get,
     PostOptions, Post,
     PutOptions, Put,
@@ -50,43 +49,28 @@ export class ModelManager<T extends ModelBase> {
         return this._getDefaultJsonCodec<T>();
     }
 
-    private _setRequestOptionDefaults<TBody extends ModelBase,TResponse extends ModelBase>(
-        options: BaseRequestOptions
-    ) {
-        var anyOptions = options as any;
-        anyOptions.bodyEncoder = anyOptions.bodyEncoder
-            || (input => this._getDefaultJsonCodec<TBody>().encode(input));
-        anyOptions.responseDecoder = anyOptions.responseDecoder
-            || (input => this._getDefaultJsonCodec<TResponse>().decode(input));
-    }
-
     // Standard request methods
 
     /// Submit a 'GET' request to the server.
     /// Unlike normal HTTP requests, a GET method should always return a single record
     /// in the result object.
-    get<TResponse>(options: GetOptions<TResponse>): Get<TResponse> {
-        this._setRequestOptionDefaults(options);
-        return new Get<TResponse>(options, this.__metadata.kind, this.http);
+    get(options: GetOptions): Get {
+        return new Get(options, this.__metadata.kind, this.http);
     }
 
-    put<TBody, TResponse>(options: PutOptions<TBody,TResponse>): Put<TBody,TResponse> {
-        this._setRequestOptionDefaults(options);
-        return new Put<TBody, TResponse>(options, this.__metadata.kind, this.http);
+    put(options: PutOptions): Put {
+        return new Put(options, this.__metadata.kind, this.http);
     }
 
-    post<TBody, TResponse>(options: PostOptions<TBody, TResponse>): Post<TBody,TResponse> {
-        this._setRequestOptionDefaults(options);
-        return new Post<TBody, TResponse>(options, this.__metadata.kind, this.http);
+    post(options: PostOptions): Post {
+        return new Post(options, this.__metadata.kind, this.http);
     }
 
     delete(options: DeleteOptions): Delete {
-        this._setRequestOptionDefaults(options);
         return new Delete(options, this.__metadata.kind, this.http);
     }
 
     search<TResponse>(options: SearchOptions<TResponse>): Search<TResponse> {
-        this._setRequestOptionDefaults(options);
         // TODO: PAGE_SIZE needs to be injected
         return new Search<TResponse>(options, this.__metadata.kind, SEARCH_PAGE_SIZE, this.http);
     }

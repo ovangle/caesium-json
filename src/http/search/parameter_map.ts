@@ -59,8 +59,8 @@ export class SearchParameterMap {
         return this._paramValues.has(param);
     }
 
-    get(param: string): any {
-        return this._paramValues.get(param);
+    get(param: string, notSetValue?: any): any {
+        return this._paramValues.get(param, notSetValue);
     }
 
     set(param: string, value: any): SearchParameterMap {
@@ -109,14 +109,14 @@ export class SearchParameterMap {
 
     isRefinementOf(other: SearchParameterMap) {
         return this._parameters.keySeq().every((paramName) => {
-            if (!this.has(paramName))
-            // undefined values always refine the map.
-                return true;
             if (!other.has(paramName))
+                // undefined values always refine the map
+                return true;
+            if (!this.has(paramName))
                 return false;
             var prevValue = other.get(paramName);
             var currValue = this.get(paramName);
-            return this.getRefiner(paramName)(prevValue, currValue);
+            return this.getRefiner(paramName)(currValue, prevValue);
         });
     }
 

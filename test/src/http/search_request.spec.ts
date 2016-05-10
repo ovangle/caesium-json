@@ -19,15 +19,15 @@ import {Search} from '../../../src/http/search_request';
 
 import {parameterTests} from "./search/parameter.spec";
 import {parameterMapTests} from "./search/parameter_map.spec";
-import {resultTests} from "./search/result.spec";
+import {searchResponseTests} from "./search/result.spec";
 
 export function searchRequestTests() {
-    searchTests();
 
-    describe('search', () => {
+    describe('search_request', () => {
+        searchTests();
         parameterTests();
         parameterMapTests();
-        resultTests();
+        searchResponseTests();
     });
 
 }
@@ -35,6 +35,10 @@ export function searchRequestTests() {
 const MODEL_KIND = 'test::MyModel';
 const SEARCH_ENDPOINT = 'search';
 const SEARCH_PAGE_SIZE = 2;
+
+function isSubstring(modelValue, paramValue) {
+    return modelValue.includes(paramValue);
+}
 
 class MockModelHttp implements ModelHttp {
     http = null;
@@ -71,53 +75,39 @@ function _mkSearch(
     return new Search<any>(options, MODEL_KIND, SEARCH_PAGE_SIZE, modelHttp);
 }
 
-function getAllItems(result: SearchResponse<any>) {
-    return result.observeItems()
-        .reduce<Immutable.Iterable<number,any>>((acc, items) => acc.concat(items))
-        .map((acc) => acc.toArray())
-        .toPromise();
+function _errHandler(params: StringMap): JsonQuery {
+    throw 'Request handler should not be called';
 }
 
-export function searchTests() {
 
+export function searchTests() {
     describe('Search', () => {
+        it('should be possible to get/set/delete a parameter value', () => {
+            var search = _mkSearch({a: {encoder: identityConverter}}, _errHandler);
+            expect(search.hasParamValue('a')).toBe(false, 'uninitialized parameter');
+            expect(search.getParamValue('a')).toBeUndefined('no notSetValue');
+            expect(search.getParamValue('a', 0)).toBe(0, 'should use notSetValue');
+
+            search.setParamValue('a', 42);
+            expect(search.hasParamValue('a')).toBe(true, 'value initialized');
+            expect(search.getParamValue('a', 0)).toBe(42, 'parameter value set');
+
+            search.deleteParamValue('a');
+            expect(search.hasParamValue('a')).toBe(false, 'value deleted');
+        });
+
         it('should be possible to submit an empty search to the server', (done) => {
             function requestHandler(search: StringMap): JsonQuery {
-                expect(search['p']).toEqual('1');
+                expect(search['p']).toEqual('1', 'should add a pageId parameter to the search');
                 return {pageId: 1, lastPage: true, items: [{a: '30'}]};
             }
             var search = _mkSearch({a: {encoder: identityConverter}}, requestHandler);
 
-            search.responseChange.first().toPromise().then((resultSet: SearchResponse<{a: number}>) => {
-                resultSet.loadNextPage();
-                return resultSet.observeItems().first().toPromise().then((items) => {
-                    expect(items.toArray()).toEqual([{a: '30'}]);
-                });
-            }).then((_) => {
-                search.dispose();
-                done()
-            }).catch((err) => {
-                fail(err);
-                done()
-            });
-        });
-
-        it('changing a parameter variable should change the results', (done) => {
-            function requestHandler(search: StringMap): JsonQuery {
-                throw 'Setting a parameter should not trigger a request';
-            }
-
-            var search = _mkSearch({a: {encoder: identityConverter}}, requestHandler);
-
-            search.responseChange.toArray().toPromise().then((results: SearchResponse<{a: number}>[]) => {
-                expect(results.length).toEqual(2);
-                expect((results[0] as any)._parameterMap.get('a')).toEqual(undefined);
-                expect((results[1] as any)._parameterMap.get('a')).toEqual(40);
+            return search.send().then((_) => {
+                var response = search.response;
+                expect(response.items.toArray()).toEqual([{a: '30'}]);
                 done();
-            }).catch(done);
-
-            search.setParamValue('a', 40);
-            search.dispose();
+            });
         });
 
         it('should be able to perform a search on a set of data', (done) => {
@@ -128,10 +118,6 @@ export function searchTests() {
                 {a: 'abcd', b: 20},
                 {a: 'abcdef', b: 30}
             ];
-
-            function isSubstring(modelValue, paramValue) {
-                return modelValue.includes(paramValue);
-            }
 
             function requestHandler(search: StringMap): JsonQuery {
                 var pageId = Number.parseInt(search['p']);
@@ -150,10 +136,10 @@ export function searchTests() {
 
                 var fstIndex = 2 * (pageId - 1);
 
-                var resultItems = [searchData[fstIndex], searchData[fstIndex + 1]];
+                var resultItems = searchData.slice(fstIndex, fstIndex + 2);
                 return {
                     pageId: pageId,
-                    lastPage: (fstIndex <= searchData.length - 1),
+                    lastPage: resultItems.length === 0,
                     items: resultItems
                 };
             }
@@ -163,85 +149,60 @@ export function searchTests() {
                 b: {encoder: identityConverter}
             }, requestHandler);
 
-            var tests = [];
-            search.responseChange.subscribe((result: SearchResponse<any>) => {
-                function getParamValue(param: string): any {
-                    return (result as any)._parameterMap.get(param);
-                }
+            return search.send().then((_) => {
+                let items = [{a: 'abcdef', b: 40}, {a: 'abc', b: 30}];
 
-                if (typeof getParamValue('a') === "undefined" && typeof getParamValue('b') === "undefined") {
+                expect(search.response.items.toArray()).toEqual(
+                    items,
+                    "one page of '' results loaded"
+                );
+                search.setParamValue('a', 'abc');
+                expect(search.response.items.toArray()).toEqual(
+                    items,
+                    "'a=abc' matches all results in first page of ''"
+                );
+                return search.send();
+            }).then((_) => {
+                expect(search.response.items.toArray()).toEqual([
+                    {a: 'abcdef', b: 40},
+                    {a: 'abc', b: 30},
+                    {a: 'abcd', b: 20},
+                    {a: 'abcdef', b: 30}
+                ], "another page of 'a=abc' results loaded");
+                search.setParamValue('a', 'abcdef');
 
-                    result.loadNextPage();
+                expect(search.response.items.toArray()).toEqual([
+                    {a: 'abcdef', b: 40},
+                    {a: 'abcdef', b: 30}
+                ], "'a=abcdef' only matches two items");
 
-                    // should have loaded the first page of results
-                    tests.push(getAllItems(result).then((items) => {
-                        expect(items).toEqual([
-                            {a: 'abcdef', b: 40},
-                            {a: 'abc', b: 30},
-                        ]);
-                        return 'test #1';
-                    }).catch(done));
-                }
+                return search.send();
+            }).then((_) => {
+                expect(search.response.items.toArray()).toEqual([
+                    {a: 'abcdef', b: 40},
+                    {a: 'abcdef', b: 30}
+                ]);
 
-                if (getParamValue('a') === 'abc' && typeof getParamValue('b') === "undefined") {
-                    // Load another page of results, so that we have a value for b == 30
-                    // which wasn't present in the original results (see: test #5)
-                    result.loadNextPage();
+                var testLastPage = search.response.hasLastPage.then((lastPage) => {
+                    expect(lastPage).toBe(true, "a=abcdef has no more items");
+                });
 
-                    tests.push(getAllItems(result).then((items) => {
-                        expect(items).toEqual([
-                            {a: 'abcdef', b: 40},
-                            {a: 'abc', b: 30},
-                            {a: 'abcd', b: 20},
-                            {a: 'abcdef', b: 30}
-                        ]);
-                        return 'test #2';
-                    }).catch(done));
-                }
+                search.setParamValue('b', 30);
+                expect(search.response.items.toArray()).toEqual([
+                    {a: 'abcdef', b: 30}
+                ]);
 
-                if (getParamValue('a') === 'abcdef' && typeof getParamValue('b') === "undefined") {
-                    tests.push(getAllItems(result).then((items) => {
-                        expect(items).toEqual([
-                            {a: 'abcdef', b: 40},
-                            {a: 'abcdef', b: 30}
-                        ]);
-                        return 'test #3';
-                    }).catch(done));
+                search.setParamValue('a', 'abc');
+                expect(search.response.items.toArray()).toEqual([
+                    {a: 'abc', b: 30},
+                    {a: 'abcdef', b: 30}
+                ], "should still have results loaded for 'a=abc'");
 
-                }
-
-                if (getParamValue('a') === 'abcdef' && getParamValue('b') === 30) {
-                    tests.push(getAllItems(result).then((items) => {
-                        expect(items).toEqual([
-                            {a: 'abcdef', b: 30}
-                        ]);
-                        return 'test #4';
-                    }).catch(done));
-                }
-
-                if (getParamValue('a') === 'abc' && getParamValue('b') === 30) {
-                    // Test #5. Should have loaded results from a=abc
-                    tests.push(getAllItems(result).then((items) => {
-                        expect(items).toEqual([
-                            {a: 'abc', b: 30},
-                            {a: 'abcdef', b: 30},
-                        ]);
-                        return 'test #5';
-                    }).catch(done));
-                }
-
-                result.dispose();
-            });
-
-            search.setParamValue('a', 'abc');
-            search.setParamValue('a', 'abcdef');
-            search.setParamValue('b', 30);
-            search.setParamValue('a', 'abc');
-
-            Promise.all(tests).then((ranTests: Array<string>) => {
-                for (let testID of ['test #1', 'test #2', 'test #3', 'test #4', 'test #5']) {
-                    expect(ranTests.find((item) => item === testID)).toBeTruthy(`ran ${testID}`);
-                }
+                return Promise.all([testLastPage]).then((_) => {
+                    done();
+                })
+            }).catch((err) => {
+                fail(`Threw error: ${err}`);
                 done();
             });
         });

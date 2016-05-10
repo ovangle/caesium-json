@@ -1,29 +1,33 @@
+import 'rxjs/add/operator/filter';
+
+import {isNumber} from '../json_codecs/interfaces';
+
 import {Observable} from 'rxjs/Observable';
 import {Subscriber} from 'rxjs/Subscriber';
-import {isBlank} from 'caesium-core/lang';
-import {isCodec, getEncoder, getDecoder, Codec} from 'caesium-core/codec';
-import {Converter} from 'caesium-core/converter';
-
-import {ArgumentError} from '../exceptions';
 
 import {
-    JsonObject,
-    BaseRequestOptions,
-    AccessorRequestOptions,
-    MutatorRequestOptions,
     AbstractResponse,
     JsonResponse,
-    SingleItemResponse
+    ResponseFilter,
+    ResponseHandler,
+    responseDecoder,
+    DefaultResponseHandler,
+    RequestBody
 } from './interfaces';
 import {ModelHttp} from './model_http';
 
-export abstract class BaseRequest<TBody,TResponse> {
+export interface BaseRequestOptions {
+    /// The method to call on the server resource
+    endpoint: string;
+}
+
+export abstract class BaseRequest {
     kind: string;
     endpoint: string;
 
     http:ModelHttp;
 
-    responseChange:Observable<AbstractResponse>;
+    responseChange:Observable<JsonResponse>;
 
     private _responseSubscribers: Immutable.List<Subscriber<AbstractResponse>>;
 
@@ -37,7 +41,7 @@ export abstract class BaseRequest<TBody,TResponse> {
         });
     }
 
-    protected emit(response:AbstractResponse) {
+    protected emit(response:JsonResponse) {
         this._responseSubscribers
             .filter((subscriber) => !subscriber.isUnsubscribed)
             .forEach((subscriber) => {
@@ -49,6 +53,11 @@ export abstract class BaseRequest<TBody,TResponse> {
         this._responseSubscribers = this._responseSubscribers.push(subscriber);
     }
 
+    /**
+     * Send the request. Completes with the status of the request.
+     */
+    abstract send(): Promise<number>;
+
     dispose() {
         this._responseSubscribers
             .filter((subscriber) => !subscriber.isUnsubscribed)
@@ -56,45 +65,87 @@ export abstract class BaseRequest<TBody,TResponse> {
                 subscriber.complete();
             });
     }
-}
 
-export abstract class AccessorRequest<TBody,TResponse> extends BaseRequest<TBody,TResponse> {
-    responseDecoder: Converter<JsonObject,TResponse>;
-
-    constructor(options: AccessorRequestOptions<TResponse>, kind: string, http: ModelHttp) {
-        super(options, kind, http);
-        if (isBlank(options.responseDecoder))
-            throw new ArgumentError('responseDecoder must be provided');
-        if (isCodec(options.responseDecoder)) {
-            var codec = (options.responseDecoder as Codec<TResponse,JsonObject>);
-            this.responseDecoder = getDecoder(codec);
+    protected _logError(...messages: string[]) {
+        console.error(`Error handling request: ${this.toString()}`);
+        for (let message of messages) {
+            console.error(`\t${message}`);
         }
-        this.responseDecoder = options.responseDecoder as Converter<JsonObject,TResponse>;
+
     }
 
-    protected handleResponse(rawResponse: JsonResponse): SingleItemResponse<TResponse> {
-        var response = {
-            status: rawResponse.status,
-            body: this.responseDecoder(response.body)
-        };
-        this.emit(response);
-        return response;
+    _kindEndpoint(): string {
+        return `${this.kind}.${this.endpoint}`
     }
 }
 
-export abstract class MutatorRequest<TBody,TResponse> extends AccessorRequest<TBody,TResponse> {
-    bodyEncoder: Converter<TBody,JsonObject>;
+export abstract class AccessorRequest extends BaseRequest {
+    private _responseFilters: Immutable.List<ResponseFilter>;
+    private _defaultHandler: DefaultResponseHandler;
 
-    constructor(options: MutatorRequestOptions<TBody, TResponse>, kind: string, http: ModelHttp) {
+    constructor(options:BaseRequestOptions, kind: string, http:ModelHttp) {
         super(options, kind, http);
-        if (isBlank(options.bodyEncoder))
-            throw new ArgumentError('bodyEncoder must be provided');
-        if (isCodec(options.bodyEncoder)) {
-            var codec = options.bodyEncoder as Codec<TBody,JsonObject>;
-            this.bodyEncoder = getEncoder(codec);
-        }
-        this.bodyEncoder = options.bodyEncoder as Converter<TBody,JsonObject>;
+        this._responseFilters = Immutable.List<ResponseFilter>();
+        this.responseChange
+            .filter((response) => this._isUnhandled(response))
+            .forEach((unhandledResponse: JsonResponse) => {
+                if (this._defaultHandler) {
+                    return this._defaultHandler.call(unhandledResponse.body);
+                }
+                this._logError(
+                    `Unhandled response (status: ${unhandledResponse.status}`,
+                    JSON.stringify(unhandledResponse.body)
+                );
+            }, this);
     }
 
-    abstract setRequestBody(body: TBody): Promise<SingleItemResponse<TResponse>>;
+    addHandler<TResponse>(responseHandler: ResponseHandler<TResponse>): AccessorRequest {
+        var _filter = this._addResponseFilter(responseHandler.selector);
+        this.responseChange
+            .filter(_filter)
+            .map((response: JsonResponse) =>
+                responseDecoder(responseHandler.decoder)(response.body))
+            .forEach(responseHandler.call, responseHandler.thisArg)
+            .catch(this._logError);
+        return this; 
+    }
+
+    setDefaultHandler<TResponse>(responseHandler: DefaultResponseHandler): AccessorRequest {
+        this._defaultHandler = responseHandler;
+        return this;
+    }
+
+    /**
+     * A response is unhandled if the filters for any of the result handlers
+     * do not match the response.
+     *
+     * @param response
+     * @returns {boolean}
+     * @private
+     */
+    private _isUnhandled(response: JsonResponse) {
+        return !this._responseFilters.some((filter) => filter(response));
+    }
+
+    /**
+     * Register a response filter on the request.
+     * @param filter
+     * @private
+     */
+    protected _addResponseFilter(filter: number | ResponseFilter): ResponseFilter {
+        var _filter: ResponseFilter;
+        // TODO: This should be in caesium-core/lang.
+        if (isNumber(filter)) {
+            _filter = (response) => response.status === filter;
+        } else {
+            _filter = filter as ResponseFilter;
+        }
+
+        this._responseFilters = this._responseFilters.push(_filter);
+        return _filter;
+    }
+}
+
+export abstract class MutatorRequest extends AccessorRequest {
+    abstract setRequestBody<TBody>(requestBody: RequestBody<TBody>): MutatorRequest;
 }

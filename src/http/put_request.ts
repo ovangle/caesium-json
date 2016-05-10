@@ -1,32 +1,41 @@
-import {RequestMethod} from 'angular2/http';
-
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/toPromise';
+import {RequestMethod} from 'angular2/http';
+import {isBlank} from 'caesium-core/lang';
 
 import {ModelHttp} from './model_http';
-import {MutatorRequestOptions, SingleItemResponse} from './interfaces';
-import {MutatorRequest} from "./abstract_request";
+import {
+    bodyEncoder, JsonObject, RequestBody, ResponseHandler, responseDecoder
+} from './interfaces';
+import {BaseRequestOptions, MutatorRequest} from "./abstract_request";
 
-export interface PutOptions<TBody,TResponse> extends MutatorRequestOptions<TBody,TResponse> {
+export interface PutOptions extends BaseRequestOptions { }
 
-}
+export class Put extends MutatorRequest {
+    private body: JsonObject;
 
-export class Put<TBody,TResponse> extends MutatorRequest<TBody,TResponse> {
-
-    constructor(options: PutOptions<TBody,TResponse>, kind: string, http: ModelHttp) {
+    constructor(options: PutOptions, kind: string, http: ModelHttp) {
         super(options, kind, http);
     }
 
-
-    setRequestBody(body: TBody): Promise<SingleItemResponse<TResponse>> {
-        var rawResponse = this.http.request({
+    send(): Promise<any> {
+        if (isBlank(this.body))
+            return Promise.reject(`Error handling ${this}: Response body uninitialized`);
+        return this.http.request({
             method: RequestMethod.Put,
             kind: this.kind,
             endpoint: this.endpoint,
-            body: this.bodyEncoder(body)
-        });
-        return rawResponse
-            .map(this.handleResponse)
-            .toPromise();
+            body: this.body
+        }).forEach((response) => this.emit(response), this);
+    }
+
+
+    setRequestBody<TBody>(requestBody: RequestBody<TBody>): Put {
+        this.body = bodyEncoder(requestBody)(requestBody.body);
+        return this;
+    }
+    
+    toString(): string {
+        return `PUT (${this.kind}, ${this.endpoint})`;
     }
 }

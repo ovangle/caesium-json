@@ -1,133 +1,172 @@
-import 'rxjs/add/operator/toPromise';
-import 'rxjs/add/operator/map';
+import {Converter} from 'caesium-core/converter';
+import {memoize} from 'caesium-core/decorators';
+
+import {ArgumentError} from '../../exceptions';
+import {AbstractResponse, JsonResponse, JsonObject, JsonQuery, isJsonQuery} from '../interfaces';
 
 import {SearchParameterMap} from './parameter_map';
-import {Observable} from "rxjs/Observable";
-import {Subscriber} from "rxjs/Subscriber";
-import {Subscription} from "rxjs/Subscription";
-import {AbstractResponse, ResponsePage} from "../interfaces";
 
-export type PageLoader<T> = (parameters: SearchParameterMap, pageId: number) => Promise<ResponsePage<T>>;
+export class SearchResponsePage<T> implements AbstractResponse {
+    /** The parameter map which was used to generate this response page */
+    parameters: SearchParameterMap;
 
-/// @Mutable
-export class SearchResponse<T> implements AbstractResponse {
-    /// The http status of the request which loaded the last page of results
-    status: number;
+    private _decoder: Converter<JsonObject,T>;
 
-    /// A cache of all the items which have been fetched for this result list.
-    private _items: Immutable.List<T>;
+    private _rawResponse: JsonResponse;
 
-    /// The parameter map which was used to generate this result list.
-    private _parameterMap: SearchParameterMap;
+    /**
+     * If there was a partial page of results loaded from the search
+     * results that were being refined, then when loading a new page,
+     * there will be duplicates at the head of the list.
+     *
+     * The number of items to skip.
+     */
+    private _skip = 0;
 
-    private _pendingPage: Promise<void>;
+    /** The HTTP status of this page of results. */
+    get status(): number { return this._rawResponse.status; }
 
-    private _seenLastPage: boolean = false;
+    get items(): Immutable.List<T> { return this._getItems(); }
 
-    private _subscribers: Immutable.List<Subscriber<Immutable.Iterable<number,T>>>;
+    get _query(): JsonQuery { return this._rawResponse.body as JsonQuery }
 
-    /// The number of items which are loaded per page of results.
-    public pageSize: number;
+    /** The items present on this page of results. */
+    @memoize()
+    private _getItems(): Immutable.List<T> {
+        return Immutable.List<JsonObject>(this._query.items)
+            .skip(this._skip)
+            .map((item) => this._decoder(item))
+            .filter((item) => this.parameters.matches(item))
+            .toList();
+    }
 
-    /// A function which obtains a new page of results from the server.
-    /// The returned observable is a single use observable and can be discarded after
-    /// completion.
-    private _loadNextPage: PageLoader<T>;
+    /** Is this the last page of results? */
+    get isLastPage(): boolean { return this._query.lastPage; }
+
+    @memoize()
+    itemCount(): number {
+        return this.items.count();
+    }
 
     constructor(
-        parameterMap: SearchParameterMap,
-        pageSize: number,
-        loadNextPage: PageLoader<T>
+        jsonResponse:JsonResponse,
+        responseDecoder:Converter<JsonObject,T>,
+        parameters: SearchParameterMap,
+        skipItems: number = 0
     ) {
-        this._items = Immutable.List<T>();
-        this._parameterMap = parameterMap;
+        if (!isJsonQuery(jsonResponse.body))
+            throw new ArgumentError(`Not a JsonQuery: ${jsonResponse}`);
+        this._rawResponse = jsonResponse;
+        this._decoder = responseDecoder;
+        this.parameters = parameters;
+        this._skip = skipItems;
+    }
+
+    skipItems(count: number): SearchResponsePage<T> {
+        return new SearchResponsePage<T>(
+            this._rawResponse,
+            this._decoder,
+            this.parameters,
+            count
+        );
+    }
+
+    refine(paramMap: SearchParameterMap): SearchResponsePage<T> {
+        if (!paramMap.isRefinementOf(this.parameters)) {
+            throw new ArgumentError('parameters must be a refinement');
+        }
+        return new SearchResponsePage<T>(
+            this._rawResponse,
+            this._decoder,
+            paramMap
+        );
+    }
+}
+
+export class SearchResponse<T> {
+
+    parameters:SearchParameterMap;
+
+    _pages:Immutable.List<SearchResponsePage<T>>;
+
+    pageSize:number;
+
+    /// All pages which have been requested from the server but not yet
+    /// added to the search result.
+    private _pendingPage:Promise<SearchResponsePage<T>>;
+
+    constructor(paramMap:SearchParameterMap,
+                pageSize:number,
+                pages?: Immutable.List<SearchResponsePage<T>>) {
+        this.parameters = paramMap;
+        if (!pages)
+            pages = Immutable.List<SearchResponsePage<T>>();
+        this._pages = pages.map(page => page.refine(paramMap)).toList();
         this.pageSize = pageSize;
-        this._loadNextPage = loadNextPage;
-        this._subscribers = Immutable.List<Subscriber<Immutable.Iterable<number,T>>>();
-
-        this._seenLastPage = false;
-        this._pendingPage = Promise.resolve();
     }
 
-    /// The parameters which generated this result.
-    get parameters(): SearchParameterMap {
-        return this._parameterMap;
+    /// Get the pages loaded on the response.
+    /// Does not include pending pages.
+    get pages(): Immutable.List<SearchResponsePage<T>> {
+        return this._pages;
     }
 
-    /// All the items which have been loaded into the result so far. If there are any pending pages,
-    /// they will not be included in this list.
+    /// Get the items loaded on the response.
+    /// Does not include items from pending pages.
     get items(): Immutable.List<T> {
-        return this._items;
+        return this.pages.reduce<Immutable.Iterable<number,T>>(
+            (acc, page) => acc.concat(page.items),
+            Immutable.List<T>()
+        ).toList();
     }
 
-    get seenLastPage(): boolean {
-        return this._seenLastPage;
+    get allPendingPagesLoaded(): Promise<void> {
+        var wait: Promise<any> = this._pendingPage || Promise.resolve();
+        return wait.then((_) => null);
     }
 
-    /// A stream of items from this result list.
-    // Each time a new page of results is loaded, the items will be emitted on this stream.
-    observeItems(): Observable<Immutable.Iterable<number,T>> {
-        return Observable.create((subscriber) => {
-            this._subscribers = this._subscribers.push(subscriber);
+    get nextPageId(): Promise<number> {
+        var wait: Promise<any> = this._pendingPage || Promise.resolve();
+        return wait.then((_) => {
+            var currentPage = Math.floor(this.items.count() / this.pageSize);
+            return currentPage + 1;
         });
     }
 
-    loadNextPage(): Promise<void> {
-        if (this._seenLastPage) {
-            return this._pendingPage;
+    get hasLastPage(): Promise<boolean> {
+        var wait: Promise<any> = this._pendingPage || Promise.resolve();
+        return wait.then((_) => {
+            // If we haven't loaded a single page, then we still need to check the
+            // server for an empty page of items.
+            if (this.pages.isEmpty())
+                return false;
+            return this.pages.last().isLastPage;
+        });
+    }
+
+    private _loadPageIntoResponse(page: SearchResponsePage<T>, skipPartial: boolean): SearchResponsePage<T> {
+        console.log(JSON.stringify(page.items.toArray()));
+        if (page.parameters !== this.parameters) {
+            throw new ArgumentError('Page parameters not from this response');
         }
-        this._pendingPage = this._pendingPage.then((_) => {
-            var currentPage = Math.floor(this._items.count() / this.pageSize);
-            return this._loadNextPage(this._parameterMap, currentPage + 1)
-                .then((page) => this._handlePageResults(page));
-        });
-        return this._pendingPage;
-    }
-
-    private _handlePageResults(page: ResponsePage<T>): void {
-        // There could be a partial page. Skip the appropriate number of items.
-        var skipItems = this._items.count() % this.pageSize;
-        var newItems = page.body.skip(skipItems);
-
-        if (page.lastPage) {
-            this._seenLastPage = true;
+        // There could be a partial page of results
+        var skipItems = this.items.count() % this.pageSize;
+        if (skipPartial && skipItems > 0) {
+            page = page.skipItems(skipItems);
         }
-
-        this.status = page.status;
-        this._emit(newItems);
-        this._items = this._items.concat(newItems).toList();
+        this._pages = this._pages.push(page);
+        return page;
     }
 
-    private _emit(items: Immutable.Iterable<number,T>): void {
-        this._subscribers
-            .filter((subscriber) => !subscriber.isUnsubscribed)
-            .forEach((subscriber) => subscriber.next(items));
+    /// Waits for the page to load from the server,
+    /// adds it to the results, then returns the HTTP status of the page.
+    addPendingPage(pendingPage: Promise<SearchResponsePage<T>>): Promise<number>{
+        var wait: Promise<any> = this._pendingPage || Promise.resolve();
+        this._pendingPage = wait
+            .then((_) => pendingPage)
+            .then(page => this._loadPageIntoResponse(page, true));
+
+        return this._pendingPage.then((page) => page.status);
     }
 
-    /// @Internal
-    /// Add any results from the parent to this result list.
-    _contributeResults(parent: SearchResponse<T>): Promise<void> {
-        this._pendingPage = parent._pendingPage.then((_) => {
-            var contributions = parent._items.filter((item) => this._parameterMap.matches(item));
-
-            if (contributions.count() > this._items.count()) {
-                this._emit(contributions.skip(this._items.count()));
-                this._items = contributions.toList();
-            }
-        });
-        return this._pendingPage;
-    }
-
-    dispose(): void {
-        this._pendingPage.then((_) => {
-            this._subscribers
-                .filter((subscriber) => !subscriber.isUnsubscribed)
-                .forEach((subscriber) => subscriber.complete());
-            this._subscribers = this._subscribers.clear();
-        });
-    }
-
-    toString(): string {
-        return `SearchResults(for: ${this.parameters})`
-    }
 }

@@ -2,25 +2,47 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/toPromise';
 
 import {RequestMethod} from 'angular2/http';
-import {ModelHttp} from './model_http';
-import {MutatorRequestOptions, SingleItemResponse} from "./interfaces";
-import {MutatorRequest} from "./abstract_request";
 
-export interface PostOptions<TBody,TResponse> extends MutatorRequestOptions<TBody,TResponse> {
+import {isBlank} from 'caesium-core/lang';
+import {Converter} from 'caesium-core/converter';
+import {Codec} from 'caesium-core/codec';
+
+import {ModelHttp} from './model_http';
+import {
+    JsonObject, bodyEncoder, RequestBody,
+    ResponseHandler, responseDecoder
+} from './interfaces';
+import {BaseRequestOptions, MutatorRequest} from "./abstract_request";
+
+export interface PostOptions extends BaseRequestOptions {
 }
 
-export class Post<TBody,TResponse> extends MutatorRequest<TBody,TResponse> {
+export class Post extends MutatorRequest {
 
-    constructor(options: PostOptions<TBody,TResponse>, kind: string, http: ModelHttp) {
+    private body: JsonObject;
+
+    constructor(options: PostOptions, kind: string, http: ModelHttp) {
         super(options, kind, http);
     }
 
-    setRequestBody(body: TBody): Promise<SingleItemResponse<TResponse>> {
+    send(): Promise<any> {
+        if (isBlank(this.body))
+            //TODO: Proper error
+            throw 'Post request must have a body';
         return this.http.request({
             method: RequestMethod.Post,
             kind: this.kind,
             endpoint: this.endpoint,
-            body: this.bodyEncoder(body)
-        }).map(this.handleResponse).toPromise();
+            body: this.body
+        }).forEach((response) => this.emit(response), this);
+    }
+
+    setRequestBody<TBody>(requestBody: RequestBody<TBody>): Post {
+        this.body = bodyEncoder(requestBody)(requestBody.body);
+        return this;
+    }
+
+    toString() {
+        return `POST (${this.kind}, ${this.endpoint})`
     }
 }

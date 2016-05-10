@@ -93,7 +93,7 @@ export function parameterMapTests() {
 
             var instance = {a: 'abcdef', b: 'ghijkl', c: 'mnopqr', propName: 'stuvwx', d: 'yz'};
 
-            expect(paramMap.matches(instance)).toBe(true, 'an empty parameter map matches everything'); 
+            expect(paramMap.matches(instance)).toBe(true, 'an empty parameter map matches everything');
             paramMap = paramMap.set('a', 'abcdefghi');
             expect(paramMap.matches(instance)).toBe(false, 'parameter \'a\' is not a substring of the instance value');
             paramMap = paramMap.set('a', 'abc');
@@ -127,25 +127,21 @@ export function parameterMapTests() {
             var mutated2 = mutated1.set('a', 'abcdef');
             var mutated3 = mutated2.set('a', 'abc');
 
+            expect(mutated3.isRefinementOf(mutated2)).toBe(false, '\'a=abc\' should not refine \'a=abcdef\'');
+
             // Reflexive
-            expect(mutated1.isRefinementOf(mutated1)).toEqual(true);
+            expect(mutated1.isRefinementOf(mutated1)).toBe(true, '\'a=abc\' should refine \'a=abc\'');
 
             // Transitive
-            expect(mutated2.isRefinementOf(paramMap)).toEqual(false);
+            expect(mutated2.isRefinementOf(paramMap)).toBe(true, '\'a=abcdef\' should refine \'\'');
 
             // Antisymmetric
-            expect(mutated3.equals(mutated1)).toEqual(true);
+            expect(mutated3.equals(mutated1)).toBe(true, "'a=abc' should equal a=abc");
 
-            var mutated4 = paramMap.set('b', 40);
+            var mutated4 = mutated1.set('b', 40);
 
-            expect(mutated4.isRefinementOf(paramMap)).toEqual(false);
-            expect(mutated4.isRefinementOf(mutated1)).toEqual(false);
-
-            // not completely transitive. Making it fully transitive
-            // would be too computationally expensive for little benefit,
-            // since we are just using it to cache results.
-            var mutated5 = mutated1.set('b', 40);
-            expect(mutated5.isRefinementOf(mutated4)).toEqual(false);
+            expect(mutated4.isRefinementOf(paramMap)).toBe(true, "'a=abc&b=40' should refine ''");
+            expect(mutated4.isRefinementOf(mutated3)).toBe(true, "'a=abc&b=40' should refine 'a=abc'");
         });
 
     });
