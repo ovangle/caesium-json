@@ -1,4 +1,3 @@
-/// <reference path="../../typings/es6-shim/es6-shim.d.ts"/>
 import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {reflector} from 'angular2/src/core/reflection/reflection';
