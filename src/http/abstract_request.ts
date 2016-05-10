@@ -1,5 +1,5 @@
 import 'rxjs/add/operator/filter';
-
+import {isBlank} from 'caesium-core/lang';
 import {isNumber} from '../json_codecs/interfaces';
 
 import {Observable} from 'rxjs/Observable';
@@ -90,7 +90,9 @@ export abstract class AccessorRequest extends BaseRequest {
             .filter((response) => this._isUnhandled(response))
             .forEach((unhandledResponse: JsonResponse) => {
                 if (this._defaultHandler) {
-                    return this._defaultHandler.call(unhandledResponse.body);
+                    var handle = this._defaultHandler.call
+                        .bind(this._defaultHandler.thisArg);
+                    return handle(unhandledResponse.body);
                 }
                 this._logError(
                     `Unhandled response (status: ${unhandledResponse.status}`,
@@ -107,7 +109,7 @@ export abstract class AccessorRequest extends BaseRequest {
                 responseDecoder(responseHandler.decoder)(response.body))
             .forEach(responseHandler.call, responseHandler.thisArg)
             .catch(this._logError);
-        return this; 
+        return this;
     }
 
     setDefaultHandler<TResponse>(responseHandler: DefaultResponseHandler): AccessorRequest {
