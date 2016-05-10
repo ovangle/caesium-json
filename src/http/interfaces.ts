@@ -52,7 +52,7 @@ export interface ResponseHandler<T> extends BaseResponseHandler<T> {
      * registered handler will be called.
      */
     selector: number | ResponseFilter;
-    decoder: Codec<T,JsonObject> | Converter<T,JsonObject>;
+    decoder: Codec<T,JsonObject> | Converter<JsonObject, T>;
 }
 
 export function filterStatus(status: number): ResponseFilter {
