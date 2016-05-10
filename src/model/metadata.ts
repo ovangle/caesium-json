@@ -166,7 +166,7 @@ export class ManagerMetadata {
         return this.modelMetadata.kind;
     }
 
-    constructor(modelType:Type) {
+    constructor({modelType}: {modelType:Type}) {
         this.modelType = modelType;
         this.modelMetadata = ModelMetadata.forType(this.modelType);
     }
