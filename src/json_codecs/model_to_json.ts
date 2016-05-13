@@ -39,11 +39,15 @@ function kindPropertyRemover(metadata: ModelMetadata): Codec<JsonObject,JsonObje
 export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject> {
     var metadata = ModelMetadata.forType(modelType);
     var propCodecs = propertyCodecs(metadata);
+    
+    var encodeProperties = metadata.properties.keySeq();
 
     var modelPropertyEncoder = objectToJson<T>(
+        encodeProperties,
         (propName: string) => getEncoder(propCodecs.get(propName))
     );
     var modelPropertyDecoder = jsonToObject<T>(
+        encodeProperties,
         (propName: string) => getDecoder(propCodecs.get(propName)),
         createModelFactory<T>(metadata)
     );

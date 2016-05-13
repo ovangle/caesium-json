@@ -23,56 +23,55 @@ import {snakeCaseToCamelCase, camelCaseToSnakeCase} from './string_case_converte
 
 
 export function objectToJson<T>(
+    encodeProperties: Immutable.Iterable<any,string>,
     valueEncoder: (propName: string) => Converter<any,any>
 ): Converter<T,JsonObject> {
-    function _encodePropertyValue(propName: string, value: any): {name: string, value: any} {
-        var encoder = valueEncoder(propName);
-        var key = camelCaseToSnakeCase(propName);
-        return {name: key, value: encoder(value)};
-    }
-
     return (input: T) => {
         if (isBlank(input))
             return input as any;
 
-        var record: {[propName: string]: any} = {};
-        forEachOwnProperty(input, (value, propName) => {
-            var encoded = _encodePropertyValue(propName, value);
+        var jsonObject: {[propName: string]: any} = {};
+        encodeProperties.forEach((propName) => {
+            var encoder = valueEncoder(propName);
+
+            var entryName = camelCaseToSnakeCase(propName);
+
+            if (isBlank(encoder))
+                throw new EncodingException(`No encoder for ${propName}`);
+
+            var value = (input as any)[propName];
+            var encodedValue = encoder(value);
 
             // Drop undefined values from output
-            if (isDefined(encoded.value)) {
-                record[encoded.name] = encoded.value;
-            }
+            if (isDefined(encodedValue))
+                jsonObject[entryName] = encodedValue;
         });
 
-        return record;
+        return jsonObject;
     };
 }
 
 export function jsonToObject<T>(
+    encodeProperties: Immutable.Iterable<any,string>,
     valueDecoder: (propName: string) => Converter<any,any>,
     factory: (values: {[propName: string]: any}) => T
 ): Converter<JsonObject,T> {
+    return (jsonObject: JsonObject) => {
+        if (isBlank(jsonObject))
+            return jsonObject as any;
 
-    function _encodeEntryValue(key: string, value: any): {name: string, value: any} {
-        var propName = snakeCaseToCamelCase(key);
-        var decoder = valueDecoder(propName);
-        if (isBlank(decoder)) {
-            throw new EncodingException(`No decoder for ${propName}`);
-        }
-        return {name: propName, value: decoder(value)};
-    }
+        var factoryArgs: {[propName: string]: any} = {};
+        encodeProperties.forEach((propName) => {
+            var entryName = camelCaseToSnakeCase(propName);
+            var value = jsonObject[entryName];
 
-    return (record: JsonObject) => {
-        if (isBlank(record))
-            return record as any;
+            var decoder = valueDecoder(propName);
+            if (isBlank(decoder))
+                throw new EncodingException(`No decoder for ${propName}`);
 
-        var obj: {[propName: string]: any} = {};
-        forEachOwnProperty(record, (value, key) => {
-            var encoded = _encodeEntryValue(key, value);
-            obj[encoded.name] = encoded.value;
+            factoryArgs[propName] = decoder(value);
         });
 
-        return factory(obj);
+        return factory(factoryArgs);
     };
 }

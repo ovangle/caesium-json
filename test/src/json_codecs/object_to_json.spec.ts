@@ -27,30 +27,52 @@ export function objectToJsonTests() {
 function _objectToJsonEncoderTests() {
     describe('objectToJson', () => {
         it('should be able to encode a json record', () => {
-            var encoder = objectToJson((propName) => identityConverter);
+            var encoder = objectToJson(
+                Immutable.List<string>(['a', 'helloWorld']),
+                (propName) => identityConverter
+            );
             expect(encoder({a: 1, helloWorld: 'hello world'}))
                 .toEqual({a: 1, hello_world: 'hello world'});
         });
 
         it('should use the correct encoder for the given attribute', () => {
-            var encoder = objectToJson(_converterForPropName);
+            var encoder = objectToJson(
+                Immutable.List(['a', 'b']),
+                _converterForPropName
+            );
             expect(encoder({a: 1, b: 2})).toEqual({a: 1, b: 3});
+        });
+
+        it('should throw if there is no encoder for an attribute', () => {
+            var encoder = objectToJson(
+                Immutable.List(['a', 'b', 'c']),
+                _converterForPropName
+            );
             expect(() => encoder({c: 1})).toThrow();
         });
 
         it('should always return an object with an Object prototype', () => {
-            var encoder = objectToJson((_) => identityConverter);
+            var encoder = objectToJson(
+                Immutable.List<string>(),
+                (_) => identityConverter
+            );
             expect(Object.getPrototypeOf(encoder({})))
                 .toEqual(Object.prototype);
         });
 
         it('should not encode undefined values', () => {
-            var encoder = objectToJson((_) => identityConverter);
+            var encoder = objectToJson(
+                Immutable.List<string>(['a']),
+                (_) => identityConverter
+            );
             expect(encoder({a: undefined})).toEqual({});
         });
 
         it('should handle blank values', () => {
-            var encoder = objectToJson((_) => identityConverter);
+            var encoder = objectToJson(
+                Immutable.List<string>([]),
+                (_) => identityConverter
+            );
             expect(encoder(null)).toBeNull();
             expect(encoder(undefined)).toBeUndefined();
         });
@@ -59,16 +81,31 @@ function _objectToJsonEncoderTests() {
 }
 
 function jsonToObjectTests() {
-    describe('ObjectToJson', () => {
+    describe('jsonToObject', () => {
         it('should be able to encode an object', () => {
-            var encoder = jsonToObject(propName => identityConverter, values => values);
+            var encoder = jsonToObject(
+                Immutable.List<string>(['a', 'helloWorld']),
+                propName => identityConverter,
+                values => values
+            );
             expect(encoder({a: 1, hello_world: 'hello world'}))
                 .toEqual({a: 1, helloWorld: 'hello world'});
         });
 
         it('should use the correct converter for the given attribute', () => {
-            var encoder = jsonToObject(_converterForPropName, values => values);
+            var encoder = jsonToObject(
+                Immutable.List<string>(['a', 'b']),
+                _converterForPropName,
+                values => values
+            );
             expect(encoder({a: 1, b: 2})).toEqual({a: 1, b: 3});
+        });
+        it('should throw if there is no encoder for the given property', () => {
+            var encoder = jsonToObject(
+                Immutable.List<string>(['a', 'b', 'c']),
+                _converterForPropName,
+                values => values
+            );
             /// no converter returned
             expect(() => encoder({c: 1})).toThrow();
         });
@@ -78,14 +115,22 @@ function jsonToObjectTests() {
                 constructor(public values: {[attr: string]: any}) { }
                 foo():any { return null; }
             }
-            var encoder = jsonToObject(attr => identityConverter, values => new Yolo(values));
+            var encoder = jsonToObject(
+                Immutable.List<string>(['a']),
+                attr => identityConverter,
+                values => new Yolo(values)
+            );
             var result = encoder({a: 1}) as Yolo;
             expect(result).toEqual(jasmine.any(Yolo));
             expect(result.values).toEqual({a: 1});
         });
 
         it('should handle blank values', () => {
-            var encoder = jsonToObject(identityConverter, values => values);
+            var encoder = jsonToObject(
+                Immutable.List<string>([]),
+                identityConverter,
+                values => values
+            );
 
             expect(encoder(null)).toBeNull();
             expect(encoder(undefined)).toBeUndefined();

@@ -1,7 +1,10 @@
 # Changelog
 
 ## 0.2.0
-- Added `enumToString` codec to the json_codecs module
+
+### Features
+- Added `enumToString` codec to the `json_codecs` module
+- Added `recordToJson` codec to the `json_codecs` module
 
 ### Bugfixes
 - JsonObject, JsonQuery, Codec, Converter, identity now exported from json_codecs module
