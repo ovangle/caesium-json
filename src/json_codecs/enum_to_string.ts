@@ -10,8 +10,8 @@ import {EncodingException} from '../exceptions';
  * @param serializedValues
  * A Map of the enum constants to their serialized string values.
  */
-export function enumToString<T>(serializedValues: Immutable.Map<T,string>): Codec<T,string> {
-    var valuesToKeys = serializedValues.flip().toMap();
+export function enumToString<T>(serializedValues: Immutable.Iterable.Keyed<T,string>): Codec<T,string> {
+    var valuesToKeys = serializedValues.flip();
     return {
         encode: (input: T) => {
             if (isBlank(input))
