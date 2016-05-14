@@ -69,8 +69,6 @@ export class ModelMetadata {
             throw new InvalidMetadata(`Model ${type} must have a 0-argument constructor`);
 
         this.type = type;
-        this.type.prototype = Object.create(this.superType.prototype);
-        this.type.prototype.constructor = this.type;
         this.ownProperties = ownProperties;
     }
 
@@ -151,7 +149,7 @@ export class ManagerMetadata {
     static forType(type:Type): ManagerMetadata {
         return managerResolver.resolve(type);
     }
-    
+
     static forInstance(instance: any): ManagerMetadata {
         var type = Object.getPrototypeOf(instance).constructor;
         return ManagerMetadata.forType(type);

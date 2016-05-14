@@ -11,6 +11,10 @@ abstract class MyModel extends ModelBase {
 
     @Property({codec: list(str), defaultValue: Immutable.List})
     listProp: Immutable.List<string>;
+    
+    foo() {
+        return this.prop;
+    }
 }
 
 
@@ -54,6 +58,11 @@ export function createModelTests() {
                 value: undefined
             });
         });
+        
+        it('should inherit all methods defined on the instance', () => {
+            var instance = factory({prop: 'hello world'});
+            expect(instance.foo()).toBe('hello world');
+        });
 
         it('should throw if providing an argument which isn\'t a property on the model', () => {
             expect(() => factory({nonExistentProp: 42})).toThrow();
@@ -62,7 +71,7 @@ export function createModelTests() {
         it('should throw when attempting to modify one of the instance properties', () => {
             var instance = factory({});
             expect(() => instance.prop = 'hello').toThrow();
-        })
+        });
     });
 }
 

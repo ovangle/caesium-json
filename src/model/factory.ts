@@ -30,7 +30,7 @@ export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata
                 value: propertyValue(prop, args[prop.name])
             }))
             .toObject();
-        return Object.create(modelMeta.type.prototype, objProperties);
+        return Object.create(new (modelMeta.type as any)(), objProperties);
     }
     return create;
 }

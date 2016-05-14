@@ -7,6 +7,7 @@
 - Added `recordToJson` codec to the `json_codecs` module
 
 ### Bugfixes
+- Factory created model instances now inherit methods defined on the model
 - JsonObject, JsonQuery, Codec, Converter, identity now exported from json_codecs module
 - onData, thisArg removed from ResponseHandler and thisArg added to BaseResponseHandler
 - Fixed ModelManager resolution error
