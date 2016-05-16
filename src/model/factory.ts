@@ -2,6 +2,7 @@ import {forEachOwnProperty} from 'caesium-core/lang';
 import {isDefined} from 'caesium-core/lang';
 import {ModelBase} from './base';
 import {ModelMetadata, PropertyMetadata} from './metadata';
+import {ModelValues} from "./values";
 
 export type ModelFactory<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
 
@@ -11,27 +12,17 @@ export interface PropertyMutation {
 }
 
 export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelFactory<T> {
-    function propertyValue(property: PropertyMetadata, initValue?: any): any {
-        if (isDefined(initValue)) {
-            return initValue;
-        }
-        if (isDefined(property.defaultValue)) {
-            return property.defaultValue();
-        }
-        return undefined;
+    function create(args: {[attr: string]: any}) {
+        var modelValues = _asMutableModelValues(_initModelValues());
+        forEachOwnProperty(args, (value, key) => modelMeta.checkHasProperty(key));
+
+        modelMeta.properties.forEach((prop: PropertyMetadata) => {
+            var initializer = prop.valueInitializer;
+            modelValues = initializer(modelValues, args[prop.name]);
+        });
+        return _createModel(modelMeta, _asImmutableModelValues(modelValues));
     }
 
-    function create(args: {[attr: string]: any}) {
-        forEachOwnProperty(args, (value, key) => modelMeta.checkHasProperty(key));
-        var objProperties = modelMeta.properties
-            .map((prop) => ({
-                enumerable: true,
-                writable: false,
-                value: propertyValue(prop, args[prop.name])
-            }))
-            .toObject();
-        return Object.create(new (modelMeta.type as any)(), objProperties);
-    }
     return create;
 }
 
@@ -52,24 +43,52 @@ export function copyModel<T extends ModelBase>(
     mutations?: PropertyMutation[]
 ): T {
     var modelMeta = ModelMetadata.forInstance(model);
-    var factory = createModelFactory<T>(modelMeta);
-
     mutations = mutations || [];
-    var mutationMap: {[propName: string]: any} = {};
+
+    var modelValues = _asMutableModelValues((model as any).__modelValues);
+
     mutations.forEach((mutation) => {
         modelMeta.checkHasProperty(mutation.property);
-        mutationMap[mutation.property] = mutation.value;
+        var mutator = modelMeta.propertyMutators.get(mutation.property);
+        modelValues = mutator(modelValues, mutation.value);
     });
 
-    var propValues = modelMeta.properties
-        .map((prop) => {
-            var propName = prop.name;
-            if (mutationMap[propName]) {
-                return mutationMap[propName];
-            } else {
-                return (model as any)[propName];
-            }
-        })
-        .toObject();
-    return factory(propValues);
+    return _createModel(modelMeta, _asImmutableModelValues(modelValues));
+}
+
+function _createModel(modelMeta: ModelMetadata, modelValues: ModelValues) {
+    var descriptors: PropertyDescriptorMap = {};
+
+    descriptors['__metadata'] = {enumerable: false, writable: false, value: modelMeta};
+    descriptors['__modelValues'] = {enumerable: false, writable: false, value: modelValues};
+
+    modelMeta.properties.forEach((prop) => {
+        descriptors[prop.name] = {
+            enumerable: true,
+            get: function() { return this.get(prop.name); }
+        }
+    });
+
+    return Object.create(new (modelMeta.type as any)(), descriptors);
+}
+
+function _initModelValues(): ModelValues {
+    return {
+        initialValues: Immutable.Map<string,any>(),
+        values: Immutable.Map<string,any>()
+    };
+}
+
+function _asMutableModelValues(modelValues: ModelValues): ModelValues {
+    return {
+        initialValues: modelValues.initialValues.asMutable(),
+        values: modelValues.values.asMutable()
+    };
+}
+
+function _asImmutableModelValues(modelValues: ModelValues): ModelValues {
+    return {
+        initialValues: modelValues.initialValues.asImmutable(),
+        values: modelValues.values.asImmutable()
+    };
 }

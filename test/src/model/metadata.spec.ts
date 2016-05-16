@@ -47,6 +47,61 @@ function propertyMetadataTests() {
                 expect(() => property.contribute(name)).toThrow();
             }
             expect(() => property.contribute('a')).not.toThrow();
-        })
+        });
+
+        it('should be able to initialize a property', () => {
+            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
+            property.name = 'prop';
+
+            var modelValues = {
+                initialValues: Immutable.Map<string,any>(),
+                values: Immutable.Map<string,any>()
+            };
+            var initializedModelValues = property.valueInitializer(modelValues, undefined);
+
+            expect(initializedModelValues.initialValues.toObject())
+                .toEqual({prop: false}, 'should initialize value to property default');
+            expect(initializedModelValues.values.toObject())
+                .toEqual({}, 'should not alter \'values\'');
+
+            var initializedWithArgs = property.valueInitializer(modelValues, true);
+            expect(initializedWithArgs.initialValues.toObject()).toEqual({prop: true},
+                'Providing a defined argument to the initializer should override the default'
+            );
+        });
+
+        it('should be able to mutate a property', () => {
+            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
+            property.name = 'prop';
+
+            var modelValues = {
+                initialValues: Immutable.Map<string,any>(),
+                values: Immutable.Map<string,any>()
+            };
+
+            var mutatedValues = property.valueMutator(modelValues, true);
+            expect(mutatedValues.initialValues.toObject()).toEqual({}, 'should not alter \'initialValues\'');
+            expect(mutatedValues.values.toObject()).toEqual({prop: true});
+        });
+
+
+        it('should be able to access property', () => {
+
+            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
+            property.name = 'prop';
+
+            var modelValues = {
+                initialValues: Immutable.Map<string,any>({prop: false}),
+                values: Immutable.Map<string,any>({prop: true})
+            };
+
+            expect(property.valueAccessor(modelValues))
+                .toBe(true, 'If property present in \'values\' then that value is returned');
+
+            modelValues.values = Immutable.Map<string,any>();
+            expect(property.valueAccessor(modelValues))
+                .toBe(false, 'If property not present in \'values\', then the initial value is returned');
+
+        });
     });
 }

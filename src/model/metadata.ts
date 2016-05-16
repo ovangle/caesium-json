@@ -1,10 +1,11 @@
-import {Type, isBlank} from 'caesium-core/lang';
+import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec} from 'caesium-core/codec';
 
 import {InvalidMetadata} from "./../exceptions";
 import {modelResolver, managerResolver} from './reflection';
 import {ModelBase} from "./base";
+import {ModelValues, ValueAccessor, ValueMutator} from "./values";
 
 const _VALID_KIND_MATCH = /([a-z](?:\.[a-z])*)::([a-zA-Z]+)/;
 
@@ -80,8 +81,34 @@ export class ModelMetadata {
             : Immutable.Map<string,PropertyMetadata>();
         return superProperties.merge(this.ownProperties);
     }
-}
 
+    get propertyAccessors() { return this._getPropertyAccessors(); }
+
+    @memoize()
+    _getPropertyAccessors(): Immutable.Map<string,ValueAccessor> {
+        return this._getProperties()
+            .map((prop) => prop.valueAccessor)
+            .toMap();
+    }
+
+    get propertyInitializers() { return this._getPropertyInitializers(); }
+
+    @memoize()
+    _getPropertyInitializers(): Immutable.Map<string,ValueMutator> {
+        return this._getProperties()
+            .map((prop) => prop.valueInitializer)
+            .toMap();
+    }
+
+    get propertyMutators() { return this._getPropertyMutators(); }
+
+    @memoize()
+    _getPropertyMutators(): Immutable.Map<string,ValueMutator> {
+        return this._getProperties()
+            .map((prop) => prop.valueMutator)
+            .toMap();
+    }
+}
 
 export class PropertyMetadata {
     /// The name of the property on the model.
@@ -142,6 +169,38 @@ export class PropertyMetadata {
         if (reservedName)
             throw new InvalidMetadata(`${reservedName} is a reserved name and cannot be the name of a property`);
         this.name = propName;
+    }
+
+    get valueAccessor(): ValueAccessor {
+        return (modelValues) => {
+            if (modelValues.values.has(this.name)) {
+                return modelValues.values.get(this.name);
+            } else {
+                return modelValues.initialValues.get(this.name);
+            }
+        }
+    }
+
+    get valueInitializer(): ValueMutator {
+        return (modelValues, value) => {
+            var initialValues = modelValues.initialValues;
+            if (isDefined(value)) {
+                initialValues = initialValues.set(this.name, value);
+            } else if (isDefined(this.defaultValue)) {
+                initialValues = modelValues.initialValues.set(this.name, this.defaultValue());
+            }
+            return {
+                initialValues: initialValues,
+                values: modelValues.values
+            }
+        }
+    }
+
+    get valueMutator(): ValueMutator {
+        return (modelValues, value) => ({
+            initialValues: modelValues.initialValues,
+            values: modelValues.values.set(this.name, value)
+        });
     }
 }
 

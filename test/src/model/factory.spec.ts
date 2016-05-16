@@ -11,7 +11,7 @@ abstract class MyModel extends ModelBase {
 
     @Property({codec: list(str), defaultValue: Immutable.List})
     listProp: Immutable.List<string>;
-    
+
     foo() {
         return this.prop;
     }
@@ -48,17 +48,6 @@ export function createModelTests() {
             expect(instance.listProp.toArray()).toEqual(['a','b','c']);
         });
 
-        it('should create immutable properties for each model property', () => {
-            var instance = factory({});
-            var descriptor = Object.getOwnPropertyDescriptor(instance, 'prop');
-            expect(descriptor).toEqual({
-                enumerable: true,
-                configurable: true,
-                writable: false,
-                value: undefined
-            });
-        });
-        
         it('should inherit all methods defined on the instance', () => {
             var instance = factory({prop: 'hello world'});
             expect(instance.foo()).toBe('hello world');
@@ -84,9 +73,9 @@ export function copyModelTests() {
         });
         it('should be possible to copy a model with no mutations', () => {
             var instanceCopy = copyModel(instance);
-            
+
             expect(instanceCopy).toEqual(jasmine.any(MyModel));
-            
+
             expect(instanceCopy.prop).toEqual('hello world');
             expect(instanceCopy.listProp.toArray()).toEqual(['a','b','c']);
         });

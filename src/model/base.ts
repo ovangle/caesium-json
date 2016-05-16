@@ -1,10 +1,10 @@
 import {ModelMetadata} from './metadata';
 import {copyModel} from './factory';
+import {ModelValues} from './values';
 
 export abstract class ModelBase {
-    private get __metadata() {
-        return ModelMetadata.forInstance(this);
-    }
+    private __metadata: ModelMetadata;
+    private __modelValues: ModelValues;
 
     /**
      * Get the value of the property `name`.
@@ -12,7 +12,8 @@ export abstract class ModelBase {
      */
     get(propName: string): any {
         this.__metadata.checkHasProperty(propName);
-        return (this as any)[propName];
+        var accessor = this.__metadata.propertyAccessors.get(propName);
+        return accessor(this.__modelValues);
     }
 
     /**
