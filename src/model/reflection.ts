@@ -1,3 +1,4 @@
+import {Map} from 'immutable';
 import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {reflector} from 'angular2/src/core/reflection/reflection';
@@ -39,7 +40,7 @@ function _resolveModelMetadata(type: Type): ModelMetadata {
     throw new ModelResolutionError(`No @Model annotations found on ${type}`);
 }
 
-function _resolvePropertyMetadata(type: Type): Immutable.Map<string,PropertyMetadata> {
+function _resolvePropertyMetadata(type: Type): Map<string,PropertyMetadata> {
     var propMetadata = reflector.propMetadata(type);
     var ownProperties: Array<[string, PropertyMetadata]> = [];
     forEachOwnProperty(propMetadata, (value, attr) => {
@@ -47,7 +48,7 @@ function _resolvePropertyMetadata(type: Type): Immutable.Map<string,PropertyMeta
         propMetadata.contribute(attr);
         ownProperties.push([attr, propMetadata]);
     });
-    return Immutable.Map<string,PropertyMetadata>(ownProperties);
+    return Map<string,PropertyMetadata>(ownProperties);
 }
 
 

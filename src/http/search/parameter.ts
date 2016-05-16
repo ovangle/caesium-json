@@ -1,5 +1,4 @@
 import {Converter} from 'caesium-core/converter';
-import {ModelBase} from "../../model/base";
 
 export type Operator = (modelValue: any, paramValue: any) => boolean;
 export type Refiner = (currentParamValue: any, previousParamValue: any) => boolean;

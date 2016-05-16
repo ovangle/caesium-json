@@ -17,8 +17,6 @@
  *      - every underscore (except leading underscores')
  *        must be between two letters
  */
-import {Converter} from 'caesium-core/converter';
-import {Try, success, failure} from 'caesium-core/try';
 import {EncodingException} from '../exceptions';
 
 const _MATCH_SNAKE_CASE =  /^_*([a-z]+_)*([a-z]+)$/;

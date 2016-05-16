@@ -14,7 +14,6 @@ import {JsonQuery, JsonResponse, JsonRequestOptions} from '../../../src/http/int
 import {ModelHttp} from '../../../src/http/model_http';
 
 import {SearchParameter} from '../../../src/http/search/parameter';
-import {SearchResponse} from '../../../src/http/search/search_response';
 import {Search} from '../../../src/http/search_request';
 
 import {parameterTests} from "./search/parameter.spec";

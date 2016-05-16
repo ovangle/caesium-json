@@ -3,13 +3,9 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/toPromise';
 
 import {RequestMethod} from 'angular2/http';
-import {Converter} from 'caesium-core/converter';
-
-import {Codec} from 'caesium-core/codec';
 
 import {ModelHttp} from './model_http';
-import {responseDecoder} from './interfaces';
-import {JsonResponse, ResponseHandler} from './interfaces';
+import {JsonResponse} from './interfaces';
 import {BaseRequestOptions, AccessorRequest} from "./abstract_request";
 
 export interface GetOptions extends BaseRequestOptions { }

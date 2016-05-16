@@ -1,8 +1,8 @@
-import {Codec} from 'caesium-core/codec';
+import {Record} from 'immutable';
 import {str} from "../../../src/json_codecs/basic";
 import {recordCodec} from '../../../src/json_codecs/record_to_json';
 
-class MyRecord extends Immutable.Record({camelCasePropertyName: 'hello', customCodec: 0}) {
+class MyRecord extends Record({camelCasePropertyName: 'hello', customCodec: 0}) {
     camelCasePropertyName: string;
     customCodec: number;
 }

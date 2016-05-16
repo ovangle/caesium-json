@@ -1,3 +1,4 @@
+import {Map, List} from 'immutable';
 import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec} from 'caesium-core/codec';
@@ -5,7 +6,7 @@ import {Codec} from 'caesium-core/codec';
 import {InvalidMetadata} from "./../exceptions";
 import {modelResolver, managerResolver} from './reflection';
 import {ModelBase} from "./base";
-import {ModelValues, ValueAccessor, ValueMutator} from "./values";
+import {ValueAccessor, ValueMutator} from "./values";
 
 const _VALID_KIND_MATCH = /([a-z](?:\.[a-z])*)::([a-zA-Z]+)/;
 
@@ -13,7 +14,7 @@ function isValidKind(kind: string) {
     return kind.match(_VALID_KIND_MATCH);
 }
 
-export const _RESERVED_PROPERTY_NAMES = Immutable.List<string>([
+export const _RESERVED_PROPERTY_NAMES = List<string>([
     'metadata',
     'kind',
     'get',
@@ -38,10 +39,10 @@ export class ModelMetadata {
     /// Basic support for model extensions.
     superType: Type;
 
-    ownProperties: Immutable.Map<string, PropertyMetadata>;
+    ownProperties: Map<string, PropertyMetadata>;
 
 
-    get properties(): Immutable.Map<string,PropertyMetadata> {
+    get properties(): Map<string,PropertyMetadata> {
         return this._getProperties();
     }
 
@@ -65,7 +66,7 @@ export class ModelMetadata {
         }
     }
 
-    contribute(type: Type, ownProperties: Immutable.Map<string,PropertyMetadata>) {
+    contribute(type: Type, ownProperties: Map<string,PropertyMetadata>) {
         if (isBlank(type) || type.length > 0)
             throw new InvalidMetadata(`Model ${type} must have a 0-argument constructor`);
 
@@ -74,18 +75,18 @@ export class ModelMetadata {
     }
 
     @memoize()
-    private _getProperties(): Immutable.Map<string,PropertyMetadata> {
+    private _getProperties(): Map<string,PropertyMetadata> {
         var supertypeMeta = this.supertypeMeta;
         var superProperties = supertypeMeta
             ? supertypeMeta.properties
-            : Immutable.Map<string,PropertyMetadata>();
+            : Map<string,PropertyMetadata>();
         return superProperties.merge(this.ownProperties);
     }
 
     get propertyAccessors() { return this._getPropertyAccessors(); }
 
     @memoize()
-    _getPropertyAccessors(): Immutable.Map<string,ValueAccessor> {
+    _getPropertyAccessors(): Map<string,ValueAccessor> {
         return this._getProperties()
             .map((prop) => prop.valueAccessor)
             .toMap();
@@ -94,7 +95,7 @@ export class ModelMetadata {
     get propertyInitializers() { return this._getPropertyInitializers(); }
 
     @memoize()
-    _getPropertyInitializers(): Immutable.Map<string,ValueMutator> {
+    _getPropertyInitializers(): Map<string,ValueMutator> {
         return this._getProperties()
             .map((prop) => prop.valueInitializer)
             .toMap();
@@ -103,7 +104,7 @@ export class ModelMetadata {
     get propertyMutators() { return this._getPropertyMutators(); }
 
     @memoize()
-    _getPropertyMutators(): Immutable.Map<string,ValueMutator> {
+    _getPropertyMutators(): Map<string,ValueMutator> {
         return this._getProperties()
             .map((prop) => prop.valueMutator)
             .toMap();

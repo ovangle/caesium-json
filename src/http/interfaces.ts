@@ -2,7 +2,7 @@ import {RequestMethod} from 'angular2/http';
 
 import {Codec, isCodec, getDecoder, getEncoder} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';
-import {JsonObject, JsonQuery, isJsonQuery, StringMap} from '../json_codecs/interfaces';
+import {JsonObject, JsonQuery, isJsonQuery} from '../json_codecs/interfaces';
 
 export {JsonObject, JsonQuery, isJsonQuery};
 

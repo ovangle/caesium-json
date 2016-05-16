@@ -1,3 +1,5 @@
+import {Stack} from 'immutable';
+
 import {Converter} from 'caesium-core/converter'
 import {Codec} from 'caesium-core/codec';
 
@@ -9,8 +11,6 @@ import {ModelHttp} from './model_http';
 import {SearchParameter} from './search/parameter';
 import {SearchParameterMap} from './search/parameter_map';
 import {SearchResponse, SearchResponsePage} from './search/search_response';
-
-import Stack = Immutable.Stack;
 
 export interface SearchOptions<T> extends BaseRequestOptions {
     parameters: {[name: string]: SearchParameter};
@@ -37,7 +37,7 @@ export class Search<T> extends BaseRequest {
         this._responseDecoder = responseDecoder(options.responseDecoder);
 
         var params = new SearchParameterMap(options.parameters);
-        this._responses = Immutable.Stack<SearchResponse<T>>()
+        this._responses = Stack<SearchResponse<T>>()
             .unshift(new SearchResponse<T>(params, this.pageSize));
     }
 

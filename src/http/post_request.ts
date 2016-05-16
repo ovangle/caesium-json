@@ -4,14 +4,9 @@ import 'rxjs/add/operator/toPromise';
 import {RequestMethod} from 'angular2/http';
 
 import {isBlank} from 'caesium-core/lang';
-import {Converter} from 'caesium-core/converter';
-import {Codec} from 'caesium-core/codec';
 
 import {ModelHttp} from './model_http';
-import {
-    JsonObject, bodyEncoder, RequestBody,
-    ResponseHandler, responseDecoder
-} from './interfaces';
+import {JsonObject, bodyEncoder, RequestBody} from './interfaces';
 import {BaseRequestOptions, MutatorRequest} from "./abstract_request";
 
 export interface PostOptions extends BaseRequestOptions {

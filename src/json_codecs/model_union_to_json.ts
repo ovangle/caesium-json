@@ -1,3 +1,4 @@
+import {Map} from 'immutable';
 import {Type, isBlank} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 import {Codec} from 'caesium-core/codec';
@@ -9,18 +10,18 @@ import {model} from './model_to_json';
 
 class UnionCodec implements Codec<any,JsonObject> {
 
-    private _modelEncoders: Immutable.Map<Type, Converter<any,JsonObject>>;
-    private _kindDecoders: Immutable.Map<string, Converter<JsonObject,any>>;
+    private _modelEncoders: Map<Type, Converter<any,JsonObject>>;
+    private _kindDecoders: Map<string, Converter<JsonObject,any>>;
 
     constructor(...types: Type[]) {
-        var modelCodecs = Immutable.Map<Type, Codec<any,JsonObject>>(
+        var modelCodecs = Map<Type, Codec<any,JsonObject>>(
             types.map((type) => [type, model(type)])
         );
 
         this._modelEncoders = modelCodecs
             .map((codec) => codec.encode.bind(codec))
             .toMap();
-        this._kindDecoders = Immutable.Map<string,Converter<JsonObject,any>>(
+        this._kindDecoders = Map<string,Converter<JsonObject,any>>(
             modelCodecs.map((codec, type) => {
                 var metadata = ModelMetadata.forType(type);
                 var modelCodec = modelCodecs.get(type);

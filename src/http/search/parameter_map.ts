@@ -1,3 +1,5 @@
+import {Map} from 'immutable';
+
 import {forEachOwnProperty} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 
@@ -15,20 +17,20 @@ function _eqMatcher(modelValue: any, paramValue: any) {
 }
 
 export class SearchParameterMap {
-    private _parameters: Immutable.Map<string, SearchParameter>;
-    private _paramValues: Immutable.Map<string,any>;
+    private _parameters: Map<string, SearchParameter>;
+    private _paramValues: Map<string,any>;
 
     constructor(
-        parameters: {[name: string]: SearchParameter} | Immutable.Map<string,SearchParameter>,
-        paramValues?: Immutable.Map<string,any>
+        parameters: {[name: string]: SearchParameter} | Map<string,SearchParameter>,
+        paramValues?: Map<string,any>
     ) {
-        if (parameters instanceof Immutable.Map) {
-            this._parameters = parameters as Immutable.Map<string,SearchParameter>;
+        if (parameters instanceof Map) {
+            this._parameters = parameters as Map<string,SearchParameter>;
         } else {
-            this._parameters = Immutable.Map<string, SearchParameter>(parameters);
+            this._parameters = Map<string, SearchParameter>(parameters);
         }
 
-        this._paramValues = paramValues || Immutable.Map<string,any>();
+        this._paramValues = paramValues || Map<string,any>();
     }
 
     getParameter(paramName: string): SearchParameter {

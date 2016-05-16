@@ -1,7 +1,8 @@
+import {Map} from 'immutable';
 
 export interface ModelValues {
-    initialValues: Immutable.Map<string,any>;
-    values: Immutable.Map<string,any>;
+    initialValues: Map<string,any>;
+    values: Map<string,any>;
 }
 
 export type ValueAccessor = (modelValues: ModelValues) => any;

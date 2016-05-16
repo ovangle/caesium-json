@@ -1,3 +1,4 @@
+import {Map} from 'immutable';
 import {Type} from 'caesium-core/lang';
 import {identity} from 'caesium-core/codec';
 
@@ -16,7 +17,7 @@ function _mkModelMetadata(
     properties?: {[name: string]: PropertyMetadata}
 ) {
     var metadata = new ModelMetadata({kind: kind});
-    metadata.contribute(type, Immutable.Map<string,PropertyMetadata>(properties));
+    metadata.contribute(type, Map<string,PropertyMetadata>(properties));
     return metadata;
 }
 
@@ -54,8 +55,8 @@ function propertyMetadataTests() {
             property.name = 'prop';
 
             var modelValues = {
-                initialValues: Immutable.Map<string,any>(),
-                values: Immutable.Map<string,any>()
+                initialValues: Map<string,any>(),
+                values: Map<string,any>()
             };
             var initializedModelValues = property.valueInitializer(modelValues, undefined);
 
@@ -75,8 +76,8 @@ function propertyMetadataTests() {
             property.name = 'prop';
 
             var modelValues = {
-                initialValues: Immutable.Map<string,any>(),
-                values: Immutable.Map<string,any>()
+                initialValues: Map<string,any>(),
+                values: Map<string,any>()
             };
 
             var mutatedValues = property.valueMutator(modelValues, true);
@@ -91,14 +92,14 @@ function propertyMetadataTests() {
             property.name = 'prop';
 
             var modelValues = {
-                initialValues: Immutable.Map<string,any>({prop: false}),
-                values: Immutable.Map<string,any>({prop: true})
+                initialValues: Map<string,any>({prop: false}),
+                values: Map<string,any>({prop: true})
             };
 
             expect(property.valueAccessor(modelValues))
                 .toBe(true, 'If property present in \'values\' then that value is returned');
 
-            modelValues.values = Immutable.Map<string,any>();
+            modelValues.values = Map<string,any>();
             expect(property.valueAccessor(modelValues))
                 .toBe(false, 'If property not present in \'values\', then the initial value is returned');
 

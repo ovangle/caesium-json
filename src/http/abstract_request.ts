@@ -1,5 +1,7 @@
 import 'rxjs/add/operator/filter';
-import {isBlank} from 'caesium-core/lang';
+
+import {List} from 'immutable';
+
 import {isNumber} from '../json_codecs/interfaces';
 
 import {Observable} from 'rxjs/Observable';
@@ -29,13 +31,13 @@ export abstract class BaseRequest {
 
     responseChange:Observable<JsonResponse>;
 
-    private _responseSubscribers: Immutable.List<Subscriber<AbstractResponse>>;
+    private _responseSubscribers: List<Subscriber<AbstractResponse>>;
 
     constructor(options:BaseRequestOptions, kind: string, http:ModelHttp) {
         this.kind = kind;
         this.endpoint = options.endpoint;
         this.http = http;
-        this._responseSubscribers = Immutable.List<Subscriber<AbstractResponse>>();
+        this._responseSubscribers = List<Subscriber<AbstractResponse>>();
         this.responseChange = Observable.create((subscriber: Subscriber<AbstractResponse>) => {
             this.onResultChangeSubscription(subscriber);
         });
@@ -80,12 +82,12 @@ export abstract class BaseRequest {
 }
 
 export abstract class AccessorRequest extends BaseRequest {
-    private _responseFilters: Immutable.List<ResponseFilter>;
+    private _responseFilters: List<ResponseFilter>;
     private _defaultHandler: DefaultResponseHandler;
 
     constructor(options:BaseRequestOptions, kind: string, http:ModelHttp) {
         super(options, kind, http);
-        this._responseFilters = Immutable.List<ResponseFilter>();
+        this._responseFilters = List<ResponseFilter>();
         this.responseChange
             .filter((response) => this._isUnhandled(response))
             .forEach((unhandledResponse: JsonResponse) => {

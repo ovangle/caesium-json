@@ -1,5 +1,6 @@
-import {isDefined, isBlank} from 'caesium-core/lang';
-import {Codec, identity} from 'caesium-core/codec';
+import {Iterable} from 'immutable';
+import {isBlank} from 'caesium-core/lang';
+import {Codec} from 'caesium-core/codec';
 import {EncodingException} from '../exceptions';
 
 /**
@@ -10,7 +11,7 @@ import {EncodingException} from '../exceptions';
  * @param serializedValues
  * A Map of the enum constants to their serialized string values.
  */
-export function enumToString<T>(serializedValues: Immutable.Iterable.Keyed<T,string>): Codec<T,string> {
+export function enumToString<T>(serializedValues: Iterable.Keyed<T,string>): Codec<T,string> {
     var valuesToKeys = serializedValues.flip();
     return {
         encode: (input: T) => {

@@ -4,9 +4,7 @@ import {RequestMethod} from 'angular2/http';
 import {isBlank} from 'caesium-core/lang';
 
 import {ModelHttp} from './model_http';
-import {
-    bodyEncoder, JsonObject, RequestBody, ResponseHandler, responseDecoder
-} from './interfaces';
+import {bodyEncoder, JsonObject, RequestBody} from './interfaces';
 import {BaseRequestOptions, MutatorRequest} from "./abstract_request";
 
 export interface PutOptions extends BaseRequestOptions { }

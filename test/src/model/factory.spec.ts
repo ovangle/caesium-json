@@ -1,3 +1,4 @@
+import {List} from 'immutable';
 import {Model, Property} from '../../../src/model/decorators';
 import {ModelBase} from '../../../src/model/base';
 import {ModelMetadata} from '../../../src/model/metadata';
@@ -9,8 +10,8 @@ abstract class MyModel extends ModelBase {
     @Property({codec: str})
     prop: string;
 
-    @Property({codec: list(str), defaultValue: Immutable.List})
-    listProp: Immutable.List<string>;
+    @Property({codec: list(str), defaultValue: List})
+    listProp: List<string>;
 
     foo() {
         return this.prop;
@@ -36,13 +37,13 @@ export function createModelTests() {
 
         it('should provide default values for any properties with a defaultValue', () => {
             var instance = factory({});
-            expect(instance.listProp).toEqual(Immutable.List());
+            expect(instance.listProp).toEqual(List());
         });
 
         it('should be possible to provide initial values for properties', () => {
             var instance = factory({
                 prop: 'hello world',
-                listProp: Immutable.List(['a', 'b', 'c'])
+                listProp: List(['a', 'b', 'c'])
             });
             expect(instance.prop).toBe('hello world');
             expect(instance.listProp.toArray()).toEqual(['a','b','c']);
@@ -69,7 +70,7 @@ export function copyModelTests() {
         var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
         var instance = factory({
             prop: 'hello world',
-            listProp: Immutable.List(['a', 'b', 'c'])
+            listProp: List(['a', 'b', 'c'])
         });
         it('should be possible to copy a model with no mutations', () => {
             var instanceCopy = copyModel(instance);

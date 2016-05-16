@@ -14,16 +14,17 @@
  * The property name is always assumed to be the camelCase attribute
  * on the Object's type.
  */
-import {isBlank, isDefined, forEachOwnProperty, Type} from 'caesium-core/lang';
+import {Iterable} from 'immutable';
+import {isBlank, isDefined} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 
 import {JsonObject} from './interfaces';
 import {EncodingException} from '../exceptions';
-import {snakeCaseToCamelCase, camelCaseToSnakeCase} from './string_case_converters';
+import {camelCaseToSnakeCase} from './string_case_converters';
 
 
 export function objectToJson<T>(
-    encodeProperties: Immutable.Iterable<any,string>,
+    encodeProperties: Iterable<any,string>,
     valueEncoder: (propName: string) => Converter<any,any>
 ): Converter<T,JsonObject> {
     return (input: T) => {
@@ -52,7 +53,7 @@ export function objectToJson<T>(
 }
 
 export function jsonToObject<T>(
-    encodeProperties: Immutable.Iterable<any,string>,
+    encodeProperties: Iterable<any,string>,
     valueDecoder: (propName: string) => Converter<any,any>,
     factory: (values: {[propName: string]: any}) => T
 ): Converter<JsonObject,T> {

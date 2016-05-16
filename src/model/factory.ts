@@ -1,5 +1,5 @@
+import {Map} from 'immutable';
 import {forEachOwnProperty} from 'caesium-core/lang';
-import {isDefined} from 'caesium-core/lang';
 import {ModelBase} from './base';
 import {ModelMetadata, PropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
@@ -74,8 +74,8 @@ function _createModel(modelMeta: ModelMetadata, modelValues: ModelValues) {
 
 function _initModelValues(): ModelValues {
     return {
-        initialValues: Immutable.Map<string,any>(),
-        values: Immutable.Map<string,any>()
+        initialValues: Map<string,any>(),
+        values: Map<string,any>()
     };
 }
 

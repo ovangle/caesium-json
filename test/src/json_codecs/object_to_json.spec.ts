@@ -1,3 +1,4 @@
+import {List} from 'immutable';
 import {identityConverter} from 'caesium-core/converter';
 import {jsonToObject, objectToJson} from "../../../src/json_codecs/object_to_json";
 
@@ -28,7 +29,7 @@ function _objectToJsonEncoderTests() {
     describe('objectToJson', () => {
         it('should be able to encode a json record', () => {
             var encoder = objectToJson(
-                Immutable.List<string>(['a', 'helloWorld']),
+                List<string>(['a', 'helloWorld']),
                 (propName) => identityConverter
             );
             expect(encoder({a: 1, helloWorld: 'hello world'}))
@@ -37,7 +38,7 @@ function _objectToJsonEncoderTests() {
 
         it('should use the correct encoder for the given attribute', () => {
             var encoder = objectToJson(
-                Immutable.List(['a', 'b']),
+                List(['a', 'b']),
                 _converterForPropName
             );
             expect(encoder({a: 1, b: 2})).toEqual({a: 1, b: 3});
@@ -45,7 +46,7 @@ function _objectToJsonEncoderTests() {
 
         it('should throw if there is no encoder for an attribute', () => {
             var encoder = objectToJson(
-                Immutable.List(['a', 'b', 'c']),
+                List(['a', 'b', 'c']),
                 _converterForPropName
             );
             expect(() => encoder({c: 1})).toThrow();
@@ -53,7 +54,7 @@ function _objectToJsonEncoderTests() {
 
         it('should always return an object with an Object prototype', () => {
             var encoder = objectToJson(
-                Immutable.List<string>(),
+                List<string>(),
                 (_) => identityConverter
             );
             expect(Object.getPrototypeOf(encoder({})))
@@ -62,7 +63,7 @@ function _objectToJsonEncoderTests() {
 
         it('should not encode undefined values', () => {
             var encoder = objectToJson(
-                Immutable.List<string>(['a']),
+                List<string>(['a']),
                 (_) => identityConverter
             );
             expect(encoder({a: undefined})).toEqual({});
@@ -70,7 +71,7 @@ function _objectToJsonEncoderTests() {
 
         it('should handle blank values', () => {
             var encoder = objectToJson(
-                Immutable.List<string>([]),
+                List<string>([]),
                 (_) => identityConverter
             );
             expect(encoder(null)).toBeNull();
@@ -84,7 +85,7 @@ function jsonToObjectTests() {
     describe('jsonToObject', () => {
         it('should be able to encode an object', () => {
             var encoder = jsonToObject(
-                Immutable.List<string>(['a', 'helloWorld']),
+                List<string>(['a', 'helloWorld']),
                 propName => identityConverter,
                 values => values
             );
@@ -94,7 +95,7 @@ function jsonToObjectTests() {
 
         it('should use the correct converter for the given attribute', () => {
             var encoder = jsonToObject(
-                Immutable.List<string>(['a', 'b']),
+                List<string>(['a', 'b']),
                 _converterForPropName,
                 values => values
             );
@@ -102,7 +103,7 @@ function jsonToObjectTests() {
         });
         it('should throw if there is no encoder for the given property', () => {
             var encoder = jsonToObject(
-                Immutable.List<string>(['a', 'b', 'c']),
+                List<string>(['a', 'b', 'c']),
                 _converterForPropName,
                 values => values
             );
@@ -116,7 +117,7 @@ function jsonToObjectTests() {
                 foo():any { return null; }
             }
             var encoder = jsonToObject(
-                Immutable.List<string>(['a']),
+                List<string>(['a']),
                 attr => identityConverter,
                 values => new Yolo(values)
             );
@@ -127,7 +128,7 @@ function jsonToObjectTests() {
 
         it('should handle blank values', () => {
             var encoder = jsonToObject(
-                Immutable.List<string>([]),
+                List<string>([]),
                 identityConverter,
                 values => values
             );

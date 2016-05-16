@@ -1,3 +1,4 @@
+import {Map} from 'immutable';
 import {enumToString} from '../../../src/json_codecs/enum_to_string';
 
 const enum MyEnum {
@@ -6,11 +7,11 @@ const enum MyEnum {
     ValueTwo
 }
 
-const serializedEnumValues = Immutable.Map<string,MyEnum>({
+const serializedEnumValues = Map<string,MyEnum>({
     VALUE_ZERO: MyEnum.ValueZero,
     VALUE_ONE: MyEnum.ValueOne,
     VALUE_TWO: MyEnum.ValueTwo
-}).flip().toMap();
+}).flip();
 
 export function enumToStringTests() {
     describe('enum_to_string', () => {

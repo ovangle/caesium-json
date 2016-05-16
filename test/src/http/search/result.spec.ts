@@ -2,7 +2,8 @@
 import 'rxjs/add/observable/fromArray';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/reduce';
-import {Observable} from 'rxjs/Observable';
+
+import {List} from 'immutable';
 
 import {identityConverter} from 'caesium-core/converter';
 import {SearchParameterMap} from '../../../../src/http/search/parameter_map';
@@ -139,14 +140,14 @@ function _searchResponseTests() {
     }
     describe('SearchResponse', () => {
         it('should create a search response with the given pages', () => {
-            var pages = Immutable.List([mkPage(paramMap, 1), mkPage(paramMap, 2)]);
+            var pages = List([mkPage(paramMap, 1), mkPage(paramMap, 2)]);
             var response = new SearchResponse(paramMap, PAGE_SIZE, pages);
             expect(response.items.toArray())
                 .toEqual([{a: 'a'}, {a: 'ab'}, {a: 'abcdefghi'}, {a: 'abc'}]);
         });
 
         it('should refine any pages provided to the constructor', () => {
-            var pages = Immutable.List([
+            var pages = List([
                 mkPage(paramMap, 1),
                 mkPage(paramMap, 2),
             ]);
@@ -155,7 +156,7 @@ function _searchResponseTests() {
         });
 
         it('should be possible to add a pending page to the response', (done) => {
-            var pages = Immutable.List([mkPage(paramMap, 1)]);
+            var pages = List([mkPage(paramMap, 1)]);
             var response = new SearchResponse(paramMap, PAGE_SIZE, pages);
 
             response.addPendingPage(mkPendingPage(paramMap, 2, 200));
@@ -166,7 +167,7 @@ function _searchResponseTests() {
         });
 
         it('should only load a partial page if there is not a multiple of pageSize items', (done) => {
-            var pages = Immutable.List([mkPage(paramMap, 1)]);
+            var pages = List([mkPage(paramMap, 1)]);
 
             var refinedParamMap = paramMap.set('a', 'ab');
             var response = new SearchResponse(refinedParamMap, PAGE_SIZE, pages);
@@ -183,7 +184,7 @@ function _searchResponseTests() {
         });
 
         it('should add pending pages in order', (done) => {
-            var response = new SearchResponse(paramMap, PAGE_SIZE, Immutable.List<any>());
+            var response = new SearchResponse(paramMap, PAGE_SIZE, List<any>());
 
             /// Deliver the pages out of order.
             response.addPendingPage(mkPendingPage(paramMap, 1, 200));
@@ -198,7 +199,7 @@ function _searchResponseTests() {
         });
 
         it('should be able to load a complete set of results', (done) => {
-            var pages = Immutable.List([
+            var pages = List([
                 mkPage(paramMap, 1),
                 mkPage(paramMap, 2)
             ]);

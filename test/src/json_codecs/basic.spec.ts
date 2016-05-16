@@ -1,3 +1,4 @@
+import {List, Map} from 'immutable';
 import {identity} from 'caesium-core/codec';
 import {str, bool, num, date, list, map} from '../../../src/json_codecs/basic';
 
@@ -50,7 +51,7 @@ export function basicTests() {
                     encode: (i: number) => i + 1,
                     decode: (i) => i - 1
                 });
-                expect(l.encode(Immutable.Map({a: 1, b: 2, c: 3})))
+                expect(l.encode(Map({a: 1, b: 2, c: 3})))
                     .toEqual({a: 2, b: 3, c: 4});
             });
 
@@ -61,7 +62,7 @@ export function basicTests() {
                 });
 
                 expect(l.decode({a: 1, b: 2, c: 3}))
-                    .toEqual(Immutable.Map({a: 0, b: 1, c: 2}));
+                    .toEqual(Map({a: 0, b: 1, c: 2}));
             });
         });
 
@@ -80,7 +81,7 @@ export function basicTests() {
                     encode: (i: number) => i + 1,
                     decode: (i) => i - 1
                 });
-                expect(l.encode(Immutable.List([1, 2, 3, 4, 5])))
+                expect(l.encode(List([1, 2, 3, 4, 5])))
                     .toEqual([2, 3, 4, 5, 6])
             });
 
@@ -91,7 +92,7 @@ export function basicTests() {
                 });
 
                 expect(l.decode([1, 2, 3, 4, 5]))
-                    .toEqual(Immutable.List([0, 1, 2, 3, 4]));
+                    .toEqual(List([0, 1, 2, 3, 4]));
             });
 
         });

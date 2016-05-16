@@ -1,4 +1,5 @@
-import {isBlank, forEachOwnProperty} from 'caesium-core/lang';
+import {List, Map} from 'immutable';
+import {isBlank} from 'caesium-core/lang';
 import {Codec, identity} from 'caesium-core/codec';
 
 import {JsonObject} from "./interfaces";
@@ -27,14 +28,14 @@ export const date: Codec<Date,string> = {
 };
 
 
-class _ListCodec<T> implements Codec<Immutable.List<T>, any[]> {
+class _ListCodec<T> implements Codec<List<T>, any[]> {
     itemCodec: Codec<T,any>;
 
     constructor(itemCodec: Codec<T,any>) {
         this.itemCodec = itemCodec;
     }
 
-    encode(list: Immutable.List<T>): any[] {
+    encode(list: List<T>): any[] {
         if (isBlank(list))
             throw new EncodingException('Expected list, got blank value');
         return list
@@ -42,27 +43,27 @@ class _ListCodec<T> implements Codec<Immutable.List<T>, any[]> {
             .toArray();
     }
 
-    decode(jsonList: any[]): Immutable.List<T> {
+    decode(jsonList: any[]): List<T> {
         if (isBlank(jsonList))
             throw new EncodingException('Expected list, got blank value');
-        return Immutable.List<T>(jsonList)
+        return List<T>(jsonList)
             .map((item) => this.itemCodec.decode(item))
             .toList();
     }
 }
 
-export function list<T>(itemCodec: Codec<T,any>): Codec<Immutable.List<T>,any[]> {
+export function list<T>(itemCodec: Codec<T,any>): Codec<List<T>,any[]> {
     return new _ListCodec(itemCodec);
 }
 
-class _MapCodec<T> implements Codec<Immutable.Map<string,T>,JsonObject> {
+class _MapCodec<T> implements Codec<Map<string,T>,JsonObject> {
     valueCodec: Codec<T,any>;
 
     constructor(valueCodec: Codec<T,any>) {
         this.valueCodec = valueCodec;
     }
 
-    encode(map: Immutable.Map<string,T>): JsonObject {
+    encode(map: Map<string,T>): JsonObject {
         if (isBlank(map))
             throw new EncodingException('Expected map, got blank value');
         return map
@@ -70,15 +71,15 @@ class _MapCodec<T> implements Codec<Immutable.Map<string,T>,JsonObject> {
             .toObject();
     }
 
-    decode(json: JsonObject): Immutable.Map<string,T> {
+    decode(json: JsonObject): Map<string,T> {
         if (isBlank(json))
             throw new EncodingException('Expected object, got blank value');
-        return Immutable.Map(json)
+        return Map(json)
             .map((value) => this.valueCodec.decode(value))
             .toMap();
     }
 }
 
-export function map<T>(valueCodec: Codec<T,any>): Codec<Immutable.Map<string,T>,JsonObject> {
+export function map<T>(valueCodec: Codec<T,any>): Codec<Map<string,T>,JsonObject> {
     return new _MapCodec<T>(valueCodec);
 }

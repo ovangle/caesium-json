@@ -1,3 +1,4 @@
+import {Map} from 'immutable';
 import {Type, isBlank} from 'caesium-core/lang';
 import {Codec, composeCodecs, getEncoder, getDecoder} from 'caesium-core/codec';
 
@@ -8,7 +9,7 @@ import {createModelFactory} from '../model/factory';
 import {PropertyCodec} from './model_property_to_json';
 import {objectToJson, jsonToObject} from './object_to_json';
 
-function propertyCodecs(modelMetadata: ModelMetadata): Immutable.Map<string,PropertyCodec> {
+function propertyCodecs(modelMetadata: ModelMetadata): Map<string,PropertyCodec> {
     return modelMetadata.properties
         .map((propertyMeta) => new PropertyCodec(propertyMeta))
         .toMap();

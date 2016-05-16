@@ -1,3 +1,5 @@
+import {List, Iterable} from 'immutable';
+
 import {Converter} from 'caesium-core/converter';
 import {memoize} from 'caesium-core/decorators';
 
@@ -26,14 +28,14 @@ export class SearchResponsePage<T> implements AbstractResponse {
     /** The HTTP status of this page of results. */
     get status(): number { return this._rawResponse.status; }
 
-    get items(): Immutable.List<T> { return this._getItems(); }
+    get items(): List<T> { return this._getItems(); }
 
     get _query(): JsonQuery { return this._rawResponse.body as JsonQuery }
 
     /** The items present on this page of results. */
     @memoize()
-    private _getItems(): Immutable.List<T> {
-        return Immutable.List<JsonObject>(this._query.items)
+    private _getItems(): List<T> {
+        return List<JsonObject>(this._query.items)
             .skip(this._skip)
             .map((item) => this._decoder(item))
             .filter((item) => this.parameters.matches(item))
@@ -87,7 +89,7 @@ export class SearchResponse<T> {
 
     parameters:SearchParameterMap;
 
-    _pages:Immutable.List<SearchResponsePage<T>>;
+    _pages:List<SearchResponsePage<T>>;
 
     pageSize:number;
 
@@ -97,26 +99,26 @@ export class SearchResponse<T> {
 
     constructor(paramMap:SearchParameterMap,
                 pageSize:number,
-                pages?: Immutable.List<SearchResponsePage<T>>) {
+                pages?: List<SearchResponsePage<T>>) {
         this.parameters = paramMap;
         if (!pages)
-            pages = Immutable.List<SearchResponsePage<T>>();
+            pages = List<SearchResponsePage<T>>();
         this._pages = pages.map(page => page.refine(paramMap)).toList();
         this.pageSize = pageSize;
     }
 
     /// Get the pages loaded on the response.
     /// Does not include pending pages.
-    get pages(): Immutable.List<SearchResponsePage<T>> {
+    get pages(): List<SearchResponsePage<T>> {
         return this._pages;
     }
 
     /// Get the items loaded on the response.
     /// Does not include items from pending pages.
-    get items(): Immutable.List<T> {
-        return this.pages.reduce<Immutable.Iterable<number,T>>(
+    get items(): List<T> {
+        return this.pages.reduce<Iterable<number,T>>(
             (acc, page) => acc.concat(page.items),
-            Immutable.List<T>()
+            List<T>()
         ).toList();
     }
 
