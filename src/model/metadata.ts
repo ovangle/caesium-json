@@ -1,4 +1,4 @@
-import {Map, List} from 'immutable';
+import {Map, Set} from 'immutable';
 import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec} from 'caesium-core/codec';
@@ -14,7 +14,7 @@ function isValidKind(kind: string) {
     return kind.match(_VALID_KIND_MATCH);
 }
 
-export const _RESERVED_PROPERTY_NAMES = List<string>([
+export const _RESERVED_PROPERTY_NAMES = Set<string>([
     'metadata',
     'kind',
     'get',
@@ -166,9 +166,8 @@ export class PropertyMetadata {
     }
 
     contribute(propName: string) {
-        var reservedName = _RESERVED_PROPERTY_NAMES.find((name) => propName === name);
-        if (reservedName)
-            throw new InvalidMetadata(`${reservedName} is a reserved name and cannot be the name of a property`);
+        if (_RESERVED_PROPERTY_NAMES.contains(propName)) 
+            throw new InvalidMetadata(`${propName} is a reserved name and cannot be the name of a property`);
         this.name = propName;
     }
 
