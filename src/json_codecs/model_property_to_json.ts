@@ -12,6 +12,8 @@ export class PropertyCodec implements Codec<any,any> {
     }
 
     encode(value: any): any {
+        //TODO: Checking metadata restrictions should be moved to the property accessor/mutator.
+        // (that way we can always guarantee them correct, instead of only ensuring they're correct on serialization).
         if (this.metadata.readOnly) {
             // read-only properties should not be on records sent to the server
             // although they may still have a value if we fetched the model.

@@ -3,6 +3,11 @@ import {copyModel} from './factory';
 import {ModelValues} from './values';
 
 export abstract class ModelBase {
+    /**
+     * The server-assigned id of the model.
+     */
+    id: any;
+
     private __metadata: ModelMetadata;
     private __modelValues: ModelValues;
 

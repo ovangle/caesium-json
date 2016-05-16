@@ -5,6 +5,8 @@
 ### Features
 - Added `enumToString` codec to the `json_codecs` module
 - Added `recordToJson` codec to the `json_codecs` module
+- All models now have an `id` property
+    The id can be of any type as long as it can be encoded using an identity codec.
 
 ### Bugfixes
 - Factory created model instances now inherit methods defined on the model

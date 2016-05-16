@@ -1,7 +1,8 @@
 import {Map, Set} from 'immutable';
+
 import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
-import {Codec} from 'caesium-core/codec';
+import {Codec, identity} from 'caesium-core/codec';
 
 import {InvalidMetadata} from "./../exceptions";
 import {modelResolver, managerResolver} from './reflection';
@@ -79,7 +80,7 @@ export class ModelMetadata {
         var supertypeMeta = this.supertypeMeta;
         var superProperties = supertypeMeta
             ? supertypeMeta.properties
-            : Map<string,PropertyMetadata>();
+            : Map<string,PropertyMetadata>({id: PropertyMetadata.idProperty(this)});
         return superProperties.merge(this.ownProperties);
     }
 
@@ -112,6 +113,26 @@ export class ModelMetadata {
 }
 
 export class PropertyMetadata {
+    /**
+     * All models have an Id property. The id can be any type, as long as the type can be
+     * converted using an `identity` codec.
+     *
+     * 'id' is never a required property, since models need to be created on the client
+     * before they can be assigned an 'id'.
+     *
+     * @returns {PropertyMetadata}
+     * @constructor
+     */
+    static idProperty(modelMetadata: ModelMetadata): PropertyMetadata {
+        //TODO: id should be a readOnly property
+        // At the moment we scrub readOnly properties from the output, 
+        // which is not the correct thing to do.
+        // Instead we should check property restrictions on the mutator/accessor.
+        var id = new PropertyMetadata({codec: identity, required: false});
+        id.contribute('id');
+        return id;
+    }
+
     /// The name of the property on the model.
     name: string;
 
@@ -166,7 +187,7 @@ export class PropertyMetadata {
     }
 
     contribute(propName: string) {
-        if (_RESERVED_PROPERTY_NAMES.contains(propName)) 
+        if (_RESERVED_PROPERTY_NAMES.contains(propName))
             throw new InvalidMetadata(`${propName} is a reserved name and cannot be the name of a property`);
         this.name = propName;
     }
