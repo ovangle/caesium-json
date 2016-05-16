@@ -2,12 +2,12 @@ import {isDefined} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 
 import {EncodingException} from '../exceptions';
-import {PropertyMetadata} from '../model/metadata';
+import {BasePropertyMetadata} from '../model/metadata';
 
 export class PropertyCodec implements Codec<any,any> {
-    metadata: PropertyMetadata;
+    metadata: BasePropertyMetadata;
 
-    constructor(metadata: PropertyMetadata) {
+    constructor(metadata: BasePropertyMetadata) {
         this.metadata = metadata;
     }
 

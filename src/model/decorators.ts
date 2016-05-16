@@ -4,7 +4,10 @@ import {makeDecorator, makePropDecorator, TypeDecorator} from 'angular2/src/core
 import {Type} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 
-import {ModelMetadata, PropertyMetadata, ManagerMetadata} from './metadata';
+import {
+    ModelMetadata, PropertyMetadata, ManagerMetadata, PropertyOptions, RefPropertyOptions,
+    RefPropertyMetadata
+} from './metadata';
 
 export interface ManagerFactory {
     (obj: {
@@ -27,22 +30,13 @@ export interface ModelFactory {
 }
 
 export interface PropertyFactory {
-    (obj: {
-        codec: Codec<any,any>,
-        defaultValue?: () => any,
-        readOnly?: boolean,
-        writeOnly?: boolean,
-        required?: boolean,
-        allowNull?: boolean
-    }): any;
-    new (obj: {
-        codec: Codec<any,any>,
-        defaultValue?: () => any,
-        readOnly?: boolean,
-        writeOnly?: boolean,
-        required?: boolean,
-        allowNull?: boolean
-    }): PropertyMetadata;
+    (obj: PropertyOptions): any;
+    new (obj: PropertyOptions): PropertyMetadata;
+}
+
+export interface RefPropertyFactory {
+    (obj: RefPropertyOptions): any;
+    new (obj: RefPropertyOptions): RefPropertyMetadata;
 }
 
 
@@ -54,6 +48,9 @@ export const Model: ModelFactory =
 //require the use of the `new` keyword. Target ES5 compiles typescript classes to functions.
 export const Property: PropertyFactory =
     <PropertyFactory>makePropDecorator(PropertyMetadata);
+
+export const RefProperty: RefPropertyFactory = 
+    <RefPropertyFactory>makePropDecorator(RefPropertyMetadata);
 
 export const Manager: ManagerFactory =
     <ManagerFactory>makeDecorator(ManagerMetadata);

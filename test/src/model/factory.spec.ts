@@ -1,5 +1,5 @@
 import {List} from 'immutable';
-import {Model, Property} from '../../../src/model/decorators';
+import {Model, Property, RefProperty} from '../../../src/model/decorators';
 import {ModelBase} from '../../../src/model/base';
 import {ModelMetadata} from '../../../src/model/metadata';
 import {str, list} from '../../../src/json_codecs';
@@ -12,6 +12,11 @@ abstract class MyModel extends ModelBase {
 
     @Property({codec: list(str), defaultValue: List})
     listProp: List<string>;
+
+    @RefProperty({refName: 'ref'})
+    refId: number;
+
+    ref: MyModel;
 
     foo() {
         return this.prop;
@@ -49,6 +54,22 @@ export function createModelTests() {
             expect(instance.listProp.toArray()).toEqual(['a','b','c']);
         });
 
+        it('should be possible to set initial values for both the ref property and it\'s value', () => {
+            var instance = factory({refId: 40});
+            expect(instance.refId).toBe(40, 'Set refId directly');
+
+            var instance = factory({ref: {id: 40}});
+            expect(instance.refId).toBe(40, 'Set refId via ref');
+            expect(instance.ref).toEqual({id: 40}, 'Set ref property');
+
+            var instance = factory({refId: null});
+            expect(instance.refId).toBe(null, 'Can set refId to `null`');
+
+            var instance = factory({ref: null});
+            expect(instance.refId).toBe(null, 'Can set ref to `null`');
+            expect(instance.ref).toBe(null);
+        });
+
         it('should inherit all methods defined on the instance', () => {
             var instance = factory({prop: 'hello world'});
             expect(instance.foo()).toBe('hello world');
@@ -72,6 +93,7 @@ export function copyModelTests() {
             prop: 'hello world',
             listProp: List(['a', 'b', 'c'])
         });
+
         it('should be possible to copy a model with no mutations', () => {
             var instanceCopy = copyModel(instance);
 
@@ -82,17 +104,13 @@ export function copyModelTests() {
         });
 
         it('should be possible to copy a model and mutate values', () => {
-            var instanceCopy = copyModel(instance, [
-                {property: 'prop', value: 'goodbye'}
-            ]);
+            var instanceCopy = copyModel(instance, [{propName: 'prop', value: 'goodbye'}]);
             expect(instanceCopy.prop).toEqual('goodbye');
             expect(instanceCopy.listProp.toArray()).toEqual(['a','b','c']);
         });
 
         it('should not be possible to provide a mutation which doesn\'t exist on the properties of the model', () => {
-            expect(() => copyModel(instance, [
-                {property: 'nonExistentProp', value: 42}
-            ])).toThrow();
+            expect(() => copyModel(instance, [{propName: 'nonExistentProp', value: 42}])).toThrow();
         });
 
     });

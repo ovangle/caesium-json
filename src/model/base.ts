@@ -1,6 +1,12 @@
-import {ModelMetadata} from './metadata';
+import {isDefined} from 'caesium-core/lang';
+
+import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
+import {ModelManager} from './manager';
+
 import {copyModel} from './factory';
 import {ModelValues} from './values';
+
+import {PropertyNotFoundException} from '../exceptions';
 
 export abstract class ModelBase {
     /**
@@ -13,23 +19,95 @@ export abstract class ModelBase {
 
     /**
      * Get the value of the property `name`.
-     * @param propName
+     * @param propNameOrRefName
      */
-    get(propName: string): any {
-        this.__metadata.checkHasProperty(propName);
-        var accessor = this.__metadata.propertyAccessors.get(propName);
-        return accessor(this.__modelValues);
+    get(propNameOrRefName: string): any {
+        var property = this.__metadata.properties.get(propNameOrRefName);
+        if (isDefined(property)) {
+            return property.valueAccessor(this.__modelValues);
+        } else {
+            // We are accessing a @RefProperty by the refName
+            var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+            var refProperty = this.__metadata.properties.get(propName) as RefPropertyMetadata;
+
+            if (!isDefined(refProperty))
+                throw new PropertyNotFoundException(propName, this);
+
+            return refProperty.refValueAccessor(this.__modelValues);
+        }
     }
 
     /**
      * Set the value of the property `name` and return the mutated model.
-     * @param propName
+     *
+     * @param propNameOrRefName
      * @param value
      */
-    set(propName: string, value: any): ModelBase /* typeof this */{
-        this.__metadata.checkHasProperty(propName);
-        return copyModel(this, [{property: propName, value: value}]);
+    set(propNameOrRefName: string, value: any): ModelBase /* typeof this */{
+        var property = this.__metadata.properties.get(propNameOrRefName);
+        var updatedModelValues: ModelValues;
+        if (isDefined(property)) {
+            updatedModelValues = property.valueMutator(this.__modelValues, value);
+        } else {
+            // We are setting the value of the reference
+            var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+            var refProperty = this.__metadata.properties.get(propName) as RefPropertyMetadata;
+            if (!isDefined(refProperty))
+                throw new PropertyNotFoundException(propNameOrRefName, this);
+            updatedModelValues = refProperty.refValueMutator(this.__modelValues, value);
+        }
+        return copyModel(this, updatedModelValues);
+    }
+
+    /**
+     * Check whether the property, given either by it's property name or it's reference property name,
+     * has been resolved.
+     * @param propNameOrRefName
+     * @returns {any}
+     */
+    isResolved(propNameOrRefName:string):boolean {
+        this.__metadata.checkHasPropertyOrRef(propNameOrRefName);
+        var property: BasePropertyMetadata = this.__metadata.properties.get(propNameOrRefName);
+        if (!isDefined(property)) {
+            var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+            property = this.__metadata.properties.get(propNameOrRefName);
+        }
+        return this.__modelValues.resolvedRefs.has(property.name);
+    }
+
+    resolveProperty(
+        manager:ModelManager<ModelBase /* typeof this */>,
+        propNameOrRefName:string,
+        {onNotFound, thisArg}: {onNotFound?:(message:string) => any, thisArg?:any}
+    ):Promise<ModelBase /* typeof this */> {
+        return new Promise((resolve, reject) => {
+            if (this.isResolved(propNameOrRefName)) {
+                return resolve(copyModel(this));
+            }
+
+            var prop = this.__metadata.properties.get(propNameOrRefName);
+            if (!isDefined(prop)) {
+                var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+                prop = this.__metadata.properties.get(propName);
+            }
+            if (!isDefined(prop) || !prop.isRef) {
+                return reject(new PropertyNotFoundException(propName, this, 'Reference'));
+            }
+            var refProp = prop as RefPropertyMetadata;
+
+            var idValue = refProp.valueAccessor(this.__modelValues);
+
+            if (idValue === null) {
+                // A null id maps to a null reference.
+                return resolve(this.set(refProp.refName, null));
+            }
+
+            manager.getById(idValue, {
+                onSuccess: (member:ModelBase) => resolve(member),
+                onNotFound: onNotFound,
+                thisArg: thisArg
+            }).catch((err:any) => reject(err));
+        });
     }
 }
-
 

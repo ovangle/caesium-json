@@ -1,4 +1,4 @@
-export {Model,Property,Manager} from './model/decorators';
+export {Model,Property,RefProperty,Manager} from './model/decorators';
 export {ModelBase} from './model/base';
 export {ModelManager} from './model/manager';
 

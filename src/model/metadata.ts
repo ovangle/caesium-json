@@ -4,10 +4,10 @@ import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
-import {InvalidMetadata} from "./../exceptions";
+import {InvalidMetadata, StateException, PropertyNotFoundException} from "../exceptions";
 import {modelResolver, managerResolver} from './reflection';
 import {ModelBase} from "./base";
-import {ValueAccessor, ValueMutator} from "./values";
+import {ModelValues} from './values';
 
 const _VALID_KIND_MATCH = /([a-z](?:\.[a-z])*)::([a-zA-Z]+)/;
 
@@ -40,12 +40,7 @@ export class ModelMetadata {
     /// Basic support for model extensions.
     superType: Type;
 
-    ownProperties: Map<string, PropertyMetadata>;
-
-
-    get properties(): Map<string,PropertyMetadata> {
-        return this._getProperties();
-    }
+    ownProperties: Map<string, BasePropertyMetadata>;
 
     get supertypeMeta(): ModelMetadata {
         if (this.superType === ModelBase)
@@ -61,9 +56,11 @@ export class ModelMetadata {
         this.superType = superType || ModelBase;
     }
 
-    checkHasProperty(propName: string): void {
-        if (!this.properties.has(propName)) {
-            throw new InvalidMetadata(`Property ${propName} is not a valid property of ${this.type}`);
+    checkHasPropertyOrRef(propNameOrRefName: string): void {
+        var hasProperty = this.properties.has(propNameOrRefName)
+                       || this.refNameMap.has(propNameOrRefName);
+        if (!hasProperty) {
+            throw new PropertyNotFoundException(propNameOrRefName, this);
         }
     }
 
@@ -73,46 +70,195 @@ export class ModelMetadata {
 
         this.type = type;
         this.ownProperties = ownProperties;
+        this.ownProperties.forEach((prop, propName) => {
+            prop.contribute(this, propName);
+        });
     }
 
+    get properties(): Map<string,BasePropertyMetadata> { return this._getProperties(); }
+
     @memoize()
-    private _getProperties(): Map<string,PropertyMetadata> {
+    private _getProperties(): Map<string,BasePropertyMetadata> {
         var supertypeMeta = this.supertypeMeta;
         var superProperties = supertypeMeta
             ? supertypeMeta.properties
-            : Map<string,PropertyMetadata>({id: PropertyMetadata.idProperty(this)});
+            : Map<string,BasePropertyMetadata>({id: PropertyMetadata.idProperty(this)});
         return superProperties.merge(this.ownProperties);
     }
 
-    get propertyAccessors() { return this._getPropertyAccessors(); }
+    /**
+     * A map of refNames to the associated property names.
+     * @returns {Map<string, string>}
+     */
+    get refNameMap(): Map<string,string> { return this._getRefNameMap(); }
 
     @memoize()
-    _getPropertyAccessors(): Map<string,ValueAccessor> {
+    private _getRefNameMap(): Map<string,string> {
         return this._getProperties()
-            .map((prop) => prop.valueAccessor)
-            .toMap();
+            .filter((prop) => prop.isRef)
+            .map((prop: RefPropertyMetadata) => prop.refName).toKeyedSeq()
+            .flip().toMap();
     }
 
-    get propertyInitializers() { return this._getPropertyInitializers(); }
+    toString() { return `ModelMetadata(${this.kind})`}
+}
 
-    @memoize()
-    _getPropertyInitializers(): Map<string,ValueMutator> {
-        return this._getProperties()
-            .map((prop) => prop.valueInitializer)
-            .toMap();
+export interface BasePropertyOptions {
+    readOnly?: boolean,
+    writeOnly?: boolean,
+    required?: boolean,
+    allowNull?: boolean
+}
+
+function _setPropertyOptionDefaults(options: BasePropertyOptions): BasePropertyOptions {
+    if (isBlank(options.readOnly))
+        options.readOnly = false;
+    if (isBlank(options.writeOnly))
+        options.writeOnly = false;
+    if (isBlank(options.required))
+        options.required = true;
+    if (isBlank(options.allowNull))
+        options.allowNull = false;
+    return options
+}
+
+
+export interface PropertyOptions extends BasePropertyOptions {
+    defaultValue?: () => any,
+    codec: Codec<any,any>;
+}
+
+export class BasePropertyMetadata {
+    defaultValue: () => any;
+
+    /**
+     * True if this property is a reference property.
+     */
+    isRef: boolean;
+
+    /**
+     * The metadata which defines this property
+     */
+    metadata: ModelMetadata;
+
+    /**
+     * The name of the property on the model
+     */
+    name: string;
+
+    /**
+     * A readOnly property cannot be written to the server during a create or update
+     * operation.
+     *
+     * Any value for this property will be dropped during serialization.
+     * Defaults to `false`.
+     */
+    readOnly: boolean;
+
+    /**
+     * The property will never be present on values retrieved from the server,
+     * but can be included when updating values on the server.
+     * Default is `false`.
+     */
+    writeOnly: boolean;
+
+    /**
+     * The property is required on all create and update requests.
+     * Will raise an error if the value is `undefined`.
+     * Default is `true`.
+     */
+    required: boolean;
+
+    /**
+     * The value of this property is allowed to be `null`.
+     * Default is `false`.
+     */
+    allowNull: boolean;
+
+    /**
+     * Used to serialize a value for this property.
+     */
+    codec: Codec<any,any>;
+
+    constructor(options: BasePropertyOptions) {
+        options = _setPropertyOptionDefaults(options);
+        this.readOnly = options.readOnly;
+        this.writeOnly = options.writeOnly;
+        this.required = options.required;
+        this.allowNull = options.allowNull;
     }
 
-    get propertyMutators() { return this._getPropertyMutators(); }
+    /**
+     * Sets the options on the property
+     * @param metadata
+     * The metadata of the model that this property belongs to.
+     * @param propName
+     * The property name on the model instance.
+     */
+    contribute(metadata: ModelMetadata, propName: string): void {
+        if (_RESERVED_PROPERTY_NAMES.contains(propName))
+            throw new InvalidMetadata(`${propName} is a reserved name and cannot be the name of a property`);
+        this.name = propName;
+    }
 
-    @memoize()
-    _getPropertyMutators(): Map<string,ValueMutator> {
-        return this._getProperties()
-            .map((prop) => prop.valueMutator)
-            .toMap();
+    /**
+     * Get the value from the model values
+     * @param modelValues
+     * @returns {any}
+     */
+    valueAccessor(modelValues: ModelValues): any {
+        if (modelValues.values.has(this.name)) {
+            return modelValues.values.get(this.name);
+        } else {
+            return modelValues.initialValues.get(this.name);
+        }
+    }
+
+    /**
+     * Initialize the value in the modelValues.
+     * @param modelValues
+     * @param value
+     * @returns {{initialValues: Map<string, any>, values: Map<string, any>}}
+     */
+    valueInitializer(modelValues: ModelValues, value: any): ModelValues {
+        var initialValues = modelValues.initialValues;
+        if (initialValues.has(this.name))
+            throw new StateException(`Property ${this.name} already initialized`);
+
+        if (isDefined(value)) {
+            initialValues = initialValues.set(this.name, value);
+        } else if (isDefined(this.defaultValue)) {
+            initialValues = modelValues.initialValues.set(this.name, this.defaultValue());
+        }
+
+        return {
+            initialValues: initialValues,
+            values: modelValues.values,
+            resolvedRefs: modelValues.resolvedRefs
+        }
+    }
+
+    /**
+     * Mutate the value in the modelValues
+     *
+     * @param modelValues: The current model state
+     * @param value: The new value of the property
+     * @returns ModelValues: The new model state
+     */
+    valueMutator(modelValues: ModelValues, value: any): ModelValues {
+        return {
+            initialValues: modelValues.initialValues,
+            values: modelValues.values.set(this.name, value),
+            resolvedRefs: modelValues.resolvedRefs
+        };
     }
 }
 
-export class PropertyMetadata {
+/**
+ * A [PropertyMetadata] represents a model property with a value type, which is always
+ * serialized onto the model.
+ */
+export class PropertyMetadata extends BasePropertyMetadata {
     /**
      * All models have an Id property. The id can be any type, as long as the type can be
      * converted using an `identity` codec.
@@ -125,19 +271,20 @@ export class PropertyMetadata {
      */
     static idProperty(modelMetadata: ModelMetadata): PropertyMetadata {
         //TODO: id should be a readOnly property
-        // At the moment we scrub readOnly properties from the output, 
+        // At the moment we scrub readOnly properties from the output,
         // which is not the correct thing to do.
         // Instead we should check property restrictions on the mutator/accessor.
         var id = new PropertyMetadata({codec: identity, required: false});
-        id.contribute('id');
+        id.contribute(modelMetadata, 'id');
         return id;
     }
 
-    /// The name of the property on the model.
-    name: string;
+    isRef = false;
 
-    /// A function which provides a default value for the property,
-    /// or `null` if the property has no default value
+    /**
+     * A function which provides a default value for the property.
+     * If `null`, the property has no default value.
+     */
     defaultValue: () => any;
 
     /// The attribute on the model, in the lowerCamelCase form of the attribute.
@@ -146,82 +293,122 @@ export class PropertyMetadata {
     /// eg. { helloWorld: 'hello world' }  would be serialized as { "hello_world": "hello world" }
     codec: Codec<any,any>;
 
-    /// A readOnly property cannot be written to the server during a create or update
-    /// operation.
-    /// Any value for this property will be dropped during serialization.
-    /// Defaults to `false`.
-    readOnly: boolean = false;
-
-    /// The property will never be present on values retrieved from the server,
-    /// but can be included when updating values on the server.
-    /// default is `false`.
-    writeOnly: boolean = false;
-
-    /// The property is required on all create and update requests.
-    /// Will raise an error if the value is `undefined`.
-    /// Default is `true`.
-    required: boolean = true;
-
-    /// `true` if the field accepts `null` or `undefined` values.
-    /// Default is `false`.
-    allowNull: boolean = false;
-
-    constructor(options: {
-        codec: Codec<any,any>,
-        defaultValue?: () => any,
-        readOnly?: boolean,
-        writeOnly?: boolean,
-        required?: boolean,
-        allowNull?: boolean
-    }) {
-        this.codec = options.codec;
+    constructor(options: PropertyOptions) {
+        super(options);
         this.defaultValue = options.defaultValue;
-        if (!isBlank(options.readOnly))
-            this.readOnly = options.readOnly;
-        if (!isBlank(options.writeOnly))
-            this.writeOnly = options.writeOnly;
-        if (!isBlank(options.required))
-            this.required = options.required;
-        if (!isBlank(options.allowNull))
-            this.allowNull = options.allowNull;
+        this.codec = options.codec;
+    }
+}
+
+
+export interface RefPropertyOptions extends BasePropertyOptions {
+    refName: string;
+}
+
+
+/**
+ * A [RefProperty] is a property which stores the id of another model.
+ *
+ * A [RefProperty] is a property associated with another property name
+ * on the model. The referenced property name cannot be a property
+ * on the model
+ *
+ * The `value` property must be annotated with `@DoNotSerialize`, and no
+ * mutations to the referenced model will be synced to the server when
+ * this model is updated.
+ */
+export class RefPropertyMetadata extends BasePropertyMetadata {
+    isRef = true;
+
+    /**
+     * The name of the property
+     */
+    name: string;
+
+    /**
+     * The name of the property on the model which stores the resolved value.
+     *
+     * It is an error for the `refName` to be a property on the model.
+     */
+    refName: string;
+
+    codec = identity;
+
+    constructor(options: RefPropertyOptions) {
+        super(options);
+        this.refName = options.refName;
     }
 
-    contribute(propName: string) {
-        if (_RESERVED_PROPERTY_NAMES.contains(propName))
-            throw new InvalidMetadata(`${propName} is a reserved name and cannot be the name of a property`);
-        this.name = propName;
-    }
-
-    get valueAccessor(): ValueAccessor {
-        return (modelValues) => {
-            if (modelValues.values.has(this.name)) {
-                return modelValues.values.get(this.name);
-            } else {
-                return modelValues.initialValues.get(this.name);
-            }
+    contribute(modelMetadata: ModelMetadata, propName: string) {
+        if (modelMetadata.properties.has(this.refName)) {
+            throw new InvalidMetadata(
+                'The `refName` of a property must not be annotated with @Property (or @RefProperty)'
+            );
         }
+        super.contribute(modelMetadata, propName);
     }
 
-    get valueInitializer(): ValueMutator {
-        return (modelValues, value) => {
-            var initialValues = modelValues.initialValues;
-            if (isDefined(value)) {
-                initialValues = initialValues.set(this.name, value);
-            } else if (isDefined(this.defaultValue)) {
-                initialValues = modelValues.initialValues.set(this.name, this.defaultValue());
-            }
-            return {
-                initialValues: initialValues,
-                values: modelValues.values
-            }
+    valueInitializer(modelValues: ModelValues, value: any): ModelValues {
+        if (isDefined(value) && modelValues.resolvedRefs.has(this.name)) {
+            throw new StateException(`Property ${this.name} already initialized (via ref)`);
         }
+        return super.valueInitializer(modelValues, value);
     }
 
-    get valueMutator(): ValueMutator {
-        return (modelValues, value) => ({
+    valueMutator(modelValues: ModelValues, value: any): ModelValues {
+        modelValues = super.valueMutator(modelValues, value);
+        // Clear the value of any resolved reference.
+        // Currently only the id is known.
+        return {
             initialValues: modelValues.initialValues,
-            values: modelValues.values.set(this.name, value)
-        });
+            values: modelValues.values,
+            resolvedRefs: modelValues.resolvedRefs.delete(this.name)
+        };
+    }
+
+    /**
+     * Gets the resolved value of the reference property.
+     * Otherwise returns `undefined`.
+     * @param modelValues
+     * @returns {any}
+     */
+    refValueAccessor(modelValues: ModelValues) {
+        return modelValues.resolvedRefs.get(this.name);
+    }
+
+    private _setIdValue(values: Map<string, any>, refValue: {id: any}): Map<string,any> {
+        // If the ref value is undefined, don't set the id value
+        if (!isDefined(refValue))
+            return values;
+        // Any other mutation to the refValue will also mutate the id.
+        return values.set(this.name, refValue === null ? null : refValue.id);
+    }
+
+    refValueInitializer(modelValues: ModelValues, value: any) {
+        if (!isBlank(value) && !isDefined(value.id)) {
+            throw new TypeError('A model reference value must either be `null`, `undefined` or have an `id` property');
+        }
+        if (isDefined(value) && modelValues.initialValues.has(this.name)) {
+            throw new StateException(`Property ${this.name} already initialized (via ref)`);
+        }
+        return {
+            initialValues: this._setIdValue(modelValues.initialValues, value),
+            values: modelValues.values,
+            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
+        }
+    }
+
+    refValueMutator(modelValues: ModelValues, value: any): ModelValues {
+        if (!isBlank(value) && !isDefined(value.id)) {
+            throw new TypeError('A model reference must either be `null`, `undefined` or have an `id` property');
+        }
+
+        // Otherwise, directly mutating the reference will also mutate the id.
+        return {
+            initialValues: modelValues.initialValues,
+            values: this._setIdValue(modelValues.values, value),
+            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
+        }
     }
 }
 
@@ -249,3 +436,5 @@ export class ManagerMetadata {
         this.modelMetadata = ModelMetadata.forType(this.modelType);
     }
 }
+
+

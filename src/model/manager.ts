@@ -18,7 +18,7 @@ import {
 
 export const SEARCH_PAGE_SIZE = 20;
 
-export class ModelManager<T extends ModelBase> {
+export abstract class ModelManager<T extends ModelBase> {
     http: ModelHttp;
 
     private get __metadata(): ManagerMetadata {
@@ -48,6 +48,12 @@ export class ModelManager<T extends ModelBase> {
     get modelCodec(): Codec<T,JsonObject> {
         return this._getDefaultJsonCodec<T>();
     }
+    
+    abstract getById(id: any, {onSuccess, onNotFound, thisArg}: {
+        onSuccess: (model: T) => any,
+        onNotFound?: (message: string) => any,
+        thisArg?: any
+    }): Promise<number>;
 
     // Standard request methods
 

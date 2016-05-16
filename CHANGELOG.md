@@ -3,6 +3,9 @@
 ## 0.2.0
 
 ### Features
+- Added model references
+    Models can now define `@RefProperty` attributes, which can be used as foreign
+    keys to other models.
 - Added `enumToString` codec to the `json_codecs` module
 - Added `recordToJson` codec to the `json_codecs` module
 - All models now have an `id` property

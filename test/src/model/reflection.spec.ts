@@ -1,8 +1,7 @@
 
-import {Model} from "../../../src/model/decorators";
 import {ModelBase} from "../../../src/model/base";
 import {str, bool} from "../../../src/json_codecs/basic";
-import {Property} from "../../../src/model/decorators";
+import {Model, Property, RefProperty} from "../../../src/model/decorators";
 import {modelResolver} from "../../../src/model/reflection";
 
 @Model({kind: 'test::MyModel'})
@@ -15,6 +14,14 @@ abstract class MyModel extends ModelBase {
 abstract class MySubmodel extends MyModel {
     @Property({codec: bool})
     killTheInnocents: boolean;
+}
+
+@Model({kind: 'test::MyRefModel'})
+abstract class MyRefModel extends ModelBase {
+    @RefProperty({refName: 'ref'})
+    refId: string;
+
+    ref: MyModel;
 }
 
 abstract class ModelWithNoMetadata extends ModelBase {
@@ -62,6 +69,15 @@ function modelResolverTests() {
                 .toEqual(['killTheInnocents']);
             expect(metadata.properties.keySeq().toArray())
                 .toEqual(['id', 'name', 'killTheInnocents']);
+        });
+
+        it('should be possible to obtain the metadata of MyRefModel', () => {
+            var metadata = modelResolver.resolve(MyRefModel);
+
+            expect(metadata.ownProperties.keySeq().toArray())
+                .toEqual(['refId']);
+            expect(metadata.properties.keySeq().toArray())
+                .toEqual(['id', 'refId']);
         });
 
         it('should not be possible to resolve a model with no @Model annotation', () => {

@@ -3,7 +3,7 @@ import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {reflector} from 'angular2/src/core/reflection/reflection';
 import {resolveForwardRef} from 'angular2/src/core/di';
-import {ManagerMetadata, ModelMetadata, PropertyMetadata} from './metadata';
+import {ManagerMetadata, ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ModelResolutionError} from "./../exceptions";
 
 export interface Resolver<T> {
@@ -44,9 +44,12 @@ function _resolvePropertyMetadata(type: Type): Map<string,PropertyMetadata> {
     var propMetadata = reflector.propMetadata(type);
     var ownProperties: Array<[string, PropertyMetadata]> = [];
     forEachOwnProperty(propMetadata, (value, attr) => {
-        var propMetadata = value.find((meta: any) => meta instanceof PropertyMetadata);
-        propMetadata.contribute(attr);
-        ownProperties.push([attr, propMetadata]);
+        var propMetadata = value.find(
+            (meta: any) => meta instanceof PropertyMetadata
+                        || meta instanceof RefPropertyMetadata
+        );
+        if (propMetadata)
+            ownProperties.push([attr, propMetadata]);
     });
     return Map<string,PropertyMetadata>(ownProperties);
 }
