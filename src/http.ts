@@ -2,6 +2,7 @@ import {HTTP_PROVIDERS} from 'angular2/http';
 import {ModelHttp} from './http/model_http';
 
 export {ModelHttp, API_HOST_HREF} from './http/model_http';
+export {JsonResponse} from './http/interfaces'
 
 export {GetOptions, Get} from './http/get_request';
 export {PutOptions, Put} from './http/put_request';
