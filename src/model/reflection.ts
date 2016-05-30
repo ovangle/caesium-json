@@ -3,7 +3,7 @@ import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {reflector} from 'angular2/src/core/reflection/reflection';
 import {resolveForwardRef} from 'angular2/src/core/di';
-import {ManagerMetadata, ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
+import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ModelResolutionError} from "./../exceptions";
 
 export interface Resolver<T> {
@@ -54,35 +54,6 @@ function _resolvePropertyMetadata(type: Type): Map<string,PropertyMetadata> {
     return Map<string,PropertyMetadata>(ownProperties);
 }
 
-
-
-class ManagerResolver implements Resolver<ManagerMetadata> {
-    private _resolved: WeakMap<Type,ManagerMetadata>;
-
-    constructor() {
-        this._resolved = new WeakMap<Type, ManagerMetadata>();
-    }
-
-    resolve(type: Type) {
-        if (!this._resolved.has(type)) {
-            this._resolved.set(type, _resolveManagerMetadata(type));
-        }
-        return this._resolved.get(type);
-    }
-}
-
-function _resolveManagerMetadata(type: Type): ManagerMetadata {
-    var typeMetadata = reflector.annotations(resolveForwardRef(type));
-
-    var metadata = typeMetadata.find((metadata) => metadata instanceof ManagerMetadata);
-
-    if (metadata) {
-        return metadata;
-    }
-    throw new ModelResolutionError(`No @Manager annotations found on ${type}`);
-}
-
 export const modelResolver: Resolver<ModelMetadata> = new ModelResolver();
-export const managerResolver: Resolver<ManagerMetadata> = new ManagerResolver();
 
 

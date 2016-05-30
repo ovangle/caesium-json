@@ -2,21 +2,11 @@
 //We shouldn't be relying on internal angular2 implementation details.
 import {makeDecorator, makePropDecorator, TypeDecorator} from 'angular2/src/core/util/decorators';
 import {Type} from 'caesium-core/lang';
-import {Codec} from 'caesium-core/codec';
 
 import {
-    ModelMetadata, PropertyMetadata, ManagerMetadata, PropertyOptions, RefPropertyOptions,
+    ModelMetadata, PropertyMetadata, PropertyOptions, RefPropertyOptions,
     RefPropertyMetadata
 } from './metadata';
-
-export interface ManagerFactory {
-    (obj: {
-        modelType: Type
-    }): TypeDecorator;
-    new (obj: {
-        type: Type
-    }): ManagerMetadata;
-}
 
 export interface ModelFactory {
     (obj: {
@@ -49,9 +39,6 @@ export const Model: ModelFactory =
 export const Property: PropertyFactory =
     <PropertyFactory>makePropDecorator(PropertyMetadata);
 
-export const RefProperty: RefPropertyFactory = 
+export const RefProperty: RefPropertyFactory =
     <RefPropertyFactory>makePropDecorator(RefPropertyMetadata);
-
-export const Manager: ManagerFactory =
-    <ManagerFactory>makeDecorator(ManagerMetadata);
 

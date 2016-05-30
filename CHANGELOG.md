@@ -17,6 +17,12 @@
 - onData, thisArg removed from ResponseHandler and thisArg added to BaseResponseHandler
 - Fixed ModelManager resolution error
 
+## Breaking changes
+- Another huge refactor of http. Renamed 'http' package to 'manager'
+- Manager is no longer exported from model
+- Manager now has no decorator
+
+
 
 ## 0.1.0
 Breaking changes

@@ -28,6 +28,10 @@ export class PropertyNotFoundException extends BaseException {
     toString() { return `PropertyNotFound: ${this.message}` }
 }
 
+export class NotSupportedError extends BaseException {
+    toString() { return `NotSupported: ${this.message}` }
+}
+
 export class StateException extends BaseException {
     toString() { return `StateException: ${this.message}`; }
 }

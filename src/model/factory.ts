@@ -2,7 +2,7 @@ import {Map} from 'immutable';
 
 import {forEachOwnProperty, isDefined} from 'caesium-core/lang';
 import {ModelBase} from './base';
-import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
+import {ModelMetadata, RefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
 export type ModelFactory<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
@@ -95,7 +95,7 @@ function _createModel(modelMeta: ModelMetadata, modelValues?: ModelValues) {
             var refName = (prop as RefPropertyMetadata).refName;
             descriptors[refName] = {
                 enumerable: true,
-                get: function() { return this.get(refName)} 
+                get: function() { return this.get(refName)}
             }
         }
     });

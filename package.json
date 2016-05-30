@@ -18,12 +18,12 @@
   "licence": "MIT",
   "peerDependencies": {
     "es6-shim": "^0.35.0",
-    "zone.js": "0.6.6",
+    "zone.js": "0.6.12",
     "reflect-metadata": "0.1.2",
     "rxjs": "5.0.0-beta.2",
     "angular2": "2.0.0-beta.14",
     "immutable": "^3.7.6",
-    "caesium-core": "^0.1.0"
+    "caesium-core": "^0.1.1"
   },
   "devDependencies": {
     "jasmine-core": "2.4.1",

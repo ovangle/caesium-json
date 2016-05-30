@@ -5,7 +5,7 @@ import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
 import {InvalidMetadata, StateException, PropertyNotFoundException} from "../exceptions";
-import {modelResolver, managerResolver} from './reflection';
+import {modelResolver} from './reflection';
 import {ModelBase} from "./base";
 import {ModelValues} from './values';
 
@@ -411,30 +411,3 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         }
     }
 }
-
-export class ManagerMetadata {
-    static forType(type:Type): ManagerMetadata {
-        return managerResolver.resolve(type);
-    }
-
-    static forInstance(instance: any): ManagerMetadata {
-        var type = Object.getPrototypeOf(instance).constructor;
-        return ManagerMetadata.forType(type);
-    }
-
-    modelType:Type;
-
-    /// The model metadata associated with this manager.
-    modelMetadata: ModelMetadata;
-
-    get kind() {
-        return this.modelMetadata.kind;
-    }
-
-    constructor({modelType}: {modelType:Type}) {
-        this.modelType = modelType;
-        this.modelMetadata = ModelMetadata.forType(this.modelType);
-    }
-}
-
-

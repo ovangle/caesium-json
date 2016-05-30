@@ -1,0 +1,79 @@
+import {List} from 'immutable';
+
+import {isBlank, isDefined, isNumber, isBoolean} from 'caesium-core/lang';
+import {Converter} from 'caesium-core/converter';
+
+import {EncodingException, ArgumentError} from '../../exceptions';
+import {JsonObject} from '../../json_codecs/interfaces';
+
+import {ResponseHandler} from '../request';
+import {SearchParameterMap} from './parameter_map';
+
+export interface SearchResultPage<T> {
+    parameters: SearchParameterMap
+
+    items: List<T>;
+    isLastPage: boolean;
+}
+
+export function refinePage<T>(page: SearchResultPage<T>, refinedParams: SearchParameterMap): SearchResultPage<T> {
+    if (!refinedParams.isRefinementOf(page.parameters)) {
+        throw new ArgumentError('parameters must be a refinement of the page params');
+    }
+    var items = page.items
+        .filter((item) => refinedParams.matches(item))
+        .toList();
+
+    return {
+        parameters: refinedParams,
+        items: items,
+        isLastPage: page.isLastPage,
+    }
+}
+
+export class SearchResultPageHandler<T> implements ResponseHandler<SearchResultPage<T>> {
+    parameters: SearchParameterMap;
+    // The number of items to skip in the raw response.
+    skip: number;
+
+    itemDecoder: Converter<JsonObject,T>;
+
+    select = 200;
+
+    constructor(
+        params: SearchParameterMap,
+        itemDecoder: Converter<JsonObject,T>,
+        skip?: number
+    ) {
+        this.parameters = params;
+        this.itemDecoder = itemDecoder;
+        this.skip = skip;
+    }
+    
+    decoder = (this.decode).bind(this);
+
+    decode(obj: JsonObject): SearchResultPage<T> {
+        if (isBlank(obj) ||
+                !Array.isArray(obj['items']) ||
+                !isNumber(obj['page_id']) ||
+                !isBoolean(obj['last_page'])) {
+            throw new EncodingException('Invalid result page: ' + JSON.stringify(obj));
+        }
+
+        var responseItems = List<JsonObject>(obj['items'])
+            .toSeq()
+            .map<T>((item) => this.itemDecoder(item))
+            .filter((item) => this.parameters.matches(item));
+
+        if (isDefined(this.skip) && this.skip > 0) {
+            responseItems = responseItems.skip(this.skip);
+        }
+
+        return {
+            parameters: this.parameters,
+            items: responseItems.toList(),
+            isLastPage: obj['last_page'],
+        }
+    }
+}
+

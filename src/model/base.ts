@@ -1,7 +1,8 @@
+import {Observable} from 'rxjs/Observable';
 import {isDefined} from 'caesium-core/lang';
 
 import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
-import {ModelManager} from './manager';
+import {ManagerBase} from '../manager';
 
 import {copyModel} from './factory';
 import {ModelValues} from './values';
@@ -76,38 +77,32 @@ export abstract class ModelBase {
     }
 
     resolveProperty(
-        manager:ModelManager<ModelBase /* typeof this */>,
+        manager:ManagerBase<ModelBase /* typeof this */>,
         propNameOrRefName:string,
         {onNotFound, thisArg}: {onNotFound?:(message:string) => any, thisArg?:any}
-    ):Promise<ModelBase /* typeof this */> {
-        return new Promise((resolve, reject) => {
-            if (this.isResolved(propNameOrRefName)) {
-                return resolve(copyModel(this));
-            }
+    ):Observable<ModelBase /* typeof this */> {
+        if (this.isResolved(propNameOrRefName)) {
+            return Observable.of(copyModel(this));
+        }
 
-            var prop = this.__metadata.properties.get(propNameOrRefName);
-            if (!isDefined(prop)) {
-                var propName = this.__metadata.refNameMap.get(propNameOrRefName);
-                prop = this.__metadata.properties.get(propName);
-            }
-            if (!isDefined(prop) || !prop.isRef) {
-                return reject(new PropertyNotFoundException(propName, this, 'Reference'));
-            }
-            var refProp = prop as RefPropertyMetadata;
+        var prop = this.__metadata.properties.get(propNameOrRefName);
+        if (!isDefined(prop)) {
+            var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+            prop = this.__metadata.properties.get(propName);
+        }
+        if (!isDefined(prop) || !prop.isRef) {
+            return Observable.throw(new PropertyNotFoundException(propName, this, 'Reference'));
+        }
+        var refProp = prop as RefPropertyMetadata;
 
-            var idValue = refProp.valueAccessor(this.__modelValues);
+        var idValue = refProp.valueAccessor(this.__modelValues);
 
-            if (idValue === null) {
-                // A null id maps to a null reference.
-                return resolve(this.set(refProp.refName, null));
-            }
+        if (idValue === null) {
+            // A null id maps to a null reference.
+            return Observable.of(this.set(refProp.refName, null));
+        }
 
-            manager.getById(idValue, {
-                onSuccess: (member:ModelBase) => resolve(member),
-                onNotFound: onNotFound,
-                thisArg: thisArg
-            }).catch((err:any) => reject(err));
-        });
+        manager.getById(idValue).handle({select: 200, decoder: manager.modelCodec}).subscribe()
     }
 }
 
