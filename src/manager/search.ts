@@ -1,7 +1,8 @@
 import {List} from 'immutable';
 
-import 'rxjs/add/operator/switchMap';
+import {Observable} from 'rxjs/Observable';
 import {Subscription} from 'rxjs/Subscription';
+import {Subject} from 'rxjs/Subject';
 
 import {OpaqueToken} from 'angular2/core';
 
@@ -34,7 +35,8 @@ export class Search<T> {
 
     _requestFactory: RequestFactory;
     protected _resultStack: List<SearchResult<T>>;
-    protected _pageRequestSubscription: Subscription;
+
+    protected _resultChange: Subject<SearchResult<T>>;
 
     constructor(
         requestFactory: RequestFactory,
@@ -51,6 +53,8 @@ export class Search<T> {
             this.itemDecoder = itemDecoder as Converter<JsonObject,T>;
         }
 
+        this._resultChange = new Subject<SearchResult<T>>();
+
         var initialParams = new SearchParameterMap(parameters);
         this._resultStack = List<SearchResult<T>>([
             new SearchResult(this, initialParams)
@@ -61,6 +65,8 @@ export class Search<T> {
     get result(): SearchResult<T> {
         return this._resultStack.first();
     }
+
+    get resultChange(): Observable<SearchResult<T>> { return this._resultChange; }
 
     getParamValue(param: string, notSetValue?: any): any {
         return this.result.parameters.get(param, notSetValue);
@@ -81,9 +87,7 @@ export class Search<T> {
     }
 
     dispose() {
-        if (!this._pageRequestSubscription.isUnsubscribed) {
-            this._pageRequestSubscription.unsubscribe();
-        }
+        this._resultChange.complete();
     }
 
     protected _rebuildResponseStack(params: SearchParameterMap) {
@@ -97,6 +101,7 @@ export class Search<T> {
             .toList();
 
         var newResponse = keepResponses.first().refine(params);
+        this._resultChange.next(newResponse);
 
         this._resultStack = keepResponses.insert(0, newResponse);
     }
@@ -106,6 +111,8 @@ export class Search<T> {
         if (resultIndex < 0) {
             // The result has been discarded. Don't update the stack.
             return result;
+        } else if (resultIndex === 0) {
+            this._resultChange.next(result);
         }
         this._resultStack = this._resultStack.set(resultIndex, result);
         return result;
