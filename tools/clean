@@ -2,6 +2,7 @@
 
 import os
 import re
+import shutil
 
 # Don't remove files from these directories
 IGNORE_DIRECTORIES = ['node_modules', 'src', 'test', 'typings', 'tools']
@@ -32,7 +33,18 @@ def remove_dist_files():
                 log_removal(path)
                 os.rmdir(path)
 
+def restore_node_modules():
+    """
+    We move the node_modules folder to a temporary location, because it interferes with typescript type resolution
+    when we symlink the project as a linked npm dependency.
+
+    This should be removed when we move to using a proper npm dependency
+    """
+    if os.path.isdir('./_node_modules'):
+        shutil.move('./_node_modules', './node_modules');
+
 if __name__ == '__main__':
+    restore_node_modules()
     remove_dist_files()
 
 
