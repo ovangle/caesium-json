@@ -131,10 +131,16 @@ export class SearchResult<T> {
     }
 
     refine(refinedParams:SearchParameterMap):SearchResult<T> {
+        if (this.parameters.equals(refinedParams)) {
+            // Nothing to do
+            return this;
+        }
+
+
         // Refine all the pages which were created at instantiation
         // of this result page
         var pages = this.pages
-            .map((page) => refinePage(page, refinedParams))
+            .map((page: SearchResultPage<T>) => refinePage(page, refinedParams))
             .toList();
 
         return new SearchResult(this.search, refinedParams, pages);

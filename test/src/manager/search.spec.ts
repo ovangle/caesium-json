@@ -69,6 +69,35 @@ export function testSearch() {
             expect(search.hasParamValue('a')).toBe(false, 'value deleted');
         });
 
+        it('mutating parameters should update the result stack', () => {
+            var search = _mkSearch([{
+                name: 'a',
+                encoder: identityConverter,
+                matcher: isSubstring
+            }], _errHandler);
+
+            function getResultStackParams(search: Search<any>): string[] {
+                return (search as any)._resultStack
+                    .map((result: any) => result.parameters.toString())
+                    .toArray();
+            }
+
+            search.setParamValue('a', 'abc');
+            expect(getResultStackParams(search)).toEqual(['', 'a=abc'], 'set parameter');
+
+            search.setParamValue('a', 'abc');
+            expect(getResultStackParams(search)).toEqual(['', 'a=abc'], 'set parameter to same value');
+
+            search.setParamValue('a', 'abcdef');
+            expect(getResultStackParams(search)).toEqual(['', 'a=abc', 'a=abcdef'], 'set refined parameter');
+
+            search.setParamValue('a', 'abcdf');
+            expect(getResultStackParams(search)).toEqual(['', 'a=abc', 'a=abcdf'], 'does not refine last value');
+
+            search.deleteParamValue('a');
+            expect(getResultStackParams(search)).toEqual(['']);
+        });
+
         it('should be possible to submit an empty search to the server', (done) => {
             function requestHandler(options: RequestOptions): RawResponse {
                 expect(options.params['p']).toEqual('1', 'should add a pageId parameter to the search');

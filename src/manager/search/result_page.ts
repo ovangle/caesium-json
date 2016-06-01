@@ -17,8 +17,13 @@ export interface SearchResultPage<T> {
 }
 
 export function refinePage<T>(page: SearchResultPage<T>, refinedParams: SearchParameterMap): SearchResultPage<T> {
+    if (page.parameters.equals(refinedParams)) {
+        // No refinement necessary
+        return page;
+    }
+
     if (!refinedParams.isRefinementOf(page.parameters)) {
-        throw new ArgumentError('parameters must be a refinement of the page params');
+        throw new ArgumentError('parameters must be a proper refinement of the page params');
     }
     var items = page.items
         .filter((item) => refinedParams.matches(item))
@@ -49,7 +54,7 @@ export class SearchResultPageHandler<T> implements ResponseHandler<SearchResultP
         this.itemDecoder = itemDecoder;
         this.skip = skip;
     }
-    
+
     decoder = (this.decode).bind(this);
 
     decode(obj: JsonObject): SearchResultPage<T> {

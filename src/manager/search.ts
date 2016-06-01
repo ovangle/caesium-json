@@ -62,7 +62,7 @@ export class Search<T> {
 
     /// The active result
     get result(): SearchResult<T> {
-        return this._resultStack.first();
+        return this._resultStack.last();
     }
 
     get resultChange(): Observable<SearchResult<T>> { return this._resultChange; }
@@ -96,21 +96,23 @@ export class Search<T> {
         // It is very unlikely that a user will erase some input just to add it back again,
         // but it's not practical to keep the cache around indefinitely
         var keepResponses = this._resultStack
-            .skipWhile((response) => !params.isRefinementOf(response.parameters))
+            .takeWhile((result) => params.isRefinementOf(result.parameters))
             .toList();
 
-        var newResponse = keepResponses.first().refine(params);
-        this._resultChange.next(newResponse);
-
-        this._resultStack = keepResponses.insert(0, newResponse);
+        if (!keepResponses.last().parameters.equals(params)) {
+            var newResponse = keepResponses.last().refine(params);
+            keepResponses = keepResponses.push(newResponse);
+        }
+        this._resultChange.next(keepResponses.last());
+        this._resultStack = keepResponses;
     }
 
     updateResult(result: SearchResult<T>): SearchResult<T> {
-        var resultIndex = this._resultStack.findIndex((r) => r.parameters.equals(result.parameters));
+        var resultIndex = this._resultStack.findLastIndex((r) => r.parameters.equals(result.parameters));
         if (resultIndex < 0) {
             // The result has been discarded. Don't update the stack.
             return result;
-        } else if (resultIndex === 0) {
+        } else if (resultIndex === this._resultStack.count() - 1) {
             this._resultChange.next(result);
         }
         this._resultStack = this._resultStack.set(resultIndex, result);
