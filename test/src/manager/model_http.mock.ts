@@ -1,7 +1,7 @@
 import 'rxjs/add/observable/timer';
 import {Observable} from 'rxjs/Observable';
 
-import {Http} from 'angular2/http';
+import {Http} from '@angular/http';
 import {ModelHttp, RequestOptions, RawResponse} from "../../../src/manager/model_http";
 
 /**
@@ -23,7 +23,7 @@ export class MockModelHttp extends ModelHttp {
     request(options:RequestOptions):Observable<RawResponse> {
         //Random delay between 0 and 500 ms
         var delay = Math.floor(500 * Math.random());
-        
+
         return Observable.timer(delay)
             .map((_) => {
                 return this._handleRequest(options)

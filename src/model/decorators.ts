@@ -1,6 +1,9 @@
 //TODO: We should redefine these in 'utils'.
 //We shouldn't be relying on internal angular2 implementation details.
-import {makeDecorator, makePropDecorator, TypeDecorator} from 'angular2/src/core/util/decorators';
+
+//TODO: We really need to come up with our own definitions for these
+// We shouldn't be relying on angular implementation details.
+import {makeDecorator, makePropDecorator, TypeDecorator} from '@angular/core/src/util/decorators';
 import {Type} from 'caesium-core/lang';
 
 import {

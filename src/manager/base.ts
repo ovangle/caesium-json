@@ -1,4 +1,4 @@
-import {Injectable, Inject, Optional, OpaqueToken} from 'angular2/core';
+import {Injectable, Inject, Optional} from '@angular/core';
 
 import {Type, isDefined} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';

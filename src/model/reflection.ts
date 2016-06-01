@@ -1,8 +1,7 @@
 import {Map} from 'immutable';
 import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
-import {reflector} from 'angular2/src/core/reflection/reflection';
-import {resolveForwardRef} from 'angular2/src/core/di';
+import {reflector, resolveForwardRef} from '@angular/core';
 import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ModelResolutionError} from "./../exceptions";
 

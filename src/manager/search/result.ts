@@ -1,4 +1,5 @@
-import 'rxjs/add/observable/fromArray';
+import 'rxjs/add/observable/from';
+import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/throw';
 import 'rxjs/add/operator/reduce';
 import 'rxjs/add/operator/concatMap';
@@ -100,7 +101,7 @@ export class SearchResult<T> {
             .map((pageId) => this._createPageRequest(pageId))
             .toArray();
 
-        return Observable.fromArray(requests)
+        return Observable.from(requests)
             .concatMap((request) => {
                 var response = request.send();
                 return response.handle(this._createSearchPageHandler())

@@ -1,4 +1,3 @@
-import 'rxjs/add/observable/fromArray';
 import 'rxjs/add/operator/toArray';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/first';
@@ -88,9 +87,10 @@ export function testSearch() {
             });
         });
 
+
         it('should be possible to search a data source', (done) => {
             var search = _mkSearch([{
-                name: 'name', 
+                name: 'name',
                 encoder: identityConverter,
                 matcher: (modelValue, paramValue) => modelValue.includes(paramValue)
             }], searchCountries);

@@ -1,7 +1,7 @@
 import 'rxjs/add/operator/toPromise';
 import {Observable} from 'rxjs/Observable';
 
-import {RequestMethod} from 'angular2/http';
+import {RequestMethod} from '@angular/http';
 
 import {identityConverter} from 'caesium-core/converter';
 import {Get} from '../../../../src/manager/request/get';

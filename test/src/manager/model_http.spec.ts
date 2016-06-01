@@ -1,10 +1,12 @@
 import 'rxjs/add/operator/toPromise';
-import {provide} from 'angular2/core';
-import {Http, RequestOptions, RequestMethod, Response, ResponseOptions, BaseRequestOptions} from 'angular2/http';
+import {provide} from '@angular/core';
+import {
+    Http, RequestOptions, RequestMethod, Response, ResponseOptions, BaseRequestOptions
+} from '@angular/http';
 
-import {beforeEachProviders, describe, it, injectAsync} from 'angular2/testing';
+import {beforeEachProviders, describe, it, inject} from '@angular/core/testing';
 
-import {MockBackend, MockConnection} from 'angular2/http/testing';
+import {MockBackend, MockConnection} from '@angular/http/testing';
 import {API_HOST_HREF, ModelHttp} from "../../../src/manager/model_http";
 
 
@@ -27,7 +29,7 @@ function _testModelHttp() {
             ModelHttp
         ]);
 
-        it('should be possible to submit a request', injectAsync([MockBackend, ModelHttp],
+        it('should be possible to submit a request', inject([MockBackend, ModelHttp],
             (backend: MockBackend, http: ModelHttp) => {
                 backend.connections.subscribe((connection: MockConnection) => {
                     var request = connection.request;

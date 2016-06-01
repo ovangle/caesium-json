@@ -1,11 +1,11 @@
 import 'rxjs/add/operator/map';
 import {Observable} from 'rxjs/Observable';
 
-import {Inject, Injectable, OpaqueToken} from 'angular2/core';
+import {Inject, Injectable, OpaqueToken} from '@angular/core';
 import {
     RequestMethod, URLSearchParams, Http, Request,
     RequestOptions as NgRequestOptions
-} from 'angular2/http';
+} from '@angular/http';
 
 import {isDefined, forEachOwnProperty} from 'caesium-core/lang';
 

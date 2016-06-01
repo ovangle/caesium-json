@@ -1,10 +1,9 @@
 import {List} from 'immutable';
 
 import {Observable} from 'rxjs/Observable';
-import {Subscription} from 'rxjs/Subscription';
 import {Subject} from 'rxjs/Subject';
 
-import {OpaqueToken} from 'angular2/core';
+import {OpaqueToken} from '@angular/core';
 
 import {Codec, isCodec, getDecoder} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';

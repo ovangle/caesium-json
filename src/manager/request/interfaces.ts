@@ -7,7 +7,7 @@ import {Converter} from 'caesium-core/converter';
 import {JsonObject} from '../../json_codecs/interfaces';
 import {ModelHttp, RawResponse} from '../model_http';
 
-export {RequestMethod} from 'angular2/http';
+export {RequestMethod} from '@angular/http';
 
 export interface Request {
     kind: string;
