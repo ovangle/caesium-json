@@ -78,8 +78,7 @@ export abstract class ModelBase {
 
     resolveProperty(
         manager:ManagerBase<ModelBase /* typeof this */>,
-        propNameOrRefName:string,
-        {onNotFound, thisArg}: {onNotFound?:(message:string) => any, thisArg?:any}
+        propNameOrRefName:string
     ):Observable<ModelBase /* typeof this */> {
         if (this.isResolved(propNameOrRefName)) {
             return Observable.of(copyModel(this));
