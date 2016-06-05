@@ -125,7 +125,7 @@ function propertyMetadataTests() {
             expect(property.writeOnly).toBe(false, 'writeOnly default set');
             expect(property.allowNull).toBe(false, 'allowNull default set');
             expect(property.required).toBe(true, 'required default set');
-        })
+        });
     });
 }
 
@@ -237,6 +237,21 @@ function refPropertyMetadataTests() {
             expect(property.refValueAccessor(modelValues))
                 .toEqual({id: 500}, 'Should retrieve the value associated with prop.name');
 
+        });
+
+        it('should not consider a ref value initialized to `undefined` to be resolved', () => {
+            var property = new RefPropertyMetadata({refName: 'prop'});
+            property.name = 'propId';
+
+            var modelValues = {
+                initialValues: Map<string,any>(),
+                values: Map<string,any>(),
+                resolvedRefs: Map<string,any>()
+            };
+
+            modelValues = property.refValueInitializer(modelValues, undefined);
+
+            expect(modelValues.resolvedRefs.has('prop')).toBe(false);
         });
     });
 }

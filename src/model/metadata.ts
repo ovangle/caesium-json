@@ -377,11 +377,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
     }
 
     private _setIdValue(values: Map<string, any>, refValue: {id: any}): Map<string,any> {
-        // If the ref value is undefined, don't set the id value
-        if (!isDefined(refValue))
-            return values;
-        // Any other mutation to the refValue will also mutate the id.
-        return values.set(this.name, refValue === null ? null : refValue.id);
+        return values.set(this.name, isBlank(refValue) ? refValue : refValue.id);
     }
 
     refValueInitializer(modelValues: ModelValues, value: any) {
@@ -391,6 +387,8 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         if (isDefined(value) && modelValues.initialValues.has(this.name)) {
             throw new StateException(`Property ${this.name} already initialized (via ref)`);
         }
+        if (!isDefined(value))
+            return modelValues;
         return {
             initialValues: this._setIdValue(modelValues.initialValues, value),
             values: modelValues.values,
@@ -407,7 +405,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         return {
             initialValues: modelValues.initialValues,
             values: this._setIdValue(modelValues.values, value),
-            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
+            resolvedRefs: modelValues.resolvedRefs.set(this.name, isBlank(value) ? value: value.id)
         }
     }
 }
