@@ -323,6 +323,16 @@ export interface RefPropertyOptions extends BasePropertyOptions {
     refName: string;
 }
 
+/**
+ * Check that the value has an `id` property
+ * @param value
+ * @returns {string}
+ * @private
+ */
+function hasIdProperty(value: any): boolean {
+    return !!(Object.keys(value).find((k) => k === 'id'));
+}
+
 
 /**
  * A [RefProperty] is a property which stores the id of another model.
@@ -399,7 +409,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
     }
 
     refValueInitializer(modelValues: ModelValues, value: any) {
-        if (!isBlank(value) && !isDefined(value.id)) {
+        if (!isBlank(value) && !hasIdProperty(value)) {
             throw new TypeError('A model reference value must either be `null`, `undefined` or have an `id` property');
         }
         if (isDefined(value) && modelValues.initialValues.has(this.name)) {
@@ -415,7 +425,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
     }
 
     refValueMutator(modelValues: ModelValues, value: any): ModelValues {
-        if (!isBlank(value) && !isDefined(value.id)) {
+        if (!isBlank(value) && !hasIdProperty(value)) {
             throw new TypeError('A model reference must either be `null`, `undefined` or have an `id` property');
         }
 
