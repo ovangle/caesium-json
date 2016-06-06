@@ -1,4 +1,5 @@
 import {List} from 'immutable';
+import {FactoryException} from '../../../src/exceptions';
 import {Model, Property, RefProperty} from '../../../src/model/decorators';
 import {ModelBase} from '../../../src/model/base';
 import {ModelMetadata} from '../../../src/model/metadata';
@@ -21,6 +22,12 @@ abstract class MyModel extends ModelBase {
     foo() {
         return this.prop;
     }
+}
+
+@Model({kind: 'test::AbstractModel', isAbstract: true})
+abstract class AbstractModel extends ModelBase {
+    @Property({codec: str})
+    prop: string;
 }
 
 
@@ -83,6 +90,11 @@ export function createModelTests() {
             var instance = factory({});
             expect(() => instance.prop = 'hello').toThrow();
         });
+
+        it('should not be possible to create a factory for an abstract model type', () => {
+            expect(() => createModelFactory(ModelMetadata.forType(AbstractModel)))
+                .toThrow(jasmine.any(FactoryException));
+        })
     });
 }
 

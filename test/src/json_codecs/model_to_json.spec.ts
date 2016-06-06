@@ -6,7 +6,7 @@ import {model} from '../../../src/json_codecs/model_to_json';
 import {ModelMetadata} from "../../../src/model/metadata";
 
 // Models for model converter test.
-@Model({kind: 'test::MyModel'})
+@Model({kind: 'test::MyModel', isAbstract: true})
 abstract class MyModel extends ModelBase {
     @Property({codec: str})
     name:string;
@@ -34,25 +34,27 @@ export function modelToJsonTests() {
 function modelTests() {
     describe('model', () => {
         it('should be possible to encode a model as json', () => {
-            var codec = model(MyModel);
+            var codec = model(SubModel);
 
-            var modelFactory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
+            var modelFactory = createModelFactory<MyModel>(ModelMetadata.forType(SubModel));
             var instance = modelFactory({
                 name: 'henry',
                 aliases: List(['hank']),
                 birthday: new Date(0),
+                submodelProperty: 'hello world'
             });
 
             expect(codec.encode(instance)).toEqual({
-                kind: 'test::MyModel',
+                kind: 'test::Submodel',
                 name: 'henry',
                 aliases: ['hank'],
-                birthday: '1970-01-01T00:00:00.000Z'
+                birthday: '1970-01-01T00:00:00.000Z',
+                submodel_property: 'hello world'
             });
         });
 
         it('should be possible to decode a model from json', () => {
-            var codec = model<MyModel>(MyModel);
+            var codec = model<MyModel>(SubModel);
 
             var modelJson = {
                 kind: 'test::MyModel',
@@ -69,7 +71,7 @@ function modelTests() {
         });
 
         it('should handle blank values', () => {
-            var codec = model(MyModel);
+            var codec = model(SubModel);
             expect(codec.encode(null)).toBeNull('encode null');
             expect(codec.decode(null)).toBeNull('decode null');
             expect(codec.encode(undefined)).toBeUndefined('encode undefined');

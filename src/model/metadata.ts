@@ -40,6 +40,12 @@ export class ModelMetadata {
     /// Basic support for model extensions.
     superType: Type;
 
+    /**
+     * An abstract model cannot be instantiated by a model factory.
+     * It is intended to act purely as a supertype for other model types.
+     */
+    isAbstract: boolean;
+
     ownProperties: Map<string, BasePropertyMetadata>;
 
     get supertypeMeta(): ModelMetadata {
@@ -48,12 +54,24 @@ export class ModelMetadata {
         return modelResolver.resolve(this.superType);
     }
 
-    constructor({kind, superType}: {kind: string, superType?: Type}) {
+    constructor({kind, superType, isAbstract}: {kind: string, superType?: Type, isAbstract?: boolean}) {
         if (!isValidKind(kind)) {
             throw new InvalidMetadata(`Invalid kind '${kind}' for model. Kind must match ${_VALID_KIND_MATCH}`);
         }
         this.kind = kind;
+
+        if (isDefined(superType)) {
+            var supertypeMeta = ModelMetadata.forType(superType);
+            if (!supertypeMeta) {
+                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be a model type`);
+            }
+            if (!supertypeMeta.isAbstract) {
+                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be abstract`);
+            }
+        }
+
         this.superType = superType || ModelBase;
+        this.isAbstract = !!isAbstract;
     }
 
     checkHasPropertyOrRef(propNameOrRefName: string): void {
@@ -405,7 +423,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         return {
             initialValues: modelValues.initialValues,
             values: this._setIdValue(modelValues.values, value),
-            resolvedRefs: modelValues.resolvedRefs.set(this.name, isBlank(value) ? value: value.id)
+            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
         }
     }
 }

@@ -4,7 +4,7 @@ import {str, bool} from "../../../src/json_codecs/basic";
 import {Model, Property, RefProperty} from "../../../src/model/decorators";
 import {modelResolver} from "../../../src/model/reflection";
 
-@Model({kind: 'test::MyModel'})
+@Model({kind: 'test::MyModel', isAbstract: true})
 abstract class MyModel extends ModelBase {
     @Property({codec: str, readOnly: true})
     name: string;

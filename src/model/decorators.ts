@@ -14,11 +14,13 @@ import {
 export interface ModelFactory {
     (obj: {
         kind: string,
-        superType?: Type
+        superType?: Type,
+        isAbstract?: boolean
     }): TypeDecorator;
     new (obj: {
         kind: string,
-        superType?: Type
+        superType?: Type,
+        isAbstract?: boolean
     }): ModelMetadata;
 }
 

@@ -1,5 +1,4 @@
 import {decoratorsTests} from "./model/decorators.spec";
-import {managerTests} from "./model/manager.spec";
 import {metadataTests} from "./model/metadata.spec";
 import {modelBaseTests} from "./model/base.spec";
 import {modelFactoryTests} from "./model/factory.spec";
@@ -10,7 +9,6 @@ export function modelTests() {
         modelBaseTests();
         decoratorsTests();
         modelFactoryTests();
-        managerTests();
         metadataTests();
         reflectionTests();
 

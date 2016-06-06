@@ -1,5 +1,5 @@
 import {Observable} from 'rxjs/Observable';
-import {isDefined} from 'caesium-core/lang';
+import {isDefined, isBlank} from 'caesium-core/lang';
 
 import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ManagerBase} from '../manager';
@@ -89,19 +89,20 @@ export abstract class ModelBase {
             var propName = this.__metadata.refNameMap.get(propNameOrRefName);
             prop = this.__metadata.properties.get(propName);
         }
+
         if (!isDefined(prop) || !prop.isRef) {
             return Observable.throw(new PropertyNotFoundException(propName, this, 'Reference'));
         }
         var refProp = prop as RefPropertyMetadata;
-
         var idValue = refProp.valueAccessor(this.__modelValues);
 
-        if (idValue === null) {
+        if (isBlank(idValue)) {
             // A null id maps to a null reference.
             return Observable.of(this.set(refProp.refName, null));
         }
 
-        manager.getById(idValue).handle({select: 200, decoder: manager.modelCodec}).subscribe()
+        //TODO: What about 404 responses?
+        return manager.getById(idValue).handle({select: 200, decoder: manager.modelCodec});
     }
 }
 

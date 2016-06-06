@@ -4,18 +4,17 @@ import {Type, isDefined} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
 
-import {createModelFactory} from '../model/factory';
+import {ModelFactory, createModelFactory} from '../model/factory';
 import {ModelMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
 
-import {model} from "../json_codecs/model_to_json";
-import {JsonObject} from '../json_codecs/interfaces';
+import {model, union, JsonObject} from '../json_codecs';
 
 import {ModelHttp} from './model_http';
 import {RequestFactory, Response} from './request';
 
 import {Search, SearchParameter, SEARCH_PAGE_SIZE} from './search';
-import {NotSupportedError} from "../exceptions";
+import {NotSupportedError, InvalidMetadata, FactoryException} from "../exceptions";
 
 /**
  * Rather than expect all manager implementations to declare @Injectable
@@ -42,15 +41,18 @@ export class ManagerOptions {
     }
 }
 
-
-
 export abstract class ManagerBase<T extends ModelBase> {
     http: ModelHttp;
     _requestFactory: RequestFactory;
     searchPageSize: number;
 
 
-    abstract getModelType(): Type;
+    abstract getModelType(): Type/*<T>*/;
+
+    /**
+     * Get a list of the proper subtypes of the model.
+     */
+    abstract getModelSubtypes(): Type/*<U extends T>*/[];
 
     /**
      * Get the search parameters that are applicable to the `search` exposed by
@@ -71,14 +73,34 @@ export abstract class ManagerBase<T extends ModelBase> {
     }
 
     /// Create a new instance of the modelType.
-    create(args: {[propName: string]: any}): T {
-        var creator = createModelFactory<T>(this.__metadata);
-        return creator(args);
+    create<U extends T>(subtype: Type/*<U>*/, args: {[propName: string]: any}): U {
+        var factory: ModelFactory<U>;
+        if (this.__metadata.isAbstract) {
+            var modelSubtypes = this.getModelSubtypes();
+            if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {
+                throw new FactoryException(
+                    `Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`
+                );
+            }
+            factory = createModelFactory<U>(ModelMetadata.forType(subtype));
+        } else {
+            factory = createModelFactory<U>(this.__metadata);
+        }
+        return factory(args);
     }
 
     @memoize()
     private _getDefaultJsonCodec(): Codec<T,JsonObject> {
-        return model<T>(this.__metadata.type);
+        var modelSubtypes = this.getModelSubtypes();
+        if (Array.isArray(modelSubtypes) && modelSubtypes.length > 0) {
+            return union(...this.getModelSubtypes());
+        } else if (this.__metadata.isAbstract) {
+            throw new InvalidMetadata(
+                'A manager for an abstract model type must provide a nonempty list of subtypes'
+            );
+        } else {
+            return model<T>(this.getModelType());
+        }
     }
 
     get modelCodec(): Codec<T,JsonObject> {

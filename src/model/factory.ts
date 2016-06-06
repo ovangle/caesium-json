@@ -1,6 +1,7 @@
 import {Map} from 'immutable';
 
 import {forEachOwnProperty, isDefined} from 'caesium-core/lang';
+import {FactoryException} from '../exceptions';
 import {ModelBase} from './base';
 import {ModelMetadata, RefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
@@ -19,6 +20,10 @@ export interface PropertyMutation {
 }
 
 export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelFactory<T> {
+    if (modelMeta.isAbstract) {
+        throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
+    } 
+    
     function create(args: {[attr: string]: any}) {
         var modelValues = _asMutableModelValues(_initModelValues());
         forEachOwnProperty(args, (value, key) => modelMeta.checkHasPropertyOrRef(key));

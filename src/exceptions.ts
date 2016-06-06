@@ -40,3 +40,7 @@ export class ModelResolutionError extends BaseException {
     toString() { return `ModelResolutionError: ${this.message}`}
 }
 
+export class FactoryException extends BaseException {
+    toString() { return `FactoryException: ${this.message}` }
+}
+

@@ -6,6 +6,9 @@
 - Added model references
     Models can now define `@RefProperty` attributes, which can be used as foreign
     keys to other models.
+- Support for abstract model types
+    Models can now be annotated as `'isAbstract: true'`, to provide better support
+    for inheritance between models
 - Added `enumToString` codec to the `json_codecs` module
 - Added `recordToJson` codec to the `json_codecs` module
 - All models now have an `id` property
@@ -21,6 +24,7 @@
 - Another huge refactor of http. Renamed 'http' package to 'manager'
 - Manager is no longer exported from model
 - Manager now has no decorator
+- Any models which are base types for other models must be annotated with `isAbstract: true`
 
 
 
