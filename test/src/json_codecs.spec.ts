@@ -1,5 +1,6 @@
 import {basicTests} from './json_codecs/basic.spec';
 import {enumToStringTests} from './json_codecs/enum_to_string.spec';
+import {itemListTests} from './json_codecs/item_list.spec';
 import {modelPropertyToJsonTests} from './json_codecs/model_property_to_json.spec';
 import {modelToJsonTests} from './json_codecs/model_to_json.spec';
 import {modelUnionToJsonTests} from './json_codecs/model_union_to_json.spec';
@@ -11,6 +12,7 @@ export function jsonCodecsTests() {
     describe('json_codecs', () => {
         basicTests();
         enumToStringTests();
+        itemListTests();
         objectToJsonTests();
         modelPropertyToJsonTests();
         modelToJsonTests();
