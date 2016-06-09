@@ -108,7 +108,52 @@ export abstract class ManagerBase<T extends ModelBase> {
     }
 
     getById(id: any): Response {
-        var request = this._requestFactory.get(id);
+        var request = this._requestFactory.get(id.toString());
+        return request.send();
+    }
+
+    /**
+     * Get all models with the specified foreign key value.
+     *
+     * For example, given the model
+     *
+     *      @Model({kind: 'example::MyModel'})
+     *      export abstract class MyModel extends ModelBase {
+     *          @RefProperty({refName: 'foreign'})
+     *          foreignId: number;
+     *          foreign: ForeignModel;
+     *      }
+     *
+     * and the model
+     *
+     *      @Model({kind: 'example::ForeignModel'})
+     *      export abstract class ForeignModel extends ModelBase {
+     *      }
+     *
+     * Then the 'getByReferences('foreignId', foreignModel)' method on the MyModel manager
+     * would submit a request:
+     *
+     *      http://host_href/example?foreign_id=<foreignModel.id>
+     *
+     * would return a response
+     * {
+     *  items: [<all MyModel instances where myModel.foreignId === foreignModel.id>]
+     * }
+     *
+     * NOTE:
+     * The 'items' key should be present in all responses to this method, even if the
+     * relationship is one-to-one.
+     *
+     *
+     * @param foreignModel
+     * @param refName
+     * @returns {Response}
+     */
+    getAllByReference(refName: string, foreignModel: ModelBase) : Response {
+        var request = this._requestFactory.get('');
+        request.setRequestParameters({
+            [refName]: foreignModel.id.toString()
+        });
         return request.send();
     }
 

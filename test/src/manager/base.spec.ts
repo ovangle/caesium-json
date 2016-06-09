@@ -1,19 +1,27 @@
+import 'rxjs/add/operator/toPromise';
+import {List} from 'immutable';
+
 import {Type} from 'caesium-core/lang';
-import {Model, ModelBase} from '../../../src/model';
+
+import {itemList} from '../../../src/json_codecs';
+import {Model, ModelBase, RefProperty} from '../../../src/model';
 import {ManagerOptions, ManagerBase, SearchParameter} from '../../../src/manager';
+import {RequestMethod} from '../../../src/manager/request/interfaces';
 import {RawResponse, RequestOptions} from "../../../src/manager/model_http";
 import {FactoryException} from '../../../src/exceptions';
 
 import {MockModelHttp} from './model_http.mock';
 
-function _mkManagerOptions() {
-    //Should not be submitting requests for these tests
-    function requestHandler(options: RequestOptions): RawResponse {
-        throw 'Should not submit a request';
+function _mkManagerOptions(requestHandler?: (options: RequestOptions) => RawResponse): ManagerOptions {
+    function _errHandler(options: RequestOptions): RawResponse {
+        throw 'Should not submit a request to the server'
     }
+    requestHandler = requestHandler || _errHandler;
 
     return new ManagerOptions(new MockModelHttp(requestHandler))
 }
+
+
 
 @Model({kind: 'test::MyModel'})
 export abstract class MyModel extends ModelBase {}
@@ -47,6 +55,8 @@ export function managerBaseTests() {
     describe('ManagerBase', () => {
         createTests();
         modelCodecTests();
+        getByIdTests();
+        getByReferenceTests();
     });
 }
 
@@ -119,3 +129,69 @@ function modelCodecTests() {
         });
     });
 }
+
+function getByIdTests() {
+    describe('.getById()', () => {
+        it('should be possible to get a model by id', (done) => {
+            function requestHandler(options: RequestOptions): RawResponse {
+                expect(options.method).toBe(RequestMethod.Get);
+                expect(options.endpoint).toBe('12345');
+
+                return {
+                    status: 200,
+                    body: {kind: 'test::MyModel', id: 12345}
+                }
+            }
+
+            var manager = new MyModelManager(_mkManagerOptions(requestHandler));
+
+            manager.getById(12345)
+                .handle({select: 200, decoder: manager.modelCodec}).toPromise()
+                .then((myModel) => {
+                    expect(myModel).toEqual(jasmine.any(MyModel));
+                    expect(myModel.id).toEqual(12345);
+                })
+                .catch((err) => fail(err))
+                .then((_) => done());
+        });
+    });
+}
+
+@Model({kind: 'test::ReferencingModel'})
+abstract class ReferencingModel extends ModelBase {
+    @RefProperty({refName: 'ref'})
+    refId: number;
+    ref: MyModel;
+}
+
+function getByReferenceTests() {
+    describe('.getAllByReference()', () => {
+        it('should be possible to obtain all models which agree on a foreign key', (done) => {
+            function requestHandler(options:RequestOptions) {
+                expect(options.method).toBe(RequestMethod.Get);
+                expect(options.endpoint).toBe('');
+                expect(options.params).toEqual({refId: '12345'});
+
+                return {
+                    status: 200,
+                    body: {items: [{id: 10011, ref_id: 12345}, {id: 23456, ref_id: 12345}]}
+                };
+            }
+
+            var manager = new MyModelManager(_mkManagerOptions(requestHandler));
+
+            var myModel = {id: 12345} as any;
+
+            return manager.getAllByReference('refId', myModel)
+                .handle({select: 200, decoder: itemList<MyModel>(manager.modelCodec)})
+                .toPromise().then((refModels:List<ReferencingModel>) => {
+                    expect(refModels.count()).toBe(2);
+                    expect(refModels.get(0).id).toEqual(10011, 'should have a refModel with `id=10011`');
+                    expect(refModels.get(1).id).toEqual(23456, 'should have a refModel with `id=23456`');
+                })
+                .catch((err) => fail(err))
+                .then((_) => done());
+        });
+    });
+}
+
