@@ -10,6 +10,7 @@ import {
 import {isDefined, forEachOwnProperty} from 'caesium-core/lang';
 
 import {JsonObject} from '../json_codecs/interfaces';
+import {camelCaseToSnakeCase} from '../json_codecs/string_case_converters';
 
 export const API_HOST_HREF = new OpaqueToken('cs_api_host_href');
 
@@ -29,7 +30,7 @@ export interface RawResponse {
 function stringMapToURLSearchParams(stringMap: {[key: string]: string}): URLSearchParams {
     var searchParams = new URLSearchParams();
     forEachOwnProperty(stringMap, (value, param) => {
-        searchParams.set(param, value);
+        searchParams.set(camelCaseToSnakeCase(param), value);
     });
     return searchParams;
 }

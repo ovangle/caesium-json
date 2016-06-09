@@ -52,7 +52,7 @@ function _testModelHttp() {
                     method: RequestMethod.Put,
                     kind: 'mymodel::MyModel',
                     endpoint: 'method_endpoint',
-                    params: {'p_one': 'one', 'p_two': 'two'},
+                    params: {'pOne': 'one', 'pTwo': 'two'},
                     body: {'json': 'request'}
                 }).toPromise().then((response) => {
                     expect(response).toEqual({
