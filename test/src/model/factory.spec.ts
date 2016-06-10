@@ -1,6 +1,6 @@
 import {List} from 'immutable';
 import {FactoryException} from '../../../src/exceptions';
-import {Model, Property, RefProperty} from '../../../src/model/decorators';
+import {Model, Property, RefProperty, BackRefProperty} from '../../../src/model/decorators';
 import {ModelBase} from '../../../src/model/base';
 import {ModelMetadata} from '../../../src/model/metadata';
 import {str, list} from '../../../src/json_codecs';
@@ -16,12 +16,9 @@ abstract class MyModel extends ModelBase {
 
     @RefProperty({refName: 'ref'})
     refId: number;
+    ref: MyBackRefModel;
 
-    ref: MyModel;
-
-    foo() {
-        return this.prop;
-    }
+    foo() { return this.prop; }
 }
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
@@ -30,6 +27,11 @@ abstract class AbstractModel extends ModelBase {
     prop: string;
 }
 
+@Model({kind: 'test::MyModel'})
+abstract class MyBackRefModel extends ModelBase {
+    @BackRefProperty({to: MyModel, refProp: 'refId'})
+    backRef: MyModel;
+}
 
 export function modelFactoryTests() {
     describe('factory', () => {
@@ -38,7 +40,7 @@ export function modelFactoryTests() {
     });
 }
 
-export function createModelTests() {
+function createModelTests() {
     describe('createModel', () => {
         var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
         it('should be possible to create a new instance of a model with no initial property values', () => {
@@ -77,6 +79,18 @@ export function createModelTests() {
             expect(instance.ref).toBe(null);
         });
 
+        it('should not be possible to set initial values for a back reference', () => {
+            var backRefFactory = createModelFactory<MyBackRefModel>(ModelMetadata.forType(MyBackRefModel));
+            var myModelInstance = factory({id: 1, refId: 40});
+
+            // TODO: Ideally we'd like to be able to to this
+            expect(() => backRefFactory({backRef: myModelInstance})).toThrow();
+
+            var instance = backRefFactory({});
+            expect(instance.isResolved('backRef')).toBe(false);
+
+        });
+
         it('should inherit all methods defined on the instance', () => {
             var instance = factory({prop: 'hello world'});
             expect(instance.foo()).toBe('hello world');
@@ -98,7 +112,7 @@ export function createModelTests() {
     });
 }
 
-export function copyModelTests() {
+function copyModelTests() {
     describe('copyModel', () => {
         var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
         var instance = factory({

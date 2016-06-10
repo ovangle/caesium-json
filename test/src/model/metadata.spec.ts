@@ -2,13 +2,17 @@ import {Map} from 'immutable';
 import {Type} from 'caesium-core/lang';
 import {identity} from 'caesium-core/codec';
 
-import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from '../../../src/model/metadata';
+import {ModelValues} from '../../../src/model/values';
+import {
+    ModelMetadata, PropertyMetadata, RefPropertyMetadata, BackRefPropertyMetadata
+} from '../../../src/model/metadata';
 
 export function metadataTests() {
     describe('metadata', () => {
         modelMetadataTests();
         propertyMetadataTests();
         refPropertyMetadataTests();
+        backRefPropertyMetadataTests();
     });
 }
 
@@ -20,6 +24,14 @@ function _mkModelMetadata(
     var metadata = new ModelMetadata({kind: kind});
     metadata.contribute(type, Map<string,PropertyMetadata>(properties));
     return metadata;
+}
+
+function _mkModelValues(): ModelValues {
+    return {
+       initialValues: Map<string,any>(),
+        values: Map<string,any>(),
+        resolvedRefs: Map<string,any>()
+    };
 }
 
 function modelMetadataTests() {
@@ -93,7 +105,7 @@ function propertyMetadataTests() {
                 resolvedRefs: Map<string,any>()
             };
 
-            var mutatedValues = property.valueMutator(modelValues, true);
+            var mutatedValues = property.valueMutator(modelValues, true, null);
             expect(mutatedValues.initialValues.toObject()).toEqual({}, 'should not alter \'initialValues\'');
             expect(mutatedValues.values.toObject()).toEqual({prop: true});
         });
@@ -208,7 +220,7 @@ function refPropertyMetadataTests() {
                 resolvedRefs: Map<string,any>({propId: {id: 32}, otherId: {id: 68}})
             };
 
-            var mutatedValues = property.valueMutator(modelValues, 500);
+            var mutatedValues = property.valueMutator(modelValues, 500, null);
             expect(mutatedValues.initialValues.toObject()).toEqual({}, 'should not alter \'initialValues\'');
             expect(mutatedValues.values.toObject()).toEqual({propId: 500});
             expect(mutatedValues.resolvedRefs.toObject())
@@ -252,6 +264,34 @@ function refPropertyMetadataTests() {
             modelValues = property.refValueInitializer(modelValues, undefined);
 
             expect(modelValues.resolvedRefs.has('prop')).toBe(false);
+        });
+    });
+}
+
+function backRefPropertyMetadataTests() {
+    describe('BackRefPropertyMetadata', () => {
+        var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
+        class MyModel { }
+
+        it('should not be possible to contribute a reserved name to a property', () => {
+            var property = new BackRefPropertyMetadata({to: MyModel, refProp: 'hello'});
+
+            for (let name of ['kind', 'metadata', 'get', 'set', 'delete']) {
+                expect(() => property.contribute(modelMeta, name)).toThrow();
+            }
+            expect(() => property.contribute(modelMeta, 'a')).not.toThrow();
+        });
+
+        it('should not be possible to initialize a single value backRef property', () => {
+            var property = new BackRefPropertyMetadata({to: MyModel, refProp: 'hello'});
+            property.contribute(modelMeta, 'name');
+
+            var modelValues = _mkModelValues();
+
+            var initializedNoValue = property.valueInitializer(modelValues, undefined);
+            expect(initializedNoValue).toBe(modelValues);
+
+            expect(() => property.valueInitializer(modelValues, {id: 42})).toThrow();
         });
     });
 }

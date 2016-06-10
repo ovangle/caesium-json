@@ -1,8 +1,9 @@
 
 import {ModelBase} from "../../../src/model/base";
 import {str, bool} from "../../../src/json_codecs/basic";
-import {Model, Property, RefProperty} from "../../../src/model/decorators";
+import {Model, Property, RefProperty, BackRefProperty} from "../../../src/model/decorators";
 import {modelResolver} from "../../../src/model/reflection";
+import {BackRefPropertyMetadata} from "../../../src/model/metadata";
 
 @Model({kind: 'test::MyModel', isAbstract: true})
 abstract class MyModel extends ModelBase {
@@ -24,6 +25,12 @@ abstract class MyRefModel extends ModelBase {
     ref: MyModel;
 }
 
+@Model({kind: 'test::MyBackRefModel'})
+abstract class MyBackRefModel extends ModelBase {
+    @BackRefProperty({to: MyRefModel, refProp: 'refId'})
+    backRef: MyRefModel;
+}
+
 abstract class ModelWithNoMetadata extends ModelBase {
     @Property({codec: str})
     property: string;
@@ -38,8 +45,6 @@ abstract class ModelWithConstructor extends ModelBase {
         this.property = property;
     }
 }
-
-
 
 export function reflectionTests() {
     describe('reflection', () => {
@@ -78,6 +83,24 @@ function modelResolverTests() {
                 .toEqual(['refId']);
             expect(metadata.properties.keySeq().toArray())
                 .toEqual(['id', 'refId']);
+        });
+
+        it('should be possible to obtain the metadata of MyBackRefModel', () => {
+            var metadata = modelResolver.resolve(MyBackRefModel);
+            expect(metadata.ownProperties.keySeq().toArray())
+                .toEqual(['backRef']);
+            expect(metadata.properties.keySeq().toArray())
+                .toEqual(['id', 'backRef']);
+
+            var backRefProp = metadata.properties.get('backRef') as BackRefPropertyMetadata;
+            expect(backRefProp.toMetadata).toBe(
+                modelResolver.resolve(MyRefModel),
+                'should resolve toMetadata with same instance'
+            );
+            expect(backRefProp.refPropMetadata).toBe(
+                modelResolver.resolve(MyRefModel).properties.get('refId'),
+                'should resolve refProp with same property instance'
+            );
         });
 
         it('should not be possible to resolve a model with no @Model annotation', () => {

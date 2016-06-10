@@ -2,7 +2,7 @@ import {Map} from 'immutable';
 import {Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {reflector, resolveForwardRef} from '@angular/core';
-import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from './metadata';
+import {ModelMetadata, BasePropertyMetadata} from './metadata';
 import {ModelResolutionError} from "./../exceptions";
 
 export interface Resolver<T> {
@@ -39,18 +39,15 @@ function _resolveModelMetadata(type: Type): ModelMetadata {
     throw new ModelResolutionError(`No @Model annotations found on ${type}`);
 }
 
-function _resolvePropertyMetadata(type: Type): Map<string,PropertyMetadata> {
+function _resolvePropertyMetadata(type: Type): Map<string,BasePropertyMetadata> {
     var propMetadata = reflector.propMetadata(type);
-    var ownProperties: Array<[string, PropertyMetadata]> = [];
+    var ownProperties: Array<[string, BasePropertyMetadata]> = [];
     forEachOwnProperty(propMetadata, (value, attr) => {
-        var propMetadata = value.find(
-            (meta: any) => meta instanceof PropertyMetadata
-                        || meta instanceof RefPropertyMetadata
-        );
+        var propMetadata = value.find((meta: any) => meta instanceof BasePropertyMetadata);
         if (propMetadata)
             ownProperties.push([attr, propMetadata]);
     });
-    return Map<string,PropertyMetadata>(ownProperties);
+    return Map<string,BasePropertyMetadata>(ownProperties);
 }
 
 export const modelResolver: Resolver<ModelMetadata> = new ModelResolver();

@@ -11,6 +11,5 @@ export function modelTests() {
         modelFactoryTests();
         metadataTests();
         reflectionTests();
-
-    })
+    });
 }

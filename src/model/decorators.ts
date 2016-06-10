@@ -8,7 +8,7 @@ import {Type} from 'caesium-core/lang';
 
 import {
     ModelMetadata, PropertyMetadata, PropertyOptions, RefPropertyOptions,
-    RefPropertyMetadata
+    RefPropertyMetadata, BackRefPropertyOptions, BackRefPropertyMetadata
 } from './metadata';
 
 export interface ModelFactory {
@@ -34,6 +34,11 @@ export interface RefPropertyFactory {
     new (obj: RefPropertyOptions): RefPropertyMetadata;
 }
 
+export interface BackRefPropertyFactory {
+    (obj: BackRefPropertyOptions): any;
+    new (obj: BackRefPropertyOptions): BackRefPropertyMetadata;
+}
+
 
 export const Model: ModelFactory =
     <ModelFactory>makeDecorator(ModelMetadata);
@@ -47,3 +52,5 @@ export const Property: PropertyFactory =
 export const RefProperty: RefPropertyFactory =
     <RefPropertyFactory>makePropDecorator(RefPropertyMetadata);
 
+export const BackRefProperty: BackRefPropertyFactory = 
+    <BackRefPropertyFactory>makePropDecorator(BackRefPropertyMetadata);

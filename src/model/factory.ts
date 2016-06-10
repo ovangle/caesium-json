@@ -3,7 +3,7 @@ import {Map} from 'immutable';
 import {forEachOwnProperty, isDefined} from 'caesium-core/lang';
 import {FactoryException} from '../exceptions';
 import {ModelBase} from './base';
-import {ModelMetadata, RefPropertyMetadata} from './metadata';
+import {ModelMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
 export type ModelFactory<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
@@ -22,8 +22,8 @@ export interface PropertyMutation {
 export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelFactory<T> {
     if (modelMeta.isAbstract) {
         throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
-    } 
-    
+    }
+
     function create(args: {[attr: string]: any}) {
         var modelValues = _asMutableModelValues(_initModelValues());
         forEachOwnProperty(args, (value, key) => modelMeta.checkHasPropertyOrRef(key));
@@ -35,6 +35,7 @@ export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata
                 modelValues = refProp.refValueInitializer(modelValues, args[refProp.refName]);
             }
         });
+
         return _createModel(modelMeta, _asImmutableModelValues(modelValues));
     }
 
@@ -72,12 +73,12 @@ export function copyModel<T extends ModelBase>(
     propMutations.forEach((mutation) => {
         var property = modelMeta.properties.get(mutation.propName);
         if (isDefined(property)) {
-            modelValues = property.valueMutator(modelValues, mutation.value);
+            modelValues = property.valueMutator(modelValues, mutation.value, model);
         } else {
             // The property is a RefProperty.
             var propName = modelMeta.refNameMap.get(mutation.propName);
             var refProperty = modelMeta.properties.get(propName) as RefPropertyMetadata;
-            modelValues = refProperty.refValueMutator(modelValues, mutation.value);
+            modelValues = refProperty.refValueMutator(modelValues, mutation.value, model);
         }
     });
 
@@ -112,7 +113,7 @@ function _initModelValues(): ModelValues {
     return {
         initialValues: Map<string,any>(),
         values: Map<string,any>(),
-        resolvedRefs: Map<string,any>()
+        resolvedRefs: Map<string,any>(),
     };
 }
 
@@ -120,7 +121,7 @@ function _asMutableModelValues(modelValues: ModelValues): ModelValues {
     return {
         initialValues: modelValues.initialValues.asMutable(),
         values: modelValues.values.asMutable(),
-        resolvedRefs: modelValues.resolvedRefs.asMutable()
+        resolvedRefs: modelValues.resolvedRefs.asMutable(),
     };
 }
 
@@ -128,6 +129,6 @@ function _asImmutableModelValues(modelValues: ModelValues): ModelValues {
     return {
         initialValues: modelValues.initialValues.asImmutable(),
         values: modelValues.values.asImmutable(),
-        resolvedRefs: modelValues.resolvedRefs.asImmutable()
+        resolvedRefs: modelValues.resolvedRefs.asImmutable(),
     };
 }

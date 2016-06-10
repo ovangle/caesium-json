@@ -72,6 +72,15 @@ export abstract class ManagerBase<T extends ModelBase> {
         this.searchPageSize = options.searchPageSize;
     }
 
+    isManagerFor(type: Type): boolean {
+        if (type === this.getModelType())
+            return true;
+        var subtypes = this.getModelSubtypes();
+        if (!Array.isArray(subtypes))
+            return false;
+        return subtypes.some((stype) => stype === type);
+    }
+
     /// Create a new instance of the modelType.
     create<U extends T>(subtype: Type/*<U>*/, args: {[propName: string]: any}): U {
         var factory: ModelFactory<U>;
