@@ -74,7 +74,10 @@ export abstract class ModelBase {
         var property: BasePropertyMetadata = this.__metadata.properties.get(propNameOrRefName);
         if (!isDefined(property)) {
             var propName = this.__metadata.refNameMap.get(propNameOrRefName);
-            property = this.__metadata.properties.get(propNameOrRefName);
+            property = this.__metadata.properties.get(propName);
+        }
+        if (!isDefined(property)) {
+            throw new PropertyNotFoundException(propNameOrRefName, this);
         }
         return this.__modelValues.resolvedRefs.has(property.name);
     }
@@ -83,9 +86,6 @@ export abstract class ModelBase {
         manager:ManagerBase<ModelBase /* typeof this */>,
         propNameOrRefName:string
     ):Observable<ModelBase /* typeof this */> {
-        if (!manager.isManagerFor(this.__metadata.type)) {
-            throw new ArgumentError(`modelManager must be a manager of ${this.__metadata.type} instances`);
-        }
         if (this.isResolved(propNameOrRefName)) {
             return Observable.of(copyModel(this));
         }
