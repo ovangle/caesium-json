@@ -67,7 +67,7 @@ export class SearchResult<T> {
     private _createPageRequest(pageId:number):Get {
         var request = this.search._requestFactory.get('');
         var requestParams = this.parameters.valuesToStringMap();
-        requestParams['p'] = pageId.toString();
+        requestParams[this.search.pageQueryParam] = pageId.toString();
 
         request.setRequestParameters(requestParams);
         return request;

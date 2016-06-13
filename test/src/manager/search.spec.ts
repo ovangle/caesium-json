@@ -45,7 +45,7 @@ function _mkSearch(
 ): Search<any> {
     var modelHttp = new MockModelHttp(requestHandler);
     var requestFactory = new RequestFactory(modelHttp, {kind: MODEL_KIND} as ModelMetadata);
-    return new Search<any>(requestFactory, parameters, identityConverter, SEARCH_PAGE_SIZE);
+    return new Search<any>(requestFactory, parameters, identityConverter, SEARCH_PAGE_SIZE, 'p');
 }
 
 function _errHandler(options: RequestOptions): RawResponse {

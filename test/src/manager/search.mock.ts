@@ -24,7 +24,8 @@ export class MockSearch extends Search<{a: string}> {
             new RequestFactory(http, {kind: 'test::MyModel'} as ModelMetadata),
             parameters, 
             identityConverter, 
-            2
+            2,
+            'p'
         );
     }
 

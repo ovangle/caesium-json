@@ -13,7 +13,7 @@ import {model, union, JsonObject} from '../json_codecs';
 import {ModelHttp} from './model_http';
 import {RequestFactory, Response} from './request';
 
-import {Search, SearchParameter, SEARCH_PAGE_SIZE} from './search';
+import {Search, SearchParameter, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM} from './search';
 import {NotSupportedError, InvalidMetadata, FactoryException} from "../exceptions";
 
 /**
@@ -24,13 +24,16 @@ import {NotSupportedError, InvalidMetadata, FactoryException} from "../exception
 @Injectable()
 export class ManagerOptions {
     static DefaultSearchPageSize = 20;
+    static DefaultSearchPageQueryParam = 'page';
 
     http: ModelHttp;
     searchPageSize: number;
+    searchPageQueryParam: string;
 
     constructor(
         http: ModelHttp,
-        @Optional()  @Inject(SEARCH_PAGE_SIZE) searchPageSize?: number
+        @Optional() @Inject(SEARCH_PAGE_SIZE) searchPageSize?: number,
+        @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) searchPageQueryParam?: string
     ) {
         this.http = http;
         if (!isDefined(searchPageSize)) {
@@ -38,6 +41,13 @@ export class ManagerOptions {
         } else {
             this.searchPageSize = searchPageSize;
         }
+
+        if (!isDefined(searchPageQueryParam)) {
+            this.searchPageQueryParam = ManagerOptions.DefaultSearchPageQueryParam;
+        } else {
+            this.searchPageQueryParam = searchPageQueryParam;
+        }
+
     }
 }
 
@@ -45,6 +55,7 @@ export abstract class ManagerBase<T extends ModelBase> {
     http: ModelHttp;
     _requestFactory: RequestFactory;
     searchPageSize: number;
+    searchPageQueryParam: string;
 
 
     abstract getModelType(): Type/*<T>*/;
@@ -70,6 +81,7 @@ export abstract class ManagerBase<T extends ModelBase> {
         this.http = options.http;
         this._requestFactory = new RequestFactory(this.http, this.__metadata);
         this.searchPageSize = options.searchPageSize;
+        this.searchPageQueryParam = options.searchPageQueryParam;
     }
 
     isManagerFor(type: Type): boolean {
@@ -174,7 +186,8 @@ export abstract class ManagerBase<T extends ModelBase> {
             this._requestFactory,
             this.getSearchParameters(),
             this.modelCodec,
-            this.searchPageSize
+            this.searchPageSize,
+            this.searchPageQueryParam
         );
     }
 

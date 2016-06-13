@@ -20,6 +20,11 @@ import {RequestFactory} from "./request/factory";
 export {SearchResult, SearchParameter};
 
 export const SEARCH_PAGE_SIZE = new OpaqueToken('cs_search_page_size');
+/**
+ * The query parameter to set when requesting a particular
+ * page of results.
+ */
+export const SEARCH_PAGE_QUERY_PARAM = new OpaqueToken('cs_search_page_query_param');
 
 export interface SearchOptions {
     http: ModelHttp;
@@ -30,6 +35,7 @@ export interface SearchOptions {
 export class Search<T> {
 
     pageSize: number;
+    pageQueryParam: string;
     itemDecoder: Converter<JsonObject,T>;
 
     _requestFactory: RequestFactory;
@@ -41,10 +47,12 @@ export class Search<T> {
         requestFactory: RequestFactory,
         parameters: SearchParameter[],
         itemDecoder: Codec<T,JsonObject> | Converter<JsonObject,T>,
-        pageSize: number
+        pageSize: number,
+        pageQueryParam: string
     ) {
         this._requestFactory = requestFactory;
         this.pageSize = pageSize;
+        this.pageQueryParam = pageQueryParam;
 
         if (isCodec(itemDecoder)) {
             this.itemDecoder = getDecoder(itemDecoder as Codec<T,JsonObject>);
@@ -102,8 +110,11 @@ export class Search<T> {
         if (!keepResponses.last().parameters.equals(params)) {
             var newResponse = keepResponses.last().refine(params);
             keepResponses = keepResponses.push(newResponse);
+            if (!this._resultChange.isUnsubscribed) {
+                console.log('rebuild result stack');
+                this._resultChange.next(keepResponses.last());
+            }
         }
-        this._resultChange.next(keepResponses.last());
         this._resultStack = keepResponses;
     }
 
@@ -113,7 +124,10 @@ export class Search<T> {
             // The result has been discarded. Don't update the stack.
             return result;
         } else if (resultIndex === this._resultStack.count() - 1) {
-            this._resultChange.next(result);
+            if (!this._resultChange.isUnsubscribed) {
+                console.log('update result');
+                this._resultChange.next(result); 
+            }
         }
         this._resultStack = this._resultStack.set(resultIndex, result);
         return result;
