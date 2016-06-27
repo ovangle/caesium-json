@@ -3,7 +3,7 @@ import {Observable} from 'rxjs/Observable';
 
 import {Inject, Injectable, OpaqueToken} from '@angular/core';
 import {
-    RequestMethod, URLSearchParams, Http, Request,
+    RequestMethod, URLSearchParams, Http, Request, Headers,
     RequestOptions as NgRequestOptions
 } from '@angular/http';
 
@@ -56,11 +56,16 @@ export class ModelHttp {
 
 
     request(options: RequestOptions): Observable<RawResponse> {
+
+        var headers = new Headers();
+        headers.set('Content-Type', 'application/json; charset=utf-8');
+
         let request = new Request(new NgRequestOptions({
             method: options.method,
             url: buildEndpointUrl(this.apiHostHref, options.kind, options.endpoint),
             search: stringMapToURLSearchParams(options.params),
-            body: isDefined(options.body)? JSON.stringify(options.body): null
+            body: isDefined(options.body)? JSON.stringify(options.body): null,
+            headers: headers
         }));
 
         return this.http.request(request)
