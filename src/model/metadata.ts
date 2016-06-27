@@ -301,7 +301,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
         // At the moment we scrub readOnly properties from the output,
         // which is not the correct thing to do.
         // Instead we should check property restrictions on the mutator/accessor.
-        var id = new PropertyMetadata({codec: identity, required: false});
+        var id = new PropertyMetadata({codec: identity, allowNull: true, defaultValue: () => null});
         id.contribute(modelMetadata, 'id');
         return id;
     }
