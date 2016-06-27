@@ -1,6 +1,6 @@
 import {Injectable, Inject, Optional} from '@angular/core';
 
-import {Type, isDefined} from 'caesium-core/lang';
+import {Type, isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
 
@@ -36,13 +36,13 @@ export class ManagerOptions {
         @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) searchPageQueryParam?: string
     ) {
         this.http = http;
-        if (!isDefined(searchPageSize)) {
+        if (isBlank(searchPageSize)) {
             this.searchPageSize = ManagerOptions.DefaultSearchPageSize;
         } else {
             this.searchPageSize = searchPageSize;
         }
 
-        if (!isDefined(searchPageQueryParam)) {
+        if (isBlank(searchPageQueryParam)) {
             this.searchPageQueryParam = ManagerOptions.DefaultSearchPageQueryParam;
         } else {
             this.searchPageQueryParam = searchPageQueryParam;
