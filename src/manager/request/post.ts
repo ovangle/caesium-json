@@ -44,7 +44,7 @@ export class Post<T> implements Request {
             method: RequestMethod.Post,
             kind: this.kind,
             endpoint: this.endpoint,
-            body: this.body
+            body: this.encoder(this.body)
         });
         return new _ObjectResponseImpl(this, observable);
     }
