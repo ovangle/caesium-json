@@ -8,7 +8,7 @@ import {setBaseTestProviders} from "@angular/core/testing";
 import {
     TEST_BROWSER_DYNAMIC_PLATFORM_PROVIDERS,
     TEST_BROWSER_DYNAMIC_APPLICATION_PROVIDERS
-} from "@angular/platform-browser-dynamic/testing/browser";
+} from "@angular/platform-browser-dynamic/testing";
 
 import {exceptionsTests} from './src/exceptions.spec';
 import {managerTests} from "./src/manager.spec";
