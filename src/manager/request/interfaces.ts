@@ -13,6 +13,7 @@ export interface Request {
     kind: string;
     endpoint: string;
     http: ModelHttp;
+    withCredentials: boolean;
 
     send(): Response;
 }

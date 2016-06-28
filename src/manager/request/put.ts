@@ -14,21 +14,20 @@ export class Put<T> implements Request {
     kind: string;
     endpoint: string;
     http: ModelHttp;
+    withCredentials: boolean;
 
     encoder: Converter<T, JsonObject>;
     body: T;
 
     constructor(http: ModelHttp, kind: string, endpoint: string,
-                bodyEncoder: Codec<T,JsonObject> | Converter<T,JsonObject>) {
+                bodyEncoder: Converter<T,JsonObject>,
+                withCredentials: boolean) {
         this.kind = kind;
         this.http = http;
         this.endpoint = endpoint;
+        this.withCredentials = withCredentials;
+        this.encoder = bodyEncoder;
 
-        if (isCodec(bodyEncoder)) {
-            this.encoder = getEncoder(bodyEncoder as Codec<T,JsonObject>);
-        } else {
-            this.encoder = bodyEncoder as Converter<T,JsonObject>;
-        }
     }
 
     setRequestBody(body: T): Put<T> {
@@ -44,7 +43,8 @@ export class Put<T> implements Request {
             method: RequestMethod.Put,
             kind: this.kind,
             endpoint: this.endpoint,
-            body: this.encoder(this.body)
+            body: this.encoder(this.body),
+            withCredentials: this.withCredentials
         });
         return new _ObjectResponseImpl(this, observable);
     }

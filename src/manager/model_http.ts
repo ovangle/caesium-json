@@ -20,6 +20,7 @@ export interface RequestOptions {
     endpoint: string;
     params?: {[param: string]: string};
     body?: JsonObject;
+    withCredentials: boolean;
 }
 
 export interface RawResponse {
@@ -65,7 +66,8 @@ export class ModelHttp {
             url: buildEndpointUrl(this.apiHostHref, options.kind, options.endpoint),
             search: stringMapToURLSearchParams(options.params),
             body: isDefined(options.body)? JSON.stringify(options.body): null,
-            headers: headers
+            headers: headers,
+            withCredentials: options.withCredentials
         }));
 
         return this.http.request(request)

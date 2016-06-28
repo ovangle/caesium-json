@@ -6,25 +6,28 @@ export class Get implements Request {
     kind: string;
     endpoint:string;
     http:ModelHttp;
-    
+    withCredentials: boolean;
+
     params: {[key: string]: string};
 
-    constructor(http: ModelHttp, kind: string, endpoint: string) {
+    constructor(http: ModelHttp, kind: string, endpoint: string, withCredentials: boolean) {
         this.http = http;
         this.kind = kind;
         this.endpoint = endpoint;
+        this.withCredentials = withCredentials;
     }
-    
+
     setRequestParameters(params: {[key: string]: string}) {
         this.params = params;
     }
 
     send():Response {
-        var rawResponses = this.http.request({  
+        var rawResponses = this.http.request({
             method: RequestMethod.Get,
             kind: this.kind,
             endpoint: this.endpoint,
-            params: this.params
+            params: this.params,
+            withCredentials: this.withCredentials
         });
 
         return new _ObjectResponseImpl(this, rawResponses);
