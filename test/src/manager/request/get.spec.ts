@@ -27,7 +27,7 @@ export function getTests() {
 
             var modelHttp = new MockModelHttp(respond);
 
-            var request = new Get(modelHttp, 'test::MyModel', 'get_endpoint');
+            var request = new Get(modelHttp, 'test::MyModel', 'get_endpoint', true);
             var response = request.send();
 
             response.handle({select: 200, decoder: identityConverter})

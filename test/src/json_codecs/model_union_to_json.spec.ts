@@ -55,6 +55,7 @@ function codecTests() {
 
             expect(codec.encode(instanceA)).toEqual({
                 kind: 'test::ModelA',
+                id: null,
                 prop_one: 'hello world'
             });
 
@@ -63,6 +64,7 @@ function codecTests() {
 
             expect(codec.encode(instanceB)).toEqual({
                 kind: 'test::ModelB',
+                id: null,
                 prop_two: 'goodbye'
             });
         });

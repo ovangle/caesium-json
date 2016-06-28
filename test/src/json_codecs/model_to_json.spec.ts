@@ -45,6 +45,7 @@ function modelTests() {
             });
 
             expect(codec.encode(instance)).toEqual({
+                id: null,
                 kind: 'test::Submodel',
                 name: 'henry',
                 aliases: ['hank'],

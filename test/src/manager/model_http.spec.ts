@@ -38,6 +38,7 @@ function _testModelHttp() {
                         'http://host/mymodel/method_endpoint?p_one=one&p_two=two'
                     );
                     expect(request.text()).toBe('{"json":"request"}');
+                    expect(request.withCredentials).toBe(true);
 
                     var response = new Response(new ResponseOptions({
                         url: request.url,
@@ -53,7 +54,8 @@ function _testModelHttp() {
                     kind: 'mymodel::MyModel',
                     endpoint: 'method_endpoint',
                     params: {'pOne': 'one', 'pTwo': 'two'},
-                    body: {'json': 'request'}
+                    body: {'json': 'request'},
+                    withCredentials: true
                 }).toPromise().then((response) => {
                     expect(response).toEqual({
                         status: 200,
@@ -61,6 +63,41 @@ function _testModelHttp() {
                     });
                 });
 
+        }));
+
+        it('should be possible to submit a request without credentials', inject([MockBackend, ModelHttp],
+            (backend: MockBackend, http: ModelHttp) => {
+                backend.connections.subscribe((connection:MockConnection) => {
+                    var request = connection.request;
+                    expect(request.method).toBe(RequestMethod.Put);
+                    expect(request.url).toBe(
+                        'http://host/mymodel/method_endpoint?p_one=one&p_two=two'
+                    );
+                    expect(request.text()).toBe('{"json":"request"}');
+                    expect(request.withCredentials).toBe(false);
+
+                    var response = new Response(new ResponseOptions({
+                        url: request.url,
+                        status: 200,
+                        body: '{"json":"response"}'
+                    }));
+
+                    connection.mockRespond(response);
+                });
+
+                return http.request({
+                    method: RequestMethod.Put,
+                    kind: 'mymodel::MyModel',
+                    endpoint: 'method_endpoint',
+                    params: {'pOne': 'one', 'pTwo': 'two'},
+                    body: {'json': 'request'},
+                    withCredentials: false
+                }).toPromise().then((response) => {
+                    expect(response).toEqual({
+                        status: 200,
+                        body: {'json': 'response'}
+                    });
+                });
         }));
     });
 }

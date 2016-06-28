@@ -98,7 +98,7 @@ function modelCodecTests() {
             var codec = manager.modelCodec;
 
             expect(codec.encode(manager.create(MyModel, {})))
-                .toEqual({'kind': 'test::MyModel'});
+                .toEqual({id: null, 'kind': 'test::MyModel'});
 
             expect(codec.decode({'kind': 'test::MyModel'}))
                 .toEqual(jasmine.any(MyModel));
@@ -110,12 +110,12 @@ function modelCodecTests() {
 
             expect(codec.encode(manager.create(AbstractModelImpl1, {})))
                 .toEqual(
-                    {'kind': 'test::AbstractModelImpl1'},
+                    {'kind': 'test::AbstractModelImpl1', id: null},
                     'should encode as AbstractModelImpl1'
                 );
             expect(codec.encode(manager.create(AbstractModelImpl2, {})))
                 .toEqual(
-                    {'kind': 'test::AbstractModelImpl2'},
+                    {'kind': 'test::AbstractModelImpl2', id: null},
                     'should encode as AbstractModelImpl2'
                 );
 
