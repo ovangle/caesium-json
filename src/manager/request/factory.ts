@@ -31,16 +31,17 @@ export class RequestFactory {
 
     put<T>(endpoint: string, bodyEncoder: Codec<T,JsonObject>|Converter<T,JsonObject>,
             withCredentials?: boolean) {
-        bodyEncoder = this.getEncoder(bodyEncoder);
+        var encoder = this.getEncoder(bodyEncoder);
         withCredentials = this.withCredentialsDefault(withCredentials);
         return new Put<T>(this.http, this.modelMetadata.kind, endpoint,
-                          this.getEncoder(bodyEncoder), withCredentials);
+                          encoder, withCredentials);
     }
 
     post<T>(endpoint: string, bodyEncoder: Codec<T, JsonObject>|Converter<T,JsonObject>,
             withCredentials?: boolean) {
+        var encoder = this.getEncoder(bodyEncoder);
         withCredentials = this.withCredentialsDefault(withCredentials);
-        return new Post<T>(this.http, this.modelMetadata.kind, endpoint, bodyEncoder, withCredentials);
+        return new Post<T>(this.http, this.modelMetadata.kind, endpoint, encoder, withCredentials);
     }
 
     delete(endpoint: string, withCredentials?: boolean) {
@@ -48,8 +49,7 @@ export class RequestFactory {
         return new Delete(this.http, this.modelMetadata.kind, endpoint, withCredentials);
     }
 
-    private getEncoder<T>(encoder: Codec<T,JsonObject>|Converter<T,JsonObject>) {
-
+    private getEncoder<T>(encoder: Codec<T,JsonObject>|Converter<T,JsonObject>): Converter<T,JsonObject> {
         if (isCodec(encoder)) {
             return getEncoder(encoder as Codec<T,JsonObject>);
         } else {
