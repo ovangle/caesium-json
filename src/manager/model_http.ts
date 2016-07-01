@@ -1,6 +1,8 @@
 import 'rxjs/add/operator/map';
 import {Observable} from 'rxjs/Observable';
 
+import {List} from 'immutable';
+
 import {Inject, Injectable, OpaqueToken} from '@angular/core';
 import {
     RequestMethod, URLSearchParams, Http, Request, Headers,
@@ -55,11 +57,26 @@ export class ModelHttp {
         this.apiHostHref = apiHostHref;
     }
 
+    //TODO: Don't use session authentication, use JWT tokens instead.
+    private _getCSRFToken() {
+        var name = 'csrftoken';
+        if (document.cookie && document.cookie !== '') {
+            var csrfCookie= List<string>(document.cookie.split(';')).valueSeq()
+                .map(cookie => cookie.trim())
+                .find(cookie => cookie.substring(0, name.length) === name);
+            if (csrfCookie !== null) {
+                return decodeURIComponent(csrfCookie.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
 
     request(options: RequestOptions): Observable<RawResponse> {
 
         var headers = new Headers();
         headers.set('Content-Type', 'application/json; charset=utf-8');
+        headers.set('X-CSRFToken', this._getCSRFToken());
 
         let request = new Request(new NgRequestOptions({
             method: options.method,
