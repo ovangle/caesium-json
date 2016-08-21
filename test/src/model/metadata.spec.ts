@@ -54,7 +54,7 @@ function modelMetadataTests() {
         it('should be possible to get a name from an associated property name', () => {
             class Foo {}
             var metadata = _mkModelMetadata('test::MyModel', Foo, {
-                'refId': new RefPropertyMetadata({refName: 'ref'})
+                'refId': new RefPropertyMetadata({refName: 'ref', refType: Foo})
             });
 
             expect(metadata.refNameMap.get('ref')).toBe('refId');
@@ -146,7 +146,7 @@ function refPropertyMetadataTests() {
         var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
 
         it('should not be possible to contribute a reserved name to a property', () => {
-            var property = new RefPropertyMetadata({refName: 'valueProp'});
+            var property = new RefPropertyMetadata({refName: 'valueProp', refType: null});
             for (let name of ['kind', 'metadata', 'get', 'set', 'delete']) {
                 expect(() => property.contribute(modelMeta, name)).toThrow();
             }
@@ -158,7 +158,7 @@ function refPropertyMetadataTests() {
             var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
             modelMeta.contribute(Foo, Map({prop: new PropertyMetadata({codec: identity})}));
 
-            var property = new RefPropertyMetadata({refName: 'prop'});
+            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
             expect(() => property.contribute(modelMeta, 'propName')).toThrow();
         });
 
@@ -172,7 +172,7 @@ function refPropertyMetadataTests() {
 
 
         it('should be able to initialize a property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop'});
+            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -211,7 +211,7 @@ function refPropertyMetadataTests() {
         });
 
         it('should be able to mutate a property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop'});
+            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -230,7 +230,7 @@ function refPropertyMetadataTests() {
 
 
         it('should be able to access property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop'});
+            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -252,7 +252,7 @@ function refPropertyMetadataTests() {
         });
 
         it('should not consider a ref value initialized to `undefined` to be resolved', () => {
-            var property = new RefPropertyMetadata({refName: 'prop'});
+            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {

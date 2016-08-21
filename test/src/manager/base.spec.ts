@@ -159,7 +159,7 @@ function getByIdTests() {
 
 @Model({kind: 'test::ReferencingModel'})
 abstract class ReferencingModel extends ModelBase {
-    @RefProperty({refName: 'ref'})
+    @RefProperty({refName: 'ref', refType: MyModel})
     refId: number;
     ref: MyModel;
 }

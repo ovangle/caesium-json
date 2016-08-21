@@ -1,6 +1,8 @@
 import {Map, Set, List, Iterable} from 'immutable';
 
-import {Type, isBlank, isDefined} from 'caesium-core/lang';
+import {resolveForwardRef} from '@angular/core';
+
+import {Type, isBlank, isDefined, isFunction} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
@@ -331,6 +333,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
 
 export interface RefPropertyOptions extends BasePropertyOptions {
     refName: string;
+    refType: Type;
 }
 
 /**
@@ -371,6 +374,11 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
      */
     refName: string;
 
+    /**
+     * The type of the referenced model
+     */
+    refType: Type;
+
     codec = identity;
 
     backRef: BackRefPropertyMetadata;
@@ -378,6 +386,10 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
     constructor(options: RefPropertyOptions) {
         super(options);
         this.refName = options.refName;
+        if (!isDefined(options.refType)) {
+            throw new ArgumentError('Cannot resolve refType. Try a forwardRef');
+        }
+        this.refType = options.refType;
     }
 
     get hasBackRef(): boolean {

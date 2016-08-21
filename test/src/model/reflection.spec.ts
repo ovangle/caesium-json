@@ -19,7 +19,7 @@ abstract class MySubmodel extends MyModel {
 
 @Model({kind: 'test::MyRefModel'})
 abstract class MyRefModel extends ModelBase {
-    @RefProperty({refName: 'ref'})
+    @RefProperty({refName: 'ref', refType: MyModel})
     refId: string;
 
     ref: MyModel;

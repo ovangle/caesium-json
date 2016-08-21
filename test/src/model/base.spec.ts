@@ -22,11 +22,11 @@ abstract class ReferencedModel extends ModelBase {
 
 @Model({kind: 'test::ReferencingModel'})
 abstract class ReferencingModel extends ModelBase {
-    @RefProperty({refName: 'ref'})
+    @RefProperty({refName: 'ref', refType: MyBackRefModel})
     refId: number;
     ref: MyBackRefModel;
 
-    @RefProperty({refName: 'multiRef'})
+    @RefProperty({refName: 'multiRef', refType: MyMultiBackRefModel})
     multiRefId: number;
     multiRef: MyMultiBackRefModel;
 }

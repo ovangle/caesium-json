@@ -14,7 +14,7 @@ abstract class MyModel extends ModelBase {
     @Property({codec: list(str), defaultValue: List})
     listProp: List<string>;
 
-    @RefProperty({refName: 'ref'})
+    @RefProperty({refName: 'ref', refType: MyBackRefModel})
     refId: number;
     ref: MyBackRefModel;
 

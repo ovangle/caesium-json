@@ -20,6 +20,7 @@ class ModelResolver implements Resolver<ModelMetadata> {
     }
 
     resolve(type: Type) {
+        type = resolveForwardRef(type);
         if (!this._resolved.has(type)) {
             this._resolved.set(type, _resolveModelMetadata(type));
         }
