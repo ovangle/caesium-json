@@ -1,3 +1,6 @@
+import moment = require('moment');
+import {Moment} from 'moment';
+
 import {List, Map} from 'immutable';
 import {isBlank} from 'caesium-core/lang';
 import {Codec, identity} from 'caesium-core/codec';
@@ -14,16 +17,34 @@ export const date: Codec<Date,string> = {
     encode: (date: Date) => {
         if (isBlank(date))
             return date as any;
+        var m = moment(date);
+        return m.format('YYYY-MM-DD');
+    },
+    decode: (value: string) => {
+        if (isBlank(value))
+            return value as any;
+        var m = moment(value, 'YYYY-MM-DD', true);
+        if (!m.isValid()) {
+            throw new EncodingException(`Not a valid date format (use YYYY-MM-DD) ${value}`)
+        }
+        return m.toDate();
+    }
+};
+
+export const dateTime: Codec<Date,string> = {
+    encode: (date: Date) => {
+        if (isBlank(date))
+            return date as any;
         return date.toISOString();
     },
     decode: (value: string) => {
         if (isBlank(value))
             return value as any;
-
-        var d = Date.parse(value);
-        if (isNaN(d))
-            throw new EncodingException(`invalid iso8601 date (${str})`);
-        return new Date(d);
+        var m: Moment = moment(value, moment.ISO_8601, true);
+        if (!m.isValid()) {
+            throw new EncodingException(`Invalid iso8601 datetime (${str}`);
+        }
+        return m.toDate();
     }
 };
 
