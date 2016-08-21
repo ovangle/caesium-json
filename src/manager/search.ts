@@ -42,6 +42,9 @@ export class Search<T> {
     protected _resultStack: List<SearchResult<T>>;
 
     protected _resultChange: Subject<SearchResult<T>>;
+    protected _onReset: Subject<void>;
+
+    private _parameterDefns: SearchParameter[];
 
     constructor(
         requestFactory: RequestFactory,
@@ -61,11 +64,14 @@ export class Search<T> {
         }
 
         this._resultChange = new Subject<SearchResult<T>>();
+        this._onReset = new Subject<void>();
+        this._parameterDefns = parameters;
 
-        var initialParams = new SearchParameterMap(parameters);
+        var initialParams = new SearchParameterMap(this._parameterDefns);
         this._resultStack = List<SearchResult<T>>([
             new SearchResult(this, initialParams)
         ]);
+        this._onReset.next(null);
     }
 
     /// The active result
@@ -74,6 +80,7 @@ export class Search<T> {
     }
 
     get resultChange(): Observable<SearchResult<T>> { return this._resultChange; }
+    get onReset(): Observable<any> { return this._onReset; }
 
     getParamValue(param: string, notSetValue?: any): any {
         return this.result.parameters.get(param, notSetValue);
@@ -95,6 +102,7 @@ export class Search<T> {
 
     dispose() {
         this._resultChange.complete();
+        this._onReset.complete();
     }
 
     protected _rebuildResponseStack(params: SearchParameterMap) {
@@ -110,12 +118,9 @@ export class Search<T> {
         if (!keepResponses.last().parameters.equals(params)) {
             var newResponse = keepResponses.last().refine(params);
             keepResponses = keepResponses.push(newResponse);
-            if (!this._resultChange.isUnsubscribed) {
-                console.log('rebuild result stack');
-                this._resultChange.next(keepResponses.last());
-            }
         }
         this._resultStack = keepResponses;
+        this._resultChange.next(keepResponses.last());
     }
 
     updateResult(result: SearchResult<T>): SearchResult<T> {
@@ -126,10 +131,21 @@ export class Search<T> {
         } else if (resultIndex === this._resultStack.count() - 1) {
             if (!this._resultChange.isUnsubscribed) {
                 console.log('update result');
-                this._resultChange.next(result); 
+                this._resultChange.next(result);
             }
         }
         this._resultStack = this._resultStack.set(resultIndex, result);
         return result;
     }
+
+    reset(): Search<T> {
+        return new Search<T>(
+            this._requestFactory,
+            this._parameterDefns,
+            this.itemDecoder,
+            this.pageSize,
+            this.pageQueryParam
+        );
+    }
+
 }
