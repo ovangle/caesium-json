@@ -13,7 +13,7 @@ export class Delete<T> implements Request {
 
     constructor(http: ModelHttp, kind: string, endpoint: string, withCredentials: boolean) {
         this.http = http;
-        this.kind = kind
+        this.kind = kind;
         this.endpoint = endpoint;
         this.withCredentials = withCredentials;
     }
@@ -23,7 +23,8 @@ export class Delete<T> implements Request {
             method: RequestMethod.Delete,
             kind: this.kind,
             endpoint: this.endpoint,
-            withCredentials: this.withCredentials
+            withCredentials: this.withCredentials,
+            isEmptyResponse: true
         });
         return new _ObjectResponseImpl(this, observable);
     }

@@ -23,6 +23,7 @@ export interface RequestOptions {
     params?: {[param: string]: string};
     body?: JsonObject;
     withCredentials: boolean;
+    isEmptyResponse?: boolean;
 }
 
 export interface RawResponse {
@@ -88,10 +89,15 @@ export class ModelHttp {
         }));
 
         return this.http.request(request)
-            .map((response) => ({
-                status: response.status,
-                body: response.json()
-            }));
+            .map((response) => {
+                if (options.isEmptyResponse) {
+                    return void 0;
+                }
+                return {
+                    status: response.status,
+                    body: response.json()
+                }
+            });
     }
 }
 

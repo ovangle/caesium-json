@@ -1,6 +1,6 @@
 {
   "name": "caesium-model",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Framework for dealing with the server-client interface in caesium projects",
   "keywords": [
     "center_stage",
@@ -28,6 +28,7 @@
     "@angular/http": "2.0.0-rc.4"
   },
   "devDependencies": {
+    "angular2-template-loader": "^0.4.0",
     "jasmine-core": "2.4.1",
     "live-server": "^0.8.2",
     "systemjs": "^0.19.27",
@@ -35,6 +36,9 @@
     "@angular/common": "2.0.0-rc.4",
     "@angular/compiler": "2.0.0-rc.4",
     "@angular/platform-browser": "2.0.0-rc.4",
-    "@angular/platform-browser-dynamic": "2.0.0-rc.4"
+    "@angular/platform-browser-dynamic": "2.0.0-rc.4",
+    "webpack": "^1.13.0",
+    "webpack-dev-server": "^1.14.1",
+    "webpack-merge": "^0.14.0"
   }
 }
