@@ -1,4 +1,3 @@
-import {HTTP_PROVIDERS} from '@angular/http';
 import {ModelHttp} from './manager/model_http';
 import {ManagerOptions} from './manager/base';
 
@@ -8,10 +7,4 @@ export {
     Search, SearchParameter, SearchResult, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM
 } from './manager/search';
 export {ManagerBase, ManagerOptions} from './manager/base';
-
-export const MANAGER_PROVIDERS = [
-    HTTP_PROVIDERS,
-    ModelHttp,
-    ManagerOptions
-];
 

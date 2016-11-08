@@ -2,15 +2,20 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
+    "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "removeComments": false,
     "declaration": true,
     "noLib": false,
-    "outDir": "dist",
+    //"outDir": "dist",
     "sourceMap": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "typeRoots":  [
+      "node_modules/@types"
+    ]
   },
+  "compileOnSave": true,
   "exclude": [
     "node_modules",
     "dist"

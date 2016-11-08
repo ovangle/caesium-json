@@ -4,7 +4,7 @@ import {Type, isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
 
-import {ModelFactory, createModelFactory} from '../model/factory';
+import {ModelConstructor, createModelFactory} from '../model/factory';
 import {ModelMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
 
@@ -95,7 +95,7 @@ export abstract class ManagerBase<T extends ModelBase> {
 
     /// Create a new instance of the modelType.
     create<U extends T>(subtype: Type/*<U>*/, args: {[propName: string]: any}): U {
-        var factory: ModelFactory<U>;
+        var factory: ModelConstructor<U>;
         if (this.__metadata.isAbstract) {
             var modelSubtypes = this.getModelSubtypes();
             if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {

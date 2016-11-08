@@ -3,7 +3,8 @@ dist/
 node_modules/
 typings/
 **/*.d.ts
-**/*.js
+src/**/*.js
+test/**/*.js
 **/*.js.map
 
 npm-debug.log

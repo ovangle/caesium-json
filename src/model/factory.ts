@@ -6,7 +6,8 @@ import {ModelBase} from './base';
 import {ModelMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
-export type ModelFactory<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
+
+export type ModelConstructor<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
 
 export interface PropertyMutation {
     /*
@@ -19,7 +20,8 @@ export interface PropertyMutation {
     value: any;
 }
 
-export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelFactory<T> {
+
+export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelConstructor<T> {
     if (modelMeta.isAbstract) {
         throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
     }

@@ -129,8 +129,7 @@ export class Search<T> {
             // The result has been discarded. Don't update the stack.
             return result;
         } else if (resultIndex === this._resultStack.count() - 1) {
-            if (!this._resultChange.isUnsubscribed) {
-                console.log('update result');
+            if (!this._resultChange.closed) {
                 this._resultChange.next(result);
             }
         }

@@ -97,6 +97,10 @@ export class ModelMetadata {
         });
     }
 
+    contributeProperty(options?: PropertyOptions): void {
+
+    }
+
     get properties(): Map<string,BasePropertyMetadata> { return this._getProperties(); }
 
     @memoize()

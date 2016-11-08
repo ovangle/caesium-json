@@ -5,52 +5,79 @@
 // We shouldn't be relying on angular implementation details.
 import {makeDecorator, makePropDecorator, TypeDecorator} from '@angular/core/src/util/decorators';
 import {Type} from 'caesium-core/lang';
+import {Codec} from 'caesium-core/codec';
+import {JsonObject} from '../json_codecs';
 
 import {
     ModelMetadata, PropertyMetadata, PropertyOptions, RefPropertyOptions,
     RefPropertyMetadata, BackRefPropertyOptions, BackRefPropertyMetadata
 } from './metadata';
 
-export interface ModelFactory {
-    (obj: {
-        kind: string,
-        superType?: Type,
-        isAbstract?: boolean
-    }): TypeDecorator;
-    new (obj: {
-        kind: string,
-        superType?: Type,
-        isAbstract?: boolean
-    }): ModelMetadata;
+import {createModelFactory} from './factory';
+
+export interface ModelOptions {
+    kind: string;
+    superType?: Type;
+    isAbstract?: boolean;
 }
 
-export interface PropertyFactory {
-    (obj: PropertyOptions): any;
-    new (obj: PropertyOptions): PropertyMetadata;
+export interface ModelConstructor<T> {
+    (...args: any[]): T;
 }
 
-export interface RefPropertyFactory {
-    (obj: RefPropertyOptions): any;
-    new (obj: RefPropertyOptions): RefPropertyMetadata;
+export function Model(options?: ModelOptions) {
+    //console.log('Options', options);
+    function model(constructor: Function) {
+
+        //console.log('Constructor', constructor);
+        return constructor();
+    }
+    return model;
 }
 
-export interface BackRefPropertyFactory {
-    (obj: BackRefPropertyOptions): any;
-    new (obj: BackRefPropertyOptions): BackRefPropertyMetadata;
+export interface BasePropertyOptions {
+    writeOnly?: boolean;
+    readOnly?: boolean;
+    required?: boolean;
+    allowNull?: boolean;
+
+    // TODO: clientOnly?: boolean;
 }
 
+export interface PropertyOptions {
+    // TODO: initial: T
+    defaultValue: () => any;
+    codec: Codec<any,JsonObject>;
+    // TODO: validators: ValidatorFn<T>[]
+}
 
-export const Model: ModelFactory =
-    <ModelFactory>makeDecorator(ModelMetadata);
+export function Property(options?: PropertyOptions) {
+    return function (target: Object, propName: string | symbol){
+        let metadata = new PropertyMetadata(options);
 
-//FIXME: makePropDecorator prevents upgrading to --target ES6
-//makePropDecorator assumes that PropertyMetadata is a function, because ES6 classes
-//require the use of the `new` keyword. Target ES5 compiles typescript classes to functions.
-export const Property: PropertyFactory =
-    <PropertyFactory>makePropDecorator(PropertyMetadata);
+        /*
+        console.log('Property');
+        console.log('\tTarget: ', target);
+        console.log('\tProperty name', propName);
+        */
+    }
+}
 
-export const RefProperty: RefPropertyFactory =
-    <RefPropertyFactory>makePropDecorator(RefPropertyMetadata);
+export interface RefPropertyOptions {
+    refName: string;
+    refType: Type;
 
-export const BackRefProperty: BackRefPropertyFactory = 
-    <BackRefPropertyFactory>makePropDecorator(BackRefPropertyMetadata);
+}
+
+export function RefProperty(options?: RefPropertyOptions) {
+    return function (target: Object, propName: string | symbol) {
+        let metadata = new RefPropertyMetadata(options);
+        /*
+        console.log('RefProperty');
+        console.log('\tTarget: ', target);
+        console.log('\tProperty name', propName);
+        */
+
+    }
+}
+

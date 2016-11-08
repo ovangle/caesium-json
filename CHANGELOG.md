@@ -1,5 +1,6 @@
 # Changelog
 
+
 ## 0.2.0
 
 ### Features
@@ -23,7 +24,9 @@
 - onData, thisArg removed from ResponseHandler and thisArg added to BaseResponseHandler
 - Fixed ModelManager resolution error
 
+
 ## Breaking changes
+- Upgraded @angular/* dependencies to ^2.0.0
 - search parameters are automatically converted to snake_case from camelCase
   All multi-word parameters need to be changed to camelCase
 
