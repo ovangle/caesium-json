@@ -79,60 +79,6 @@ describe('model.metadata', () => {
             expect(() => ModelMetadata.forType(Invalid_UntypedProperty)).toThrow();
         })
 
-        it('should be able to initialize a property', () => {
-            let property = ModelMetadata.forType(Test.ModelOneProperty).properties.get('prop');
-            var modelValues = {
-                initialValues: Map<string,any>(),
-                values: Map<string,any>(),
-                resolvedRefs: Map<string,any>()
-            };
-            var initializedModelValues = property.valueInitializer(modelValues, undefined);
-
-            expect(initializedModelValues.initialValues.toObject())
-                .toEqual({prop: null}, 'should initialize value to property default');
-            expect(initializedModelValues.values.toObject())
-                .toEqual({}, 'should not alter \'values\'');
-
-            var initializedWithArgs = property.valueInitializer(modelValues, true);
-            expect(initializedWithArgs.initialValues.toObject()).toEqual({prop: true},
-                'Providing a defined argument to the initializer should override the default'
-            );
-        });
-
-        it('should be able to mutate a property', () => {
-            let property = ModelMetadata.forType(Test.ModelOneProperty).properties.get('prop');
-
-            var modelValues = {
-                initialValues: Map<string,any>(),
-                values: Map<string,any>(),
-                resolvedRefs: Map<string,any>()
-            };
-
-            var mutatedValues = property.valueMutator(modelValues, true, null);
-            expect(mutatedValues.initialValues.toObject()).toEqual({}, 'should not alter \'initialValues\'');
-            expect(mutatedValues.values.toObject()).toEqual({prop: true});
-        });
-
-
-        it('should be able to access property', () => {
-
-            let property = ModelMetadata.forType(Test.ModelOneProperty).properties.get('prop');
-
-            var modelValues = {
-                initialValues: Map<string,any>({prop: false}),
-                values: Map<string,any>({prop: true}),
-                resolvedRefs: Map<string,any>()
-            };
-
-            expect(property.valueAccessor(modelValues))
-                .toBe(true, 'If property present in \'values\' then that value is returned');
-
-            modelValues.values = Map<string,any>();
-            expect(property.valueAccessor(modelValues))
-                .toBe(false, 'If property not present in \'values\', then the initial value is returned');
-
-        });
-
         it('should have default values for the boolean property attributes', () => {
             let property = ModelMetadata.forType(Test.ModelOneProperty).properties.get('prop');
             expect(property.readOnly).toBe(false, 'readOnly default set');
@@ -156,100 +102,12 @@ describe('model.metadata', () => {
             expect(property.required).toBe(true, 'required default set');
         });
 
-        it('should be able to initialize a property reference', () => {
-            var property = <RefPropertyMetadata>ModelMetadata.forType(Test.ModelOneRefProperty).properties.get('propId');
-
-            var modelValues = {
-                initialValues: Map<string,any>(),
-                values: Map<string,any>(),
-                resolvedRefs: Map<string,any>()
-            };
-
-            var initializedNoInitialValue = property.valueInitializer(modelValues, undefined);
-            expect(initializedNoInitialValue.initialValues.toObject())
-                .toEqual({}, 'should initialize value to property default');
-            expect(initializedNoInitialValue.values.toObject())
-                .toEqual({}, 'should not alter \'values\'');
-
-            var initializedWithArgs = property.valueInitializer(modelValues, 40);
-            expect(initializedWithArgs.initialValues.toObject()).toEqual({propId: 40},
-                'Providing a defined argument to the initializer should override the default'
-            );
-            expect(initializedWithArgs.resolvedRefs.toObject())
-                .toEqual({}, 'Initializing via id should not touch resolvedRefs');
-
-            var initializedViaRef = property.refValueInitializer(modelValues, {id: 40});
-            expect(initializedViaRef.initialValues.toObject())
-                .toEqual({propId: 40}, 'Initializing ref should initialize id value');
-            expect(initializedViaRef.values.toObject()).toEqual({}, 'initializing ref should not touch values');
-            expect(initializedViaRef.resolvedRefs.toObject())
-                .toEqual({propId: {id: 40}}, 'Should have set an initial value for ref');
-
-            // Set ref after initializing id
-            expect(() => property.refValueInitializer(initializedWithArgs, {id: 400})).toThrow();
-
-            // Set id after initializing ref
-            expect(() => property.valueInitializer(initializedViaRef, 400)).toThrow();
-        });
-
-        it('should be able to mutate a property reference', () => {
-            let property = <RefPropertyMetadata>ModelMetadata.forType(Test.ModelOneRefProperty).properties.get('propId');
-
-            var modelValues = {
-                initialValues: Map<string,any>(),
-                values: Map<string,any>(),
-                resolvedRefs: Map<string,any>({propId: {id: 32}, otherId: {id: 68}})
-            };
-
-            var mutatedValues = property.valueMutator(modelValues, 500, null);
-            expect(mutatedValues.initialValues.toObject()).toEqual({}, 'should not alter \'initialValues\'');
-            expect(mutatedValues.values.toObject()).toEqual({propId: 500});
-            expect(mutatedValues.resolvedRefs.toObject())
-                .toEqual({otherId: {id: 68}}, 'should clear any value associated with \'propId\'');
-
-        });
-
-
-        it('should be able to access property reference', () => {
-            let property = <RefPropertyMetadata>ModelMetadata.forType(Test.ModelOneRefProperty).properties.get('propId');
-
-            var modelValues = {
-                initialValues: Map<string,any>({propId: 20}),
-                values: Map<string,any>({propId: 40}),
-                resolvedRefs: Map<string,any>({propId: {id: 500}, prop: {id: 600}})
-            };
-
-            expect(property.valueAccessor(modelValues))
-                .toBe(40, 'If property present in \'values\' then that value is returned');
-
-            modelValues.values = Map<string,any>();
-            expect(property.valueAccessor(modelValues))
-                .toBe(20, 'If property not present in \'values\', then the initial value is returned');
-
-            expect(property.refValueAccessor(modelValues))
-                .toEqual({id: 500}, 'Should retrieve the value associated with prop.name');
-
-        });
 
         //TODO: Test for multi valued properties
         it('should be possible to define a multi-valued refProperty', () => {
             let multiProp = <RefPropertyMetadata>ModelMetadata.forType(Test.OneMultiRefProperty).properties.get('multiPropId');
             expect(multiProp.isMulti).toBe(true);
             // TODO: Need to test mutation and access to property.
-        });
-
-        it('should not consider a ref value initialized to `undefined` to be resolved', () => {
-            var property = <RefPropertyMetadata>ModelMetadata.forType(Test.ModelOneRefProperty).properties.get('propId');
-
-            var modelValues = {
-                initialValues: Map<string,any>(),
-                values: Map<string,any>(),
-                resolvedRefs: Map<string,any>()
-            };
-
-            modelValues = property.refValueInitializer(modelValues, undefined);
-
-            expect(modelValues.resolvedRefs.has('prop')).toBe(false);
         });
     });
 });

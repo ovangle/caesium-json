@@ -1,4 +1,5 @@
-import {OrderedMap, Set, List, Map} from 'immutable';
+import {OrderedMap, Set, List, Map, Iterable} from 'immutable';
+
 
 import {forwardRef, resolveForwardRef} from '@angular/core';
 
@@ -12,11 +13,10 @@ import {
 import {ModelNotFoundException} from './exceptions';
 import {num} from '../json_codecs';
 
-import {ModelTypeProxy} from './type_proxy';
-
 import {ModelOptions, BasePropertyOptions, defaultPropertyOptions, PropertyOptions, RefPropertyOptions} from './decorators';
+import {ModelConstructor} from './factory';
 import {ModelBase} from "./base";
-import {ModelValues} from './values';
+import {ModelValues, Accessor, ValueAccessor, RefAccessor} from './values';
 
 const _VALID_KIND_MATCH = /([a-z](?:\.[a-z])*)::([a-zA-Z]+)/;
 
@@ -87,6 +87,11 @@ export class BasePropertyMetadata {
      */
     isMulti: boolean;
 
+    /**
+     * The value accessor for mutating model values.
+     */
+    valueAccessor: Accessor<this>;
+
     constructor(public modelType: Type, public name: string, public type: Type, options: BasePropertyOptions) {
         this.name = name;
 
@@ -118,90 +123,7 @@ export class BasePropertyMetadata {
             throw new InvalidMetadata(`${this.name} is a reserved name and cannot be the name of a property`);
     }
 
-    /**
-     * Get the value from the model values
-     * @param modelValues
-     * @returns {any}
-     */
-    valueAccessor(modelValues: ModelValues): any {
-        if (modelValues.values.has(this.name)) {
-            return modelValues.values.get(this.name);
-        } else {
-            return modelValues.initialValues.get(this.name);
-        }
-    }
 
-    /**
-     * Initialize the value in the modelValues.
-     * @param modelValues
-     * @param value
-     * Contextual information for the initializer
-     * @returns {{initialValues: Map<string, any>, values: Map<string, any>}}
-     */
-    valueInitializer(modelValues: ModelValues, value: any): ModelValues {
-        var initialValues = modelValues.initialValues;
-        if (initialValues.has(this.name))
-            throw new StateException(`Property ${this.name} already initialized`);
-
-        if (isDefined(value)) {
-            initialValues = initialValues.set(this.name, value);
-        } else if (isDefined(this.defaultValue)) {
-            initialValues = modelValues.initialValues.set(this.name, this.defaultValue());
-        }
-
-        return {
-            initialValues: initialValues,
-            values: modelValues.values,
-            resolvedRefs: modelValues.resolvedRefs
-        }
-    }
-
-    /**
-     * Mutate the value in the modelValues
-     *
-     * @param modelValues: The current model state
-     * @param value: The new value of the property
-     * @param context: Context for the mutator
-     * @returns ModelValues: The new model state
-     */
-    valueMutator(modelValues: ModelValues, value: any, modelThis: ModelBase): ModelValues {
-        let values = modelValues.values;
-
-        console.log('previous value (expected)\t', values.get(this.name));
-
-        let updatedValues = modelValues.values.set(this.name, value);
-
-        console.log('previous value (actual)\t\t', values.get(this.name));
-        console.log('current value\t\t\t\t', updatedValues.get(this.name));
-
-
-        return {
-            initialValues: modelValues.initialValues,
-            values: updatedValues,
-            resolvedRefs: modelValues.resolvedRefs
-        };
-    }
-
-    get descriptor(): TypedPropertyDescriptor<any> {
-        let propName = this.name;
-        return {
-            get: function() {
-                // Don't use fat arrow syntax, the 'this' in this context should refer
-                // to the model.
-                return this.get(propName);
-            },
-            set: function(value) {
-                // We know we have completed construction once the object is frozen.
-                if (Object.isFrozen(this)) {
-                    throw new TypeError('Cannot set value of ' + propName);
-                }
-                // While constructing the object, set should be a no-op, because we can't prevent the generated
-                // typescript from assigning to `this`.
-            },
-            enumerable: true,
-            configurable: false
-        };
-    }
 }
 
 /**
@@ -209,8 +131,7 @@ export class BasePropertyMetadata {
  * serialized onto the model.
  */
 export class PropertyMetadata extends BasePropertyMetadata {
-    static _idPropertyOptions = Object.assign({}, defaultPropertyOptions, {codec: num, readOnly: true, allowNull: true});
-    /**
+   /**
      * All models have an Id property. The id can be any type, as long as the type can be
      * converted using an `identity` codec.
      *
@@ -220,7 +141,14 @@ export class PropertyMetadata extends BasePropertyMetadata {
      * @returns {PropertyMetadata}
      * @constructor
      */
-    static idProperty = new PropertyMetadata(ModelBase, name, Number, PropertyMetadata._idPropertyOptions);
+   static idProperty(name?: string) {
+        name = name || 'id';
+        let _idPropertyOptions = Object.assign({}, defaultPropertyOptions, {
+            codec: num, readOnly: true, allowNull: true
+        });
+
+        return new PropertyMetadata(ModelBase, name, Number, _idPropertyOptions);
+   }
 
     isRef = false;
 
@@ -240,6 +168,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
         super(modelType, name, paramType, options);
         this.defaultValue = options.defaultValue;
         this.codec = options.codec;
+        this.valueAccessor = <Accessor<this>>new ValueAccessor(this);
         Object.freeze(this);
     }
 
@@ -288,6 +217,8 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
      */
     refType: Type;
 
+    defaultValue: () => null;
+
     codec = identity;
 
     isMulti: boolean;
@@ -301,92 +232,9 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         }
         this.refType = options.refType;
         this.isMulti = options.isMulti;
+
+        this.valueAccessor = <any>new RefAccessor(this, PropertyMetadata.idProperty(this.name));
         Object.freeze(this);
-    }
-
-    checkValid(modelMetadata: ModelMetadata) {
-        super.checkValid(modelMetadata);
-        if (modelMetadata.properties.has(this.refName)) {
-            throw new InvalidMetadata(
-                'The `refName` of a property must not be annotated with @Property (or @RefProperty)'
-            );
-        }
-    }
-
-
-    valueInitializer(modelValues: ModelValues, value: any): ModelValues {
-        if (isDefined(value) && modelValues.resolvedRefs.has(this.name)) {
-            throw new StateException(`Property ${this.name} already initialized (via ref)`);
-        }
-        return super.valueInitializer(modelValues, value);
-    }
-
-    valueMutator(modelValues: ModelValues, value: any, modelThis: ModelBase): ModelValues {
-        modelValues = super.valueMutator(modelValues, value, modelThis);
-        // Clear the value of any resolved reference.
-        // Currently only the id is known.
-        return {
-            initialValues: modelValues.initialValues,
-            values: modelValues.values,
-            resolvedRefs: modelValues.resolvedRefs.delete(this.name)
-        };
-    }
-
-    /**
-     * Gets the resolved value of the reference property.
-     * Otherwise returns `undefined`.
-     * @param modelValues
-     * @returns {any}
-     */
-    refValueAccessor(modelValues: ModelValues) {
-        return modelValues.resolvedRefs.get(this.name);
-    }
-
-    private _setIdValue(values: Map<string, any>, refValue: {id: any}): Map<string,any> {
-        return values.set(this.name, isBlank(refValue) ? refValue : refValue.id);
-    }
-
-    refValueInitializer(modelValues: ModelValues, value: any): ModelValues {
-        if (!isBlank(value) && !hasIdProperty(value)) {
-            throw new TypeError('A model reference value must either be `null`, `undefined` or have an `id` property');
-        }
-        if (isDefined(value) && modelValues.initialValues.has(this.name)) {
-            throw new StateException(`Property ${this.name} already initialized (via ref)`);
-        }
-        if (!isDefined(value))
-            return modelValues;
-
-        return {
-            initialValues: this._setIdValue(modelValues.initialValues, value),
-            values: modelValues.values,
-            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
-        }
-    }
-
-    refValueMutator(modelValues: ModelValues, value: any, modelThis: ModelBase): ModelValues {
-        if (!isBlank(value) && !hasIdProperty(value)) {
-            throw new TypeError('A model reference must either be `null`, `undefined` or have an `id` property');
-        }
-
-        // Otherwise, directly mutating the reference will also mutate the id.
-        return {
-            initialValues: modelValues.initialValues,
-            values: this._setIdValue(modelValues.values, value),
-            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
-        }
-    }
-
-    get refDescriptor(): TypedPropertyDescriptor<any> {
-        let refName = this.refName;
-        return {
-            get: function() {
-                // Don't use fat arrow syntax, the 'this' in this context should refer
-                // to the model.
-                return this.get(refName);
-            },
-            enumerable: true,
-            configurable: false
-        };
     }
 }
 
@@ -408,16 +256,10 @@ export class ModelMetadata {
     static _modelBaseMetadata = new ModelMetadata(
         forwardRef(() => ModelBase),
         OrderedMap <string, PropertyMetadata>([
-            ['id', PropertyMetadata.idProperty]
+            ['id', PropertyMetadata.idProperty()]
         ]),
         { kind: 'core::ModModelBase' /* TODO: Get rid of fucking kind. */}
     );
-
-    static _create( type: Type,
-                    ownProperties: OrderedMap<string,PropertyMetadata>,
-                    options: ModelOptions) {
-        return new ModelMetadata(type, ownProperties, options);
-    }
 
     kind: string;
 
@@ -482,7 +324,7 @@ export class ModelMetadata {
         return this._getRefNameMap();
     }
 
-    private constructor(
+    constructor(
         type: Type,
         ownProperties: OrderedMap<string,PropertyMetadata>,
         options: ModelOptions
@@ -515,6 +357,19 @@ export class ModelMetadata {
         });
     }
 
+    getProperty(propNameOrRefName: string): PropertyMetadata {
+        let propName: string;
+        if (this.refNameMap.has(propNameOrRefName)) {
+            propName = this.refNameMap.get(propNameOrRefName);
+        } else {
+            propName = propNameOrRefName;
+        }
+        if (!this.properties.has(propName)) {
+            throw new PropertyNotFoundException(propNameOrRefName, this);
+        }
+        return this.properties.get(propName);
+    }
+
 
     checkHasPropertyOrRef(propNameOrRefName: string): void {
         var hasProperty = this.properties.has(propNameOrRefName)
@@ -527,22 +382,14 @@ export class ModelMetadata {
 
     toString() { return `ModelMetadata(${this.kind})`}
 
-    @memoize()
-    private _getPropertyDescriptors(): PropertyDescriptorMap {
-        let descriptorMap: PropertyDescriptorMap = {};
-        this.properties.forEach(prop => {
-            descriptorMap[prop.name] = prop.descriptor;
-            if (prop.isRef) {
-                let refProp = <RefPropertyMetadata>prop;
-                descriptorMap[refProp.refName] = refProp.refDescriptor;
-            }
-        });
-        return descriptorMap;
+    get valueAccessors(): Iterable.Keyed<string, ValueAccessor> {
+        return this._getValueAccessors();
     }
-
-    prepareInstance(obj: any): void {
-        let prototype = Object.create(Object.getPrototypeOf(obj), this._getPropertyDescriptors());
-        Object.setPrototypeOf(obj, prototype);
+    @memoize()
+    private _getValueAccessors(): Iterable.Keyed<string, ValueAccessor> {
+        return this.properties
+            .map(property => property.valueAccessor)
+            .toKeyedSeq();
     }
 }
 
@@ -594,7 +441,7 @@ export function buildModelMetadata(type: Type, typeProxy: any): ModelMetadata {
         options.superType = superTypeMeta.type;
     }
 
-    let metadata = ModelMetadata._create(typeProxy, buildOwnPropertyMap(type), options);
+    let metadata = new ModelMetadata(typeProxy, buildOwnPropertyMap(type), options);
     metadata.checkValid();
     return metadata;
 }

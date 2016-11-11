@@ -46,21 +46,24 @@ class AbstractModel extends ModelBase {
 class MyBackRefModel extends ModelBase {
 }
 
+
 describe('model.factory', () => {
     describe('createModel', () => {
-        var factory = createModelFactory<MyModel>(MyModel);
         it('should be possible to create a new instance of a model with no initial property values', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({});
             expect(instance).toEqual(jasmine.any(MyModel));
             expect(instance.prop).toBeNull();
         });
 
         it('should provide default values for any properties with a defaultValue', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({});
             expect(instance.listProp).toEqual(List());
         });
 
         it('should be possible to provide initial values for properties', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({
                 prop: 'hello world',
                 listProp: List(['a', 'b', 'c'])
@@ -70,12 +73,14 @@ describe('model.factory', () => {
         });
 
         it('should be possible to set initial values for both the ref property and it\'s value', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({refId: 40});
             expect(instance.refId).toBe(40, 'Set refId directly');
 
-            var instance = factory({ref: {id: 40}});
+            let reference = new MyBackRefModel(40);
+            var instance = factory({ref: reference});
             expect(instance.refId).toBe(40, 'Set refId via ref');
-            expect(instance.ref).toEqual({id: 40}, 'Set ref property');
+            expect(instance.ref).toBe(reference, 'Set ref property');
 
             var instance = factory({refId: null});
             expect(instance.refId).toBe(null, 'Can set refId to `null`');
@@ -86,15 +91,18 @@ describe('model.factory', () => {
         });
 
         it('should inherit all methods defined on the instance', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({prop: 'hello world'});
             expect(instance.foo()).toBe('hello world');
         });
 
         it('should throw if providing an argument which isn\'t a property on the model', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             expect(() => factory({nonExistentProp: 42})).toThrow();
         });
 
         it('should throw when attempting to modify one of the instance properties', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({});
             expect(() => instance.prop = 'hello').toThrow();
         });
@@ -106,13 +114,14 @@ describe('model.factory', () => {
     });
 
     describe('copyModel', () => {
-        var factory = createModelFactory<MyModel>(MyModel);
-        var instance = factory({
-            prop: 'hello world',
-            listProp: List(['a', 'b', 'c'])
-        });
+
 
         it('should be possible to copy a model with no mutations', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
+            var instance = factory({
+                prop: 'hello world',
+                listProp: List(['a', 'b', 'c'])
+            });
             var instanceCopy = copyModel(instance);
 
             expect(instanceCopy).toEqual(jasmine.any(MyModel));
@@ -122,6 +131,11 @@ describe('model.factory', () => {
         });
 
         it('should be possible to copy a model with mutations', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
+            var instance = factory({
+                prop: 'hello world',
+                listProp: List(['a', 'b', 'c'])
+            });
             let copy = copyModel(instance, {
                 prop: 'is mutated',
                 listProp: instance.listProp.push('d')
@@ -134,6 +148,11 @@ describe('model.factory', () => {
         });
 
         it('should not be possible to provide a mutation which doesn\'t exist on the properties of the model', () => {
+            var factory = createModelFactory<MyModel>(MyModel);
+            var instance = factory({
+                prop: 'hello world',
+                listProp: List(['a', 'b', 'c'])
+            });
             expect(() => copyModel(instance, [{propName: 'nonExistentProp', value: 42}])).toThrow();
         });
 
