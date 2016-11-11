@@ -4,10 +4,10 @@ import {createModelFactory} from '../../src/model/factory';
 import {str, date, num, list} from '../../src/json_codecs/basic';
 import {model} from '../../src/json_codecs/model_to_json';
 import {ModelMetadata} from "../../src/model/metadata";
-
+/*
 // Models for model converter test.
 @Model({kind: 'test::MyModel', isAbstract: true})
-abstract class MyModel extends ModelBase {
+class MyModel extends ModelBase {
     @Property({codec: str})
     name:string;
 
@@ -19,7 +19,7 @@ abstract class MyModel extends ModelBase {
 }
 
 @Model({kind: 'test::Submodel', superType: MyModel})
-abstract class SubModel extends MyModel {
+class SubModel extends MyModel {
     @Property({codec: str})
     submodelProperty:string;
 }
@@ -71,3 +71,4 @@ describe('json_codecs.model_to_json', () => {
         expect(codec.decode(undefined)).toBeUndefined('decode undefined');
     });
 });
+*/

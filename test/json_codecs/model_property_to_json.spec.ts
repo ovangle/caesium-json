@@ -10,8 +10,9 @@ const stringReversingCodec: Codec<string,string> = {
     decode: (input: string) => input.split('').reverse().join('')
 };
 
+/*
 @Model({kind: 'test::PropertyRestrictions'})
-abstract class PropertyRestrictions extends ModelBase {
+class PropertyRestrictions extends ModelBase {
     @Property({codec: stringReversingCodec})
     customCodecProperty: string;
 
@@ -26,7 +27,9 @@ abstract class PropertyRestrictions extends ModelBase {
 
     @Property({codec: num, allowNull: false, required: false})
     notNullableProperty:number;
+
 }
+
 
 describe('PropertyCodec', () => {
     var metadata = ModelMetadata.forType(PropertyRestrictions);
@@ -67,4 +70,4 @@ describe('PropertyCodec', () => {
         expect(codec.decode(null)).toBeNull('should not error on decode');
     });
 });
-
+*/

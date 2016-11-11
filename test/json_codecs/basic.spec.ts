@@ -4,7 +4,7 @@ import {identity} from 'caesium-core/codec';
 import {str, bool, num, date, list, map} from '../../src/json_codecs/basic';
 
 
-describe('json_codecs.basic', () => {
+xdescribe('json_codecs.basic', () => {
     describe('str', () => {
         it('should be just an identity codec', () => {
             expect(str).toBe(identity);

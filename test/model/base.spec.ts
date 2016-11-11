@@ -1,47 +1,51 @@
 import {List, Set} from 'immutable';
+import {forwardRef} from '@angular/core';
 import {Model, Property, RefProperty} from "../../src/model/decorators";
 import {ModelMetadata} from '../../src/model/metadata';
 import {ModelBase} from '../../src/model/base';
 import {createModelFactory} from '../../src/model/factory';
 import {str} from '../../src/json_codecs';
 
-@Model({kind: 'test::MyModel'})
-abstract class MyModel extends ModelBase {
-    @Property({codec: str})
-    prop: string;
-}
+//TODO: Move all models defined here to models.
+import * as Test from './models';
+
 
 @Model({kind: 'test::ReferencedModel'})
-abstract class ReferencedModel extends ModelBase {
+class ReferencedModel extends ModelBase {
 }
 
 @Model({kind: 'test::ReferencingModel'})
-abstract class ReferencingModel extends ModelBase {
-    @RefProperty({refName: 'ref', refType: ReferencedModel})
-    refId: number;
+class ReferencingModel extends ModelBase {
+    constructor(
+        id: number,
+        @RefProperty('refId', {refName: 'ref', refType: forwardRef(() => ReferencedModel)})
+        public refId: number,
+        @RefProperty('multiRefId', {refName: 'multiRef', refType: forwardRef(() => ReferencedModel), isMulti: true})
+        public multiRefId: List<number>
+    ) {
+        super(id, refId, multiRefId);
+    }
     ref: ReferencedModel;
-
-    @RefProperty({refName: 'multiRef', refType: ReferencedModel})
-    multiRefId: Set<string>;
-    multiRef: Set<ReferencedModel>;
-
+    multiRef: List<ReferencedModel>;
 }
-
-
-
-
 
 describe('model.base', () => {
     describe('ModelBase', () => {
-        var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
-        var referencingModelFactory = createModelFactory<ReferencingModel>(ModelMetadata.forType(ReferencingModel));
 
         it('should be possible to get the value of a property from a model', () => {
+            let factory = createModelFactory(Test.ModelOneProperty);
             var instance = factory({prop: 'hello world'});
             expect(instance.get('prop')).toBe('hello world');
         });
 
+        it('should be possible to get the property value from an attribute', () => {
+            let factory = createModelFactory<Test.ModelOneProperty>(Test.ModelOneProperty);
+            let instance = factory({prop: 'accessible via attribute'});
+            expect(instance.prop).toBe('accessible via attribute');
+        });
+
         it('should not be possible to directly set a value on the model', () => {
+            let factory = createModelFactory<Test.ModelOneProperty>(Test.ModelOneProperty);
             var instance = factory({prop: 'hello world'});
             expect(() => {
                 instance.id = 4239
@@ -52,14 +56,16 @@ describe('model.base', () => {
         });
 
         it('should be possible to set the value of a property on a model', () => {
+            let factory = createModelFactory<Test.ModelOneProperty>(Test.ModelOneProperty);
             var instance = factory({prop: 'hello world'});
-            var mutated = instance.set('prop', 'goodbye') as MyModel;
+            var mutated = instance.set('prop', 'goodbye');
 
             expect(instance.prop).toBe('hello world', 'original instance not mutated');
             expect(mutated.prop).toBe('goodbye', 'instance with mutated \'prop\' value');
         });
 
         it('should not be possible to get the value of a nonexistent property from a model', () => {
+            let factory = createModelFactory(Test.ModelOneProperty);
             var instance = factory({prop: 'hello world'});
             expect(() => instance.get('nonExistentProp')).toThrow();
             expect(() => instance.set('nonExistentProp', 'goodbye')).toThrow();
@@ -67,7 +73,9 @@ describe('model.base', () => {
 
 
         it('should be possible to set the value of a reference on a model', () => {
-            var instance = referencingModelFactory({refId: 28});
+            let factory = createModelFactory<ReferencingModel>(ReferencingModel);
+
+            var instance = factory({refId: 28});
             instance = instance.set('ref', {id: 42}) as ReferencingModel;
 
             expect(instance.refId).toBe(42, 'Should set the propId when setting the ref');
@@ -85,4 +93,3 @@ describe('model.base', () => {
 
     });
 });
-

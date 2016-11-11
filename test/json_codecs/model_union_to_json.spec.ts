@@ -6,15 +6,15 @@ import {union} from "../../src/json_codecs/model_union_to_json";
 import {createModelFactory} from '../../src/model/factory';
 import {ModelMetadata} from "../../src/model/metadata";
 
-
+/*
 @Model({kind: 'test::ModelA'})
-abstract class ModelA extends ModelBase {
+class ModelA extends ModelBase {
     @Property({codec: identity})
     propOne: string
 }
 
 @Model({kind: 'test::ModelB'})
-abstract class ModelB extends ModelBase {
+class ModelB extends ModelBase {
     @Property({codec: identity})
     propTwo: string;
 }
@@ -71,5 +71,6 @@ describe('json_codecs.model_union_to_json', () => {
 
 
 });
+*/
 
 

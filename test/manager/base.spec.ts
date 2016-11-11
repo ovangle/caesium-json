@@ -24,7 +24,7 @@ function _mkManagerOptions(requestHandler?: (options: RequestOptions) => RawResp
 
 
 @Model({kind: 'test::MyModel'})
-export abstract class MyModel extends ModelBase {}
+export class MyModel extends ModelBase {}
 
 export class MyModelManager extends ManagerBase<MyModel> {
     constructor(options: ManagerOptions) {
@@ -37,20 +37,24 @@ export class MyModelManager extends ManagerBase<MyModel> {
 }
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
-export abstract class AbstractModel extends ModelBase {}
+export class AbstractModel extends ModelBase {}
 
 @Model({kind: 'test::AbstractModelImpl1', superType: AbstractModel})
-export abstract class AbstractModelImpl1 extends AbstractModel {}
+export class AbstractModelImpl1 extends AbstractModel {}
 
 @Model({kind: 'test::AbstractModelImpl2', superType: AbstractModel})
-export abstract class AbstractModelImpl2 extends AbstractModel {}
+export class AbstractModelImpl2 extends AbstractModel {}
 
 
 @Model({kind: 'test::ReferencingModel'})
-abstract class ReferencingModel extends ModelBase {
-    @RefProperty({refName: 'ref', refType: MyModel})
-    refId: number;
-    ref: MyModel;
+class ReferencingModel extends ModelBase {
+    constructor(
+        id: number,
+        @RefProperty('ref', {refName: 'ref', refType: MyModel})
+        refId: number
+    ) {
+        super(id, refId);
+    }
 }
 
 export class AbstractModelManager extends ManagerBase<AbstractModel> {

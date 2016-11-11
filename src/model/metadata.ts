@@ -1,15 +1,20 @@
-import {Map, Set, List, Iterable} from 'immutable';
+import {OrderedMap, Set, List, Map} from 'immutable';
 
-import {resolveForwardRef} from '@angular/core';
+import {forwardRef, resolveForwardRef} from '@angular/core';
 
-import {Type, isBlank, isDefined, isFunction} from 'caesium-core/lang';
+import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
 import {
     InvalidMetadata, StateException, PropertyNotFoundException, ArgumentError
 } from "../exceptions";
-import {modelResolver} from './reflection';
+import {ModelNotFoundException} from './exceptions';
+import {num} from '../json_codecs';
+
+import {ModelTypeProxy} from './type_proxy';
+
+import {ModelOptions, BasePropertyOptions, defaultPropertyOptions, PropertyOptions, RefPropertyOptions} from './decorators';
 import {ModelBase} from "./base";
 import {ModelValues} from './values';
 
@@ -27,132 +32,8 @@ export const _RESERVED_PROPERTY_NAMES = Set<string>([
     'delete'
 ]);
 
-export class ModelMetadata {
-    static forType(type: Type): ModelMetadata {
-        return modelResolver.resolve(type);
-    }
+let _typeCache = new WeakMap<Type,ModelMetadata>();
 
-    static forInstance(instance: any): ModelMetadata {
-        var type = Object.getPrototypeOf(instance).constructor;
-        return ModelMetadata.forType(type);
-    }
-
-    kind: string;
-
-    type: Type;
-
-    /// Basic support for model extensions.
-    superType: Type;
-
-    /**
-     * An abstract model cannot be instantiated by a model factory.
-     * It is intended to act purely as a supertype for other model types.
-     */
-    isAbstract: boolean;
-
-    ownProperties: Map<string, BasePropertyMetadata>;
-
-    get supertypeMeta(): ModelMetadata {
-        if (this.superType === ModelBase)
-            return null;
-        return modelResolver.resolve(this.superType);
-    }
-
-    constructor({kind, superType, isAbstract}: {kind: string, superType?: Type, isAbstract?: boolean}) {
-        if (!isValidKind(kind)) {
-            throw new InvalidMetadata(`Invalid kind '${kind}' for model. Kind must match ${_VALID_KIND_MATCH}`);
-        }
-        this.kind = kind;
-
-        if (isDefined(superType)) {
-            var supertypeMeta = ModelMetadata.forType(superType);
-            if (!supertypeMeta) {
-                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be a model type`);
-            }
-            if (!supertypeMeta.isAbstract) {
-                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be abstract`);
-            }
-        }
-
-        this.superType = superType || ModelBase;
-        this.isAbstract = !!isAbstract;
-    }
-
-    checkHasPropertyOrRef(propNameOrRefName: string): void {
-        var hasProperty = this.properties.has(propNameOrRefName)
-                       || this.refNameMap.has(propNameOrRefName);
-        if (!hasProperty) {
-            throw new PropertyNotFoundException(propNameOrRefName, this);
-        }
-    }
-
-    contribute(type: Type, ownProperties: Map<string,PropertyMetadata>) {
-        if (isBlank(type) || type.length > 0)
-            throw new InvalidMetadata(`Model ${type} must have a 0-argument constructor`);
-
-        this.type = type;
-        this.ownProperties = ownProperties;
-        this.ownProperties.forEach((prop, propName) => {
-            prop.contribute(this, propName);
-        });
-    }
-
-    contributeProperty(options?: PropertyOptions): void {
-
-    }
-
-    get properties(): Map<string,BasePropertyMetadata> { return this._getProperties(); }
-
-    @memoize()
-    private _getProperties(): Map<string,BasePropertyMetadata> {
-        var supertypeMeta = this.supertypeMeta;
-        var superProperties = supertypeMeta
-            ? supertypeMeta.properties
-            : Map<string,BasePropertyMetadata>({id: PropertyMetadata.idProperty(this)});
-        return superProperties.merge(this.ownProperties);
-    }
-
-    /**
-     * A map of refNames to the associated property names.
-     * @returns {Map<string, string>}
-     */
-    get refNameMap(): Map<string,string> { return this._getRefNameMap(); }
-
-    @memoize()
-    private _getRefNameMap(): Map<string,string> {
-        return this._getProperties()
-            .filter((prop) => prop.isRef)
-            .map((prop: RefPropertyMetadata) => prop.refName).toKeyedSeq()
-            .flip().toMap();
-    }
-
-    toString() { return `ModelMetadata(${this.kind})`}
-}
-
-export interface BasePropertyOptions {
-    readOnly?: boolean,
-    writeOnly?: boolean,
-    required?: boolean,
-    allowNull?: boolean
-}
-
-function _setPropertyOptionDefaults(options: BasePropertyOptions): BasePropertyOptions {
-    if (isBlank(options.readOnly))
-        options.readOnly = false;
-    if (isBlank(options.writeOnly))
-        options.writeOnly = false;
-    if (isBlank(options.required))
-        options.required = true;
-    if (isBlank(options.allowNull))
-        options.allowNull = false;
-    return options
-}
-
-
-export interface PropertyOptions extends BasePropertyOptions {
-    defaultValue?: () => any,
-    codec: Codec<any,any>;
-}
 
 export class BasePropertyMetadata {
     defaultValue: () => any;
@@ -171,11 +52,6 @@ export class BasePropertyMetadata {
      * The metadata which defines this property
      */
     metadata: ModelMetadata;
-
-    /**
-     * The name of the property on the model
-     */
-    name: string;
 
     /**
      * A readOnly property cannot be written to the server during a create or update
@@ -211,25 +87,40 @@ export class BasePropertyMetadata {
      */
     codec: Codec<any,any>;
 
-    constructor(options: BasePropertyOptions) {
-        options = _setPropertyOptionDefaults(options);
+    /**
+     * The value of this proeprty is a list.
+     */
+    isMulti: boolean;
+
+    constructor(public modelType: Type, public name: string, public type: Type, options: BasePropertyOptions) {
+        this.name = name;
+
         this.readOnly = options.readOnly;
         this.writeOnly = options.writeOnly;
         this.required = options.required;
         this.allowNull = options.allowNull;
+        this.isMulti = options.isMulti;
     }
 
     /**
-     * Sets the options on the property
-     * @param metadata
+     * Check that the metadata is valid
+     * @param modelMetadata
      * The metadata of the model that this property belongs to.
      * @param propName
      * The property name on the model instance.
      */
-    contribute(metadata: ModelMetadata, propName: string): void {
-        if (_RESERVED_PROPERTY_NAMES.contains(propName))
-            throw new InvalidMetadata(`${propName} is a reserved name and cannot be the name of a property`);
-        this.name = propName;
+    checkValid(modelMetadata: ModelMetadata): void {
+        //TODO: This check is incorrect (however, it doesn't matter at the moment).
+        // Need to do a property check when we change how ref properties work.
+        if (!this.isMulti && this.type === Object) {
+            throw new InvalidMetadata(
+                `Could not resolve the type of property ${this.name}. ` +
+                `If the property is not a primitive type, a List, a Date or a subtype of ModelBase` +
+                `then a specific codec needs to be provided in the property options.`
+            );
+        }
+        if (_RESERVED_PROPERTY_NAMES.contains(this.name))
+            throw new InvalidMetadata(`${this.name} is a reserved name and cannot be the name of a property`);
     }
 
     /**
@@ -279,10 +170,41 @@ export class BasePropertyMetadata {
      * @returns ModelValues: The new model state
      */
     valueMutator(modelValues: ModelValues, value: any, modelThis: ModelBase): ModelValues {
+        let values = modelValues.values;
+
+        console.log('previous value (expected)\t', values.get(this.name));
+
+        let updatedValues = modelValues.values.set(this.name, value);
+
+        console.log('previous value (actual)\t\t', values.get(this.name));
+        console.log('current value\t\t\t\t', updatedValues.get(this.name));
+
+
         return {
             initialValues: modelValues.initialValues,
-            values: modelValues.values.set(this.name, value),
+            values: updatedValues,
             resolvedRefs: modelValues.resolvedRefs
+        };
+    }
+
+    get descriptor(): TypedPropertyDescriptor<any> {
+        let propName = this.name;
+        return {
+            get: function() {
+                // Don't use fat arrow syntax, the 'this' in this context should refer
+                // to the model.
+                return this.get(propName);
+            },
+            set: function(value) {
+                // We know we have completed construction once the object is frozen.
+                if (Object.isFrozen(this)) {
+                    throw new TypeError('Cannot set value of ' + propName);
+                }
+                // While constructing the object, set should be a no-op, because we can't prevent the generated
+                // typescript from assigning to `this`.
+            },
+            enumerable: true,
+            configurable: false
         };
     }
 }
@@ -292,6 +214,7 @@ export class BasePropertyMetadata {
  * serialized onto the model.
  */
 export class PropertyMetadata extends BasePropertyMetadata {
+    static _idPropertyOptions = Object.assign({}, defaultPropertyOptions, {codec: num, readOnly: true, allowNull: true});
     /**
      * All models have an Id property. The id can be any type, as long as the type can be
      * converted using an `identity` codec.
@@ -302,15 +225,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
      * @returns {PropertyMetadata}
      * @constructor
      */
-    static idProperty(modelMetadata: ModelMetadata): PropertyMetadata {
-        //TODO: id should be a readOnly property
-        // At the moment we scrub readOnly properties from the output,
-        // which is not the correct thing to do.
-        // Instead we should check property restrictions on the mutator/accessor.
-        var id = new PropertyMetadata({codec: identity, allowNull: true, defaultValue: () => null});
-        id.contribute(modelMetadata, 'id');
-        return id;
-    }
+    static idProperty = new PropertyMetadata(ModelBase, name, Number, PropertyMetadata._idPropertyOptions);
 
     isRef = false;
     isBackRef = false;
@@ -327,18 +242,15 @@ export class PropertyMetadata extends BasePropertyMetadata {
     /// eg. { helloWorld: 'hello world' }  would be serialized as { "hello_world": "hello world" }
     codec: Codec<any,any>;
 
-    constructor(options: PropertyOptions) {
-        super(options);
+    constructor(modelType: Type, name: string, paramType: Type, options: PropertyOptions) {
+        super(modelType, name, paramType, options);
         this.defaultValue = options.defaultValue;
         this.codec = options.codec;
+        Object.freeze(this);
     }
+
 }
 
-
-export interface RefPropertyOptions extends BasePropertyOptions {
-    refName: string;
-    refType: Type;
-}
 
 /**
  * Check that the value has an `id` property
@@ -387,31 +299,33 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 
     backRef: BackRefPropertyMetadata;
 
-    constructor(options: RefPropertyOptions) {
-        super(options);
+    isMulti: boolean;
+
+    constructor(modelType: Type, name: string, type: Type, options: RefPropertyOptions) {
+        super(modelType, name, type, options);
+
         this.refName = options.refName;
         if (!isDefined(options.refType)) {
             throw new ArgumentError('Cannot resolve refType. Try a forwardRef');
         }
         this.refType = options.refType;
+        this.isMulti = options.isMulti;
+        Object.freeze(this);
     }
 
     get hasBackRef(): boolean {
         return isDefined(this.backRef);
     }
 
-    contribute(modelMetadata: ModelMetadata, propName: string) {
+    checkValid(modelMetadata: ModelMetadata) {
+        super.checkValid(modelMetadata);
         if (modelMetadata.properties.has(this.refName)) {
             throw new InvalidMetadata(
                 'The `refName` of a property must not be annotated with @Property (or @RefProperty)'
             );
         }
-        super.contribute(modelMetadata, propName);
     }
 
-    contributeBackRef(backRefProperty: BackRefPropertyMetadata) {
-        this.backRef = backRefProperty;
-    }
 
     valueInitializer(modelValues: ModelValues, value: any): ModelValues {
         if (isDefined(value) && modelValues.resolvedRefs.has(this.name)) {
@@ -474,6 +388,19 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
             resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
         }
     }
+
+    get refDescriptor(): TypedPropertyDescriptor<any> {
+        let refName = this.refName;
+        return {
+            get: function() {
+                // Don't use fat arrow syntax, the 'this' in this context should refer
+                // to the model.
+                return this.get(refName);
+            },
+            enumerable: true,
+            configurable: false
+        };
+    }
 }
 
 export interface BackRefPropertyOptions extends BasePropertyOptions {
@@ -517,6 +444,7 @@ export class BackRefPropertyMetadata extends BasePropertyMetadata {
      * The model type which holds the foreign key value that this
      */
     to: Type;
+
     get toMetadata(): ModelMetadata {
         return this._getToMetadata();
     }
@@ -526,6 +454,7 @@ export class BackRefPropertyMetadata extends BasePropertyMetadata {
      * The `refName` property which holds the foreign key value
      */
     refProp: string;
+
     get refPropMetadata(): RefPropertyMetadata {
         return this._getRefPropMetadata();
     }
@@ -539,7 +468,7 @@ export class BackRefPropertyMetadata extends BasePropertyMetadata {
     codec = identity;
 
     constructor(options: BackRefPropertyOptions) {
-        super(options);
+        super(undefined, undefined, undefined, options);
         this.to = options.to;
         this.refProp = options.refProp;
         this.multi = options.multi || false;
@@ -646,3 +575,213 @@ export class BackRefPropertyMetadata extends BasePropertyMetadata {
         }
     }
 }
+
+export class ModelMetadata {
+
+    static forType(type: Type): ModelMetadata {
+        if ('__model_metadata__' in type) {
+            return (type as any).__model_metadata__;
+        }
+        throw new ModelNotFoundException(type);
+    }
+
+    static forInstance(model: any): ModelMetadata {
+        if ('__metadata__'in model)
+            return (model as any).__metadata__;
+        throw new ModelNotFoundException(model.constructor);
+    }
+
+    static _modelBaseMetadata = new ModelMetadata(
+        forwardRef(() => ModelBase),
+        OrderedMap <string, PropertyMetadata>([
+            ['id', PropertyMetadata.idProperty]
+        ]),
+        { kind: 'core::ModModelBase' /* TODO: Get rid of fucking kind. */}
+    );
+
+    static _create( type: Type,
+                    ownProperties: OrderedMap<string,PropertyMetadata>,
+                    options: ModelOptions) {
+        return new ModelMetadata(type, ownProperties, options);
+    }
+
+    kind: string;
+
+    // The model type that is being managed.
+    type: Type;
+
+    /// Basic support for model extensions.
+    superType: Type;
+    private get superTypeMetadata(): ModelMetadata {
+        if (this.superType === undefined)
+            return ModelMetadata._modelBaseMetadata;
+        return ModelMetadata.forType(this.superType);
+    }
+
+    /**
+     * An abstract model cannot be instantiated by a model factory.
+     * It is intended to act purely as a supertype for other model types.
+     */
+    isAbstract: boolean;
+
+    /**
+     * All properties defined directly on this object.
+     */
+    ownProperties: OrderedMap<string,PropertyMetadata>;
+
+    // TODO: memoize needs to be applicable to properties.
+    // eg.
+    // @memoize
+    // get properties(): OrderedMap<string,PropertyMetadata>
+
+    /**
+     * All the properties of the object, including inehrited properties
+     */
+    @memoize()
+    private _getProperties(): OrderedMap<string,BasePropertyMetadata> {
+        let inherited: OrderedMap<string,BasePropertyMetadata>;
+        if (isDefined(this.superType)) {
+            inherited = this.superTypeMetadata.properties;
+        } else {
+            inherited = ModelMetadata._modelBaseMetadata.ownProperties;
+        }
+        return inherited.merge(this.ownProperties);
+
+    }
+    get properties(): OrderedMap<string,BasePropertyMetadata> {
+        return this._getProperties();
+    }
+
+
+    /**
+     * Maps of the names of reference property to the name of the reference property
+     * @returns {any}
+     */
+    @memoize()
+    _getRefNameMap(): OrderedMap<string,string> {
+        return this.properties.filter(prop => prop.isRef)
+            .map((prop: RefPropertyMetadata) => prop.refName).toKeyedSeq()
+            .flip().toOrderedMap();
+    }
+
+    get refNameMap(): OrderedMap<string,string> {
+        return this._getRefNameMap();
+    }
+
+    private constructor(
+        type: Type,
+        ownProperties: OrderedMap<string,PropertyMetadata>,
+        options: ModelOptions
+    ) {
+        this.type = resolveForwardRef(type);
+        this.kind = options.kind;
+        this.ownProperties = ownProperties;
+
+        this.superType = options.superType;
+        this.isAbstract = !!options.isAbstract;
+    }
+
+    checkValid() {
+        // Constructor shouldn't throw.
+        if (!isValidKind(this.kind)) {
+            throw new InvalidMetadata(`Invalid kind '${this.kind}' for model. Kind must match ${_VALID_KIND_MATCH}`);
+        }
+
+        if (this.superType !== undefined) {
+            var supertypeMeta = ModelMetadata.forType(this.superType);
+            if (!supertypeMeta) {
+                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be a model type`);
+            }
+            if (!supertypeMeta.isAbstract) {
+                throw new InvalidMetadata(`Supertype ${supertypeMeta.kind} must be abstract`);
+            }
+        }
+        this.ownProperties.valueSeq().forEach(prop => {
+            prop.checkValid(this);
+        });
+    }
+
+
+    checkHasPropertyOrRef(propNameOrRefName: string): void {
+        var hasProperty = this.properties.has(propNameOrRefName)
+            || this.refNameMap.has(propNameOrRefName);
+        if (!hasProperty) {
+            throw new PropertyNotFoundException(propNameOrRefName, this);
+        }
+    }
+
+
+    toString() { return `ModelMetadata(${this.kind})`}
+
+    @memoize()
+    private _getPropertyDescriptors(): PropertyDescriptorMap {
+        let descriptorMap: PropertyDescriptorMap = {};
+        this.properties.forEach(prop => {
+            descriptorMap[prop.name] = prop.descriptor;
+            if (prop.isRef) {
+                let refProp = <RefPropertyMetadata>prop;
+                descriptorMap[refProp.refName] = refProp.refDescriptor;
+            }
+        });
+        return descriptorMap;
+    }
+
+    prepareInstance(obj: any): void {
+        let prototype = Object.create(Object.getPrototypeOf(obj), this._getPropertyDescriptors());
+        Object.setPrototypeOf(obj, prototype);
+    }
+}
+
+
+function buildOwnPropertyMap(type: Type): OrderedMap<string, PropertyMetadata> {
+    let propArgs = List<{isRef: boolean, args: any[]}>(Reflect.getMetadata('model:properties', type))
+        .skipWhile(arg => arg === null /* Ignore args for the supertype */);
+
+    if (propArgs.isEmpty())
+        return OrderedMap<string,BasePropertyMetadata>();
+
+    // There is possibly one null at the end, if it is possible to subtype the model.
+    // This would be a spread parameter.
+    if (propArgs.last() === null) {
+        propArgs = propArgs.butLast();
+    }
+
+    if (propArgs.some(arg => arg === null)) {
+        throw new InvalidMetadata(`The own properties in the parameter list of ${type} must be contiguous`);
+    }
+
+    let ownProperties = propArgs.map(({isRef, args}) => {
+        if (isRef) {
+            return new RefPropertyMetadata(args[0], args[1], args[2], args[3]);
+        } else {
+            return new PropertyMetadata(args[0], args[1], args[2], args[3]);
+        }
+    });
+
+    return OrderedMap<string,BasePropertyMetadata>(ownProperties.map(prop => [prop.name, prop]));
+}
+
+export function buildModelMetadata(type: Type, typeProxy: any): ModelMetadata {
+
+    if (type === ModelBase) {
+        return ModelMetadata._modelBaseMetadata;
+    }
+
+    if (!Reflect.getMetadata('model:options', type)) {
+        throw new ModelNotFoundException(type);
+    }
+
+
+    let options = Reflect.getMetadata('model:options', type);
+
+    if (isDefined(options.superType)) {
+        // Replace the value with the proxy
+        let superTypeMeta = ModelMetadata.forType(options.superType);
+        options.superType = superTypeMeta.type;
+    }
+
+    let metadata = ModelMetadata._create(typeProxy, buildOwnPropertyMap(type), options);
+    metadata.checkValid();
+    return metadata;
+}
+

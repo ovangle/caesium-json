@@ -1,32 +1,31 @@
 import {Map} from 'immutable';
 
-import {forEachOwnProperty, isDefined} from 'caesium-core/lang';
-import {FactoryException} from '../exceptions';
+import {forEachOwnProperty, isDefined, isFunction, Type} from 'caesium-core/lang';
+import {FactoryException, PropertyNotFoundException} from '../exceptions';
 import {ModelBase} from './base';
 import {ModelMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
 
-export type ModelConstructor<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
-
-export interface PropertyMutation {
-    /*
-     * The property (or reference) name that is being mutated
-     */
-    propName: string;
-    /**
-     * The new value of the property/reference.
-     */
-    value: any;
+export type ModelFactory<T extends ModelBase> = (properties: {[prop: string]: any}) => T;
+export interface ModelConstructor<T extends ModelBase> extends Function {
+    new (...args: any[]): T;
 }
 
 
-export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelConstructor<T> {
+export function createModelFactory<T extends ModelBase>(objOrType: Type | T): ModelFactory<T> {
+    if (!isFunction(objOrType)) {
+        let obj: T = <T>objOrType;
+        return (properties: {[prop: string]: any}) => copyModel<T>(obj, properties);
+    }
+    let type: Type = <Type>objOrType;
+    let modelMeta = ModelMetadata.forType(type);
+
     if (modelMeta.isAbstract) {
         throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
     }
 
-    function create(args: {[attr: string]: any}) {
+    return function create(args: {[attr: string]: any}) {
         var modelValues = _asMutableModelValues(_initModelValues());
         forEachOwnProperty(args, (value, key) => modelMeta.checkHasPropertyOrRef(key));
 
@@ -38,10 +37,10 @@ export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata
             }
         });
 
-        return _createModel(modelMeta, _asImmutableModelValues(modelValues));
-    }
+        modelValues = _asImmutableModelValues(modelValues);
 
-    return create;
+        return new (type as ModelConstructor<T>)(modelValues);
+    }
 }
 
 /**
@@ -58,57 +57,37 @@ export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata
  */
 export function copyModel<T extends ModelBase>(
     model: T,
-    mutations?: PropertyMutation[] | ModelValues
+    ...mutations: {[prop: string]: any}[]
 ): T {
     var modelMeta = ModelMetadata.forInstance(model);
     if (!isDefined(mutations)) {
-        return _createModel(modelMeta, (model as any).__modelValues);
+        // models are immutable, why are we copying it?
+        return model;
     }
-
-    if (!Array.isArray(mutations)) {
-        return _createModel(modelMeta, mutations as ModelValues);
+    if (mutations.some(mut => Array.isArray(mut))) {
+        throw 'The ability to pass an array of mutations was removed';
     }
-    var modelValues = _asMutableModelValues((model as any).__modelValues);
+    let result = Object.assign({}, ...mutations);
 
-    var propMutations = mutations as PropertyMutation[];
+    var modelValues = _asMutableModelValues((model as any).__modelValues__);
 
-    propMutations.forEach((mutation) => {
-        var property = modelMeta.properties.get(mutation.propName);
+    forEachOwnProperty(result, (value, propNameOrRefName) => {
+        var property = modelMeta.properties.get(propNameOrRefName);
+
         if (isDefined(property)) {
-            modelValues = property.valueMutator(modelValues, mutation.value, model);
+            modelValues = property.valueMutator(modelValues, value, model);
         } else {
             // The property is a RefProperty.
-            var propName = modelMeta.refNameMap.get(mutation.propName);
+            let propName = modelMeta.refNameMap.get(propNameOrRefName);
+            let refName = propNameOrRefName;
+            if (!isDefined(refName))
+                throw new PropertyNotFoundException(refName, model);
             var refProperty = modelMeta.properties.get(propName) as RefPropertyMetadata;
-            modelValues = refProperty.refValueMutator(modelValues, mutation.value, model);
+            modelValues = refProperty.refValueMutator(modelValues, value, model);
         }
     });
 
-    return _createModel(modelMeta, _asImmutableModelValues(modelValues));
-}
-
-function _createModel(modelMeta: ModelMetadata, modelValues?: ModelValues) {
-    modelValues = modelValues || _initModelValues();
-    var descriptors: PropertyDescriptorMap = {};
-
-    descriptors['__metadata'] = {enumerable: false, writable: false, value: modelMeta};
-    descriptors['__modelValues'] = {enumerable: false, writable: false, value: modelValues};
-
-    modelMeta.properties.forEach((prop) => {
-        descriptors[prop.name] = {
-            enumerable: true,
-            get: function() { return this.get(prop.name); }
-        };
-        if (prop.isRef) {
-            var refName = (prop as RefPropertyMetadata).refName;
-            descriptors[refName] = {
-                enumerable: true,
-                get: function() { return this.get(refName)}
-            }
-        }
-    });
-
-    return Object.create(new (modelMeta.type as any)(), descriptors);
+    return new (modelMeta.type as ModelConstructor<T>)(_asImmutableModelValues(modelValues));
 }
 
 function _initModelValues(): ModelValues {

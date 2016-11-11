@@ -60,11 +60,11 @@ export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject>
     var modelPropertyDecoder = jsonToObject<T>(
         encodeProperties,
         (propNameOrRefName: string) => getDecoder(propCodecs.get(propNameOrRefName)),
-        createModelFactory<T>(metadata)
+        createModelFactory<T>(modelType)
     );
     return composeCodecs<T,JsonObject,JsonObject>(
         {encode: modelPropertyEncoder, decode: modelPropertyDecoder},
-        kindPropertyRemover(metadata)
+        kindPropertyRemover(ModelMetadata.forType(modelType))
     );
 }
 

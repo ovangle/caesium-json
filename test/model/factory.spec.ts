@@ -10,44 +10,49 @@ import {str, list} from '../../src/json_codecs';
 import {createModelFactory, copyModel} from '../../src/model/factory';
 
 @Model({kind: 'test::MyModel'})
-abstract class MyModel extends ModelBase {
-    @Property({codec: str})
-    prop: string;
+class MyModel extends ModelBase {
+    constructor(
+        id: number,
+        @Property('prop', {codec: str})
+        public prop: string,
+        @Property('listProp', {codec: list(str), defaultValue: List, isMulti: true})
+        public listProp: List<string>,
+        // @Property('ref')
+        // public ref: MyBackRefModel
+        @RefProperty('refId', {refName: 'ref', refType: forwardRef(() => MyBackRefModel)})
+        public refId: number,
+        // @Property('multiRef', {itemType: forwardRef(() => AbstractModel)})
+        public multiRef: Set<AbstractModel>
+    ) {
+        super(id, prop, listProp, refId, multiRef);
+    }
 
-    @Property({codec: list(str), defaultValue: List})
-    listProp: List<string>;
-
-    @RefProperty({refName: 'ref', refType: forwardRef(() => MyBackRefModel)})
-    refId: number;
-    ref: MyBackRefModel;
+    public ref: MyBackRefModel;
 
     foo() { return this.prop; }
 }
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
-abstract class AbstractModel extends ModelBase {
-    @Property({codec: str})
-    prop: string;
+class AbstractModel extends ModelBase {
+    constructor(
+        id: number,
+        @Property('prop', {codec: str}) public prop: string
+    ) {
+        super(id, prop);
+    }
 }
 
 @Model({kind: 'test::MyModel'})
-abstract class MyBackRefModel extends ModelBase {
+class MyBackRefModel extends ModelBase {
 }
 
-export function modelFactoryTests() {
-    describe('factory', () => {
-        createModelTests();
-        copyModelTests();
-    });
-}
-
-function createModelTests() {
+describe('model.factory', () => {
     describe('createModel', () => {
-        var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
+        var factory = createModelFactory<MyModel>(MyModel);
         it('should be possible to create a new instance of a model with no initial property values', () => {
             var instance = factory({});
             expect(instance).toEqual(jasmine.any(MyModel));
-            expect(instance.prop).toBeUndefined();
+            expect(instance.prop).toBeNull();
         });
 
         it('should provide default values for any properties with a defaultValue', () => {
@@ -80,18 +85,6 @@ function createModelTests() {
             expect(instance.ref).toBe(null);
         });
 
-        it('should not be possible to set initial values for a back reference', () => {
-            var backRefFactory = createModelFactory<MyBackRefModel>(ModelMetadata.forType(MyBackRefModel));
-            var myModelInstance = factory({id: 1, refId: 40});
-
-            // TODO: Ideally we'd like to be able to to this
-            expect(() => backRefFactory({backRef: myModelInstance})).toThrow();
-
-            var instance = backRefFactory({});
-            expect(instance.isResolved('backRef')).toBe(false);
-
-        });
-
         it('should inherit all methods defined on the instance', () => {
             var instance = factory({prop: 'hello world'});
             expect(instance.foo()).toBe('hello world');
@@ -107,15 +100,13 @@ function createModelTests() {
         });
 
         it('should not be possible to create a factory for an abstract model type', () => {
-            expect(() => createModelFactory(ModelMetadata.forType(AbstractModel)))
+            expect(() => createModelFactory(AbstractModel))
                 .toThrow(jasmine.any(FactoryException));
         })
     });
-}
 
-function copyModelTests() {
     describe('copyModel', () => {
-        var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
+        var factory = createModelFactory<MyModel>(MyModel);
         var instance = factory({
             prop: 'hello world',
             listProp: List(['a', 'b', 'c'])
@@ -130,10 +121,16 @@ function copyModelTests() {
             expect(instanceCopy.listProp.toArray()).toEqual(['a','b','c']);
         });
 
-        it('should be possible to copy a model and mutate values', () => {
-            var instanceCopy = copyModel(instance, [{propName: 'prop', value: 'goodbye'}]);
-            expect(instanceCopy.prop).toEqual('goodbye');
-            expect(instanceCopy.listProp.toArray()).toEqual(['a','b','c']);
+        it('should be possible to copy a model with mutations', () => {
+            let copy = copyModel(instance, {
+                prop: 'is mutated',
+                listProp: instance.listProp.push('d')
+            });
+
+            expect(copy.prop).toEqual('is mutated');
+            expect(copy.listProp.toArray()).toEqual(['a','b','c','d']);
+
+            expect(instance.prop).toEqual('hello world', 'Does not edit orinal instance');
         });
 
         it('should not be possible to provide a mutation which doesn\'t exist on the properties of the model', () => {
@@ -141,4 +138,4 @@ function copyModelTests() {
         });
 
     });
-}
+});
