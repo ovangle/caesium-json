@@ -94,8 +94,8 @@ export abstract class ManagerBase<T extends ModelBase> {
     }
 
     /// Create a new instance of the modelType.
-    create<U extends T>(subtype: Type/*<U>*/, args: {[propName: string]: any}): U {
-        var factory: ModelFactory<U>;
+    create(subtype: Type, args: {[propName: string]: any}): T {
+        var factory: ModelFactory<T>;
         if (this.__metadata.isAbstract) {
             var modelSubtypes = this.getModelSubtypes();
             if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {
@@ -103,9 +103,9 @@ export abstract class ManagerBase<T extends ModelBase> {
                     `Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`
                 );
             }
-            factory = createModelFactory<U>(subtype);
+            factory = createModelFactory<T>(subtype);
         } else {
-            factory = createModelFactory<U>(this.getModelType());
+            factory = createModelFactory<T>(this.getModelType());
         }
         return factory(args);
     }

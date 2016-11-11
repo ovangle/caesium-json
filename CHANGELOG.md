@@ -16,9 +16,6 @@
 - Added `recordToJson` codec to the `json_codecs` module
 - All models now have an `id` property
     The id can be of any type as long as it can be encoded using an identity codec.
-- Add (primitive) support for reverse references
-    A model property with @BackRefProperty can be resolved with all models with an
-    appropriate foreign key matching the model
 
 ### Bugfixes
 - Factory created model instances now inherit methods defined on the model

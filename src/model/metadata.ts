@@ -44,11 +44,6 @@ export class BasePropertyMetadata {
     isRef: boolean;
 
     /**
-     * True if this property is a BackRef property.
-     */
-    isBackRef: boolean;
-
-    /**
      * The metadata which defines this property
      */
     metadata: ModelMetadata;
@@ -228,7 +223,6 @@ export class PropertyMetadata extends BasePropertyMetadata {
     static idProperty = new PropertyMetadata(ModelBase, name, Number, PropertyMetadata._idPropertyOptions);
 
     isRef = false;
-    isBackRef = false;
 
     /**
      * A function which provides a default value for the property.
@@ -276,7 +270,6 @@ function hasIdProperty(value: any): boolean {
  */
 export class RefPropertyMetadata extends BasePropertyMetadata {
     isRef = true;
-    isBackRef = false;
 
     /**
      * The name of the property
@@ -297,8 +290,6 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 
     codec = identity;
 
-    backRef: BackRefPropertyMetadata;
-
     isMulti: boolean;
 
     constructor(modelType: Type, name: string, type: Type, options: RefPropertyOptions) {
@@ -311,10 +302,6 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
         this.refType = options.refType;
         this.isMulti = options.isMulti;
         Object.freeze(this);
-    }
-
-    get hasBackRef(): boolean {
-        return isDefined(this.backRef);
     }
 
     checkValid(modelMetadata: ModelMetadata) {
@@ -400,179 +387,6 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
             enumerable: true,
             configurable: false
         };
-    }
-}
-
-export interface BackRefPropertyOptions extends BasePropertyOptions {
-    /**
-     * The type that holds the foreign key property that this @BackRef
-     * is referring to.
-     */
-    to: Type;
-
-    /**
-     * The name of the @RefProperty that references this model.
-     *
-     * Must be the name of the `id` property, _not_ the `refName` of the id.
-     */
-    refProp: string;
-
-    /**
-     * Is the foreign key relationship one-to-one?
-     *
-     * If [:multi:] is `true`, the annotated value must be an immutable list.
-     *
-     * Default is `false`.
-     */
-    multi?: boolean;
-}
-
-/**
- * A @BackRefProperty is the converse side of a foreign key relationship
- * to a @RefProperty.
- */
-export class BackRefPropertyMetadata extends BasePropertyMetadata {
-    isRef = false;
-    isBackRef = true;
-
-    /**
-     * The name of the property
-     */
-    name: string;
-
-    /**
-     * The model type which holds the foreign key value that this
-     */
-    to: Type;
-
-    get toMetadata(): ModelMetadata {
-        return this._getToMetadata();
-    }
-
-
-    /**
-     * The `refName` property which holds the foreign key value
-     */
-    refProp: string;
-
-    get refPropMetadata(): RefPropertyMetadata {
-        return this._getRefPropMetadata();
-    }
-
-
-    /**
-     * Is the relationship one-to-one (default is false).
-     */
-    multi: boolean;
-
-    codec = identity;
-
-    constructor(options: BackRefPropertyOptions) {
-        super(undefined, undefined, undefined, options);
-        this.to = options.to;
-        this.refProp = options.refProp;
-        this.multi = options.multi || false;
-    }
-
-    @memoize()
-    private _getToMetadata() {
-        var foreignMeta = ModelMetadata.forType(this.to);
-        if (isBlank(foreignMeta))
-            throw new InvalidMetadata(
-                `The to of a @BackRef annotated property must be an @Model annotated model`
-            );
-        return foreignMeta;
-
-    }
-
-    @memoize()
-    private _getRefPropMetadata(): RefPropertyMetadata {
-        if (!this.toMetadata.properties.has(this.refProp)) {
-            throw new InvalidMetadata(
-                'The `refProp` of a @BackRef annotated property must be a property on the foreign model'
-            );
-        }
-        var foreignProp = this.toMetadata.properties.get(this.refProp);
-        if (!(foreignProp instanceof RefPropertyMetadata)) {
-            throw new InvalidMetadata(
-                'The `refProp` of a @BackRef annotated property must be an @RefProperty annotated property'
-            );
-        }
-        return foreignProp as RefPropertyMetadata;
-    }
-
-    valueAccessor(modelValues: ModelValues): any {
-        return modelValues.resolvedRefs.get(this.name);
-    }
-
-    valueInitializer(modelValues: ModelValues, value: any): ModelValues {
-        if (isDefined(value)) {
-            //TODO: Need to think about this.
-            throw new ArgumentError('Cannot initialize back reference via constructor args');
-        }
-        return modelValues;
-
-    }
-
-    valueMutator(modelValues: ModelValues, value: any, modelThis: any): ModelValues {
-        if (this.multi) {
-            if (!List.isList(value)) {
-                throw new ArgumentError(
-                    `The value of a multi value @BackRef property (${this.name}) must be a list`
-                );
-            } else {
-                (value as List<ModelBase>).forEach((item) => {
-                    if (isBlank(item)) {
-                        throw new ArgumentError(
-                            `Values in a multi value @BackRef property (${this.name}) must be non-null`
-                        );
-                    }
-                    return this._checkReference(item, modelThis);
-                });
-            }
-        } else {
-            this._checkReference(value, modelThis);
-        }
-        return {
-            initialValues: modelValues.initialValues,
-            values: modelValues.values,
-            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
-        };
-    }
-
-    /**
-     * When assigning a value to a @BackRefProperty, there is a possibility that the
-     * foreign ref will either be:
-     * - not resolved
-     * - resolved to a different instance of `this`.
-     *
-     *
-     * @param item
-     * @param modelThis
-     * @returns {ModelBase}
-     * @private
-     */
-    private _checkReference(item: ModelBase, modelThis: any): ModelBase {
-        if (isBlank(item)) {
-            return;
-        }
-        if (!(item instanceof this.to)) {
-            throw new ArgumentError(
-                `Values of a back ref must be instances of the target type (${this.to})`
-            );
-        }
-        var fkId = this.refPropMetadata.valueAccessor((item as any).__modelValues);
-        if (!isBlank(fkId)) {
-            if (fkId !== modelThis.id) {
-
-                // If changing the foreign key value of the source model, the foreign key
-                // should be mutated _before_ assigning the model to the @BackRef.
-                throw new ArgumentError(
-                    `The value of a @BackRef property (${this.name}) must agree on foreign key ` +
-                    `(foreign key value (${this.refProp}): ${fkId}, this id: ${modelThis.id}).`
-                );
-            }
-        }
     }
 }
 
@@ -733,7 +547,7 @@ export class ModelMetadata {
 }
 
 
-function buildOwnPropertyMap(type: Type): OrderedMap<string, PropertyMetadata> {
+function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadata> {
     let propArgs = List<{isRef: boolean, args: any[]}>(Reflect.getMetadata('model:properties', type))
         .skipWhile(arg => arg === null /* Ignore args for the supertype */);
 

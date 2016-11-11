@@ -5,9 +5,7 @@ import {identity} from 'caesium-core/codec';
 import {ModelValues} from '../../src/model/values';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
-import {
-    ModelMetadata, PropertyMetadata, RefPropertyMetadata, BackRefPropertyMetadata
-} from '../../src/model/metadata';
+import {ModelMetadata, PropertyMetadata, RefPropertyMetadata} from '../../src/model/metadata';
 
 import * as Test from './models';
 

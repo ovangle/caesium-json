@@ -3,7 +3,7 @@ import {Map} from 'immutable';
 import {forEachOwnProperty, isDefined, isFunction, Type} from 'caesium-core/lang';
 import {FactoryException, PropertyNotFoundException} from '../exceptions';
 import {ModelBase} from './base';
-import {ModelMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
+import {ModelMetadata, RefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
 

@@ -3,7 +3,7 @@ import {List} from 'immutable';
 import {isDefined, isBlank} from 'caesium-core/lang';
 
 import {itemList} from '../json_codecs';
-import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
+import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ManagerBase} from '../manager';
 
 import {copyModel, ModelConstructor} from './factory';
@@ -162,54 +162,6 @@ export class ModelBase {
     private _resolveWith(propName: string, model: ModelBase): ModelBase /* this */ {
         var prop = <RefPropertyMetadata>this.__metadata__.properties.get(propName);
         return this.set(prop.refName, model);
-    }
-
-    /**
-     * Returns all models which reference `this` via the given referencing property name.
-     * @param modelManager
-     * The manager of the foreign model type.
-     *
-     * @param propName
-     * @returns {Observable<List<ModelBase>>}
-     */
-    resolveBackRefProperty(
-        modelManager: ManagerBase<any>,
-        propName: string
-    ): Observable<ModelBase /* typeof this*/> {
-        if (this.isResolved(propName))
-            return Observable.of(this);
-
-        var prop = this.__metadata__.properties.get(propName);
-        if (!isDefined(prop) || !prop.isBackRef) {
-            return Observable.throw(new PropertyNotFoundException(propName, this, 'BackReference'));
-        }
-
-        var backRefProp = prop as BackRefPropertyMetadata;
-        if (!modelManager.isManagerFor(backRefProp.to)) {
-            return Observable.throw(new ArgumentError(
-                'manager must be the manager for the foreign model type ' + backRefProp.to)
-            );
-        }
-
-        var foreignRefName = backRefProp.refProp;
-
-        return modelManager.getAllByReference(foreignRefName, this)
-            .handle<List<ModelBase>>({select: 200, decoder: itemList<ModelBase>(modelManager.modelCodec)})
-            .map((references: List<ModelBase>) => {
-                if (backRefProp.multi) {
-                    references = references
-                        .map((ref) => ref._resolveWith(foreignRefName, this))
-                        .toList();
-                    return this.set(backRefProp.name, references);
-                } else {
-                    var ref = references.get(0, null);
-                    if (ref !== null) {
-                        ref = ref._resolveWith(foreignRefName, this);
-                    }
-                    return this.set(backRefProp.name, ref);
-                }
-            });
-
     }
 }
 
