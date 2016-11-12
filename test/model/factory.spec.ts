@@ -2,7 +2,7 @@ import {List} from 'immutable';
 
 import {forwardRef} from '@angular/core';
 
-import {FactoryException} from '../../src/exceptions';
+import {InvalidMetadata} from '../../src/model';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 import {ModelMetadata} from '../../src/model/metadata';
@@ -109,7 +109,7 @@ describe('model.factory', () => {
 
         it('should not be possible to create a factory for an abstract model type', () => {
             expect(() => createModelFactory(AbstractModel))
-                .toThrow(jasmine.any(FactoryException));
+                .toThrow(jasmine.any(InvalidMetadata));
         })
     });
 

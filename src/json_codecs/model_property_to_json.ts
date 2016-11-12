@@ -1,7 +1,7 @@
 import {isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 
-import {EncodingException, ArgumentError} from '../exceptions';
+import {EncodingException} from './exceptions';
 import {BasePropertyMetadata, RefPropertyMetadata} from '../model/metadata';
 
 import {model} from './model_to_json';

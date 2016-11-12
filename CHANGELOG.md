@@ -32,6 +32,9 @@
 - search parameters are automatically converted to snake_case from camelCase
   All multi-word parameters need to be changed to camelCase
 
+- No longer exports an 'exceptions' subpackage.
+
+
 - Another huge refactor of http. Renamed 'http' package to 'manager'
 - Manager is no longer exported from model
 - Manager now has no decorator

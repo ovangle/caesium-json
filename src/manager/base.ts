@@ -3,8 +3,10 @@ import {Injectable, Inject, Optional} from '@angular/core';
 import {Type, isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
+import {ValueError} from 'caesium-core/exception';
 
 import {ModelFactory, createModelFactory} from '../model/factory';
+import {InvalidMetadata} from '../model/exceptions';
 import {ModelMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
 
@@ -14,7 +16,18 @@ import {ModelHttp} from './model_http';
 import {RequestFactory, Response} from './request';
 
 import {Search, SearchParameter, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM} from './search';
-import {NotSupportedError, InvalidMetadata, FactoryException} from "../exceptions";
+
+// TODO: This is all that is required for a manager to be injectable.
+//      class MyComponent {
+//          constructor(@Inject(MY_MODEL_MANAGER) public mode {}
+//
+//      }
+
+//    @Injectable()
+//    export class MyModelManager implements ModelManager<MyModel> {
+//          public type: MyModel;
+//    }
+//
 
 /**
  * Rather than expect all manager implementations to declare @Injectable
@@ -99,9 +112,7 @@ export abstract class ManagerBase<T extends ModelBase> {
         if (this.__metadata.isAbstract) {
             var modelSubtypes = this.getModelSubtypes();
             if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {
-                throw new FactoryException(
-                    `Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`
-                );
+                throw new TypeError(`Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`);
             }
             factory = createModelFactory<T>(subtype);
         } else {
@@ -116,9 +127,7 @@ export abstract class ManagerBase<T extends ModelBase> {
         if (Array.isArray(modelSubtypes) && modelSubtypes.length > 0) {
             return union(...this.getModelSubtypes());
         } else if (this.__metadata.isAbstract) {
-            throw new InvalidMetadata(
-                'A manager for an abstract model type must provide a nonempty list of subtypes'
-            );
+            throw new InvalidMetadata('A manager for an abstract model type must provide a nonempty list of subtypes');
         } else {
             return model<T>(this.getModelType());
         }
@@ -179,9 +188,6 @@ export abstract class ManagerBase<T extends ModelBase> {
     }
 
     search(): Search<T> {
-        if (!isDefined(this.getSearchParameters())) {
-            throw new NotSupportedError(`${this.getModelType()} manager does not support search`);
-        }
         return new Search<T>(
             this._requestFactory,
             this.getSearchParameters(),

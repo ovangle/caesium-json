@@ -6,9 +6,9 @@ import {isBlank} from 'caesium-core/lang';
 import {Codec, identity} from 'caesium-core/codec';
 
 import {JsonObject} from "./interfaces";
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 
-export const errorCodec: Codec<any,any> = {
+export const error: Codec<any,any> = {
     encode: (_) => {
         throw new Error('A codec was not provided');
     },
@@ -16,9 +16,6 @@ export const errorCodec: Codec<any,any> = {
         throw new Error('A codec was not provided');
     }
 }
-
-
-
 
 export const str: Codec<string,string> = identity;
 export const num: Codec<number,number> = identity;

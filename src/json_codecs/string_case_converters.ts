@@ -17,7 +17,7 @@
  *      - every underscore (except leading underscores')
  *        must be between two letters
  */
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 
 const _MATCH_SNAKE_CASE =  /^_*([a-z]+_)*([a-z]+)$/;
 const _REPLACE_SNAKE_CASE = /([a-z])_([a-z])/g;

@@ -1,7 +1,7 @@
 import {Iterable} from 'immutable';
 import {isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 
 /**
  * Converts an enum to a string.

@@ -1,7 +1,8 @@
 import {Map} from 'immutable';
 
 import {forEachOwnProperty, isDefined, isFunction, Type} from 'caesium-core/lang';
-import {FactoryException, PropertyNotFoundException} from '../exceptions';
+import {PropertyNotFoundException, InvalidMetadata} from './exceptions';
+
 import {ModelBase} from './base';
 import {ModelValues, initialModelValues, mutateModelValues} from "./values";
 import {ModelMetadata} from './metadata';
@@ -22,7 +23,7 @@ export function createModelFactory<T extends ModelBase>(objOrType: Type | T): Mo
     let modelMeta: ModelMetadata = (type as any).__model_metadata__;
 
     if (modelMeta.isAbstract) {
-        throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
+        throw new InvalidMetadata(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
     }
 
     return function create(args: {[attr: string]: any}) {

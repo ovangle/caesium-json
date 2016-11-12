@@ -8,7 +8,7 @@ import {Model, ModelBase, RefProperty} from '../../src/model';
 import {ManagerOptions, ManagerBase, SearchParameter} from '../../src/manager';
 import {RequestMethod} from '../../src/manager/request/interfaces';
 import {RawResponse, RequestOptions} from "../../src/manager/model_http";
-import {FactoryException} from '../../src/exceptions';
+import {InvalidMetadata} from '../../src/model/exceptions';
 
 import {MockModelHttp} from './model_http.mock';
 
@@ -90,7 +90,7 @@ describe('manager.base', () => {
         it('should throw if the type is not a registered subtype', () => {
             var manager = new AbstractModelManager(_mkManagerOptions());
             expect(() => manager.create(MyModel, {}))
-                .toThrow(jasmine.any(FactoryException));
+                .toThrow(jasmine.any(InvalidMetadata));
         });
     });
     describe('.modelCodec()', () => {

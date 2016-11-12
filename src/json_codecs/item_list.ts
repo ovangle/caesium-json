@@ -1,7 +1,7 @@
 import {List} from 'immutable';
 import {isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 import {JsonObject} from './interfaces';
 import {list} from './basic';
 

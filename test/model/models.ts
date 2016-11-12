@@ -141,7 +141,7 @@ export class ModelMixedProperties extends ModelBase {
     private constructor(
         id: number,
         @RefProperty('propOne', {refType: ModelNoProperties, refName: 'propOne'})
-        public propOne: number,
+        public propOne: number = 4,
         @Property('propTwo',{codec: str})
         public propTwo: String,
         @Property('propThree', {codec: str})

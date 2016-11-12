@@ -6,7 +6,7 @@ import {JsonObject} from '../../json_codecs/interfaces';
 
 import {ModelHttp} from '../model_http';
 import {Request, RequestMethod, Response} from './interfaces';
-import {StateException} from "../../exceptions";
+import {StateException} from "./exceptions";
 import {_ObjectResponseImpl} from "./response";
 
 export class Put<T> implements Request {

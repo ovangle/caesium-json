@@ -1,20 +1,12 @@
-/**
- * System configuration for Angular samples
- * Adjust as necessary for your application needs.
- */
 (function (global) {
     System.config({
         paths: {
             // paths serve as alias
-            'npm:': 'node_modules/'
+            'npm:': 'node_modules/',
         },
 
         // map tells the System loader where to look for things
         map: {
-            // Look in the src folder for 'src/' files
-            src: 'src',
-            test: 'test',
-
             // angular bundles
             '@angular/core': 'npm:@angular/core/bundles/core.umd.js',
             '@angular/common': 'npm:@angular/common/bundles/common.umd.js',
@@ -36,7 +28,26 @@
         // packages tells the System loader how to load when no filename and/or no extension
         packages: {
             src: {
-                main: './main.js',
+                defaultExtension: 'js'
+            },
+            'src/json_codecs': {
+                main: 'index',
+                defaultExtension: 'js'
+            },
+            'src/manager': {
+                main: 'index',
+                defaultExtension: 'js'
+            },
+            'src/manager/search': {
+                main: 'index',
+                defaultExtension: 'js'
+            },
+            'src/manager/request': {
+                main: 'index',
+                defaultExtension: 'js'
+            },
+            'src/model': {
+                main: 'index',
                 defaultExtension: 'js'
             },
             test: {

@@ -2,9 +2,9 @@ import {List} from 'immutable';
 
 import {isBlank, isDefined, isNumber, isBoolean} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
+import {ValueError} from 'caesium-core/exception';
 
-import {EncodingException, ArgumentError} from '../../exceptions';
-import {JsonObject} from '../../json_codecs/interfaces';
+import {JsonObject, EncodingException} from '../../json_codecs';
 
 import {ResponseHandler} from '../request';
 import {SearchParameterMap} from './parameter_map';
@@ -23,7 +23,7 @@ export function refinePage<T>(page: SearchResultPage<T>, refinedParams: SearchPa
     }
 
     if (!refinedParams.isRefinementOf(page.parameters)) {
-        throw new ArgumentError('parameters must be a proper refinement of the page params');
+        throw new ValueError('parameters must be a proper refinement of the page params');
     }
     var items = page.items
         .filter((item) => refinedParams.matches(item))

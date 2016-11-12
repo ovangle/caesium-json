@@ -1,23 +1,20 @@
 import {List} from 'immutable';
-
-import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs/Observable';
 
 import {OpaqueToken} from '@angular/core';
 
-import {Codec, isCodec, getDecoder} from 'caesium-core/codec';
 import {Converter} from 'caesium-core/converter';
+import {Codec, isCodec, getDecoder} from 'caesium-core/codec';
 
-import {JsonObject} from '../json_codecs/interfaces';
+import {JsonObject} from '../../json_codecs';
 
-import {ModelHttp} from "./model_http";
-
-import {SearchResult} from './search/result';
-import {SearchParameter} from "./search/parameter";
-import {SearchParameterMap} from './search/parameter_map';
-import {RequestFactory} from "./request/factory";
-
-export {SearchResult, SearchParameter};
+import {ModelHttp} from '../model_http';
+import {RequestFactory} from '../request';
+import {SearchParameterMap} from './parameter_map';
+import {SearchParameter} from './parameter';
+import {SearchResultPage} from './result_page';
+import {SearchResult} from './result';
 
 export const SEARCH_PAGE_SIZE = new OpaqueToken('cs_search_page_size');
 /**

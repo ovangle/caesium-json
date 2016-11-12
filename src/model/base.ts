@@ -9,7 +9,7 @@ import {ManagerBase} from '../manager';
 import {copyModel, ModelConstructor} from './factory';
 import {initialModelValues, ModelValues, isModelValues, mutateModelValues} from './values';
 
-import {PropertyNotFoundException, ArgumentError} from '../exceptions';
+import {PropertyNotFoundException, ArgumentError} from './exceptions';
 
 export class ModelBase {
     /**

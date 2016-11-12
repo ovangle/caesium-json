@@ -4,7 +4,7 @@ import {Converter} from 'caesium-core/converter';
 import {Codec} from 'caesium-core/codec';
 
 import {JsonObject} from './interfaces';
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 import {ModelMetadata} from '../model/metadata';
 import {model} from './model_to_json';
 

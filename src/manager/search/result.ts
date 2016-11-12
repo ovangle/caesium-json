@@ -12,12 +12,10 @@ import {Observable} from 'rxjs/Observable';
 
 import {memoize} from 'caesium-core/decorators';
 
-import {Search} from '../search';
-import {Response} from '../request/interfaces';
-import {Get} from '../request/get';
+import {Search} from './search';
+import {StateException, Response, Get} from '../request';
 import {SearchParameterMap} from './parameter_map';
 import {SearchResultPage, refinePage, SearchResultPageHandler} from "./result_page";
-import {StateException} from "../../exceptions";
 
 export class SearchResult<T> {
 

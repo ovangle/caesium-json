@@ -113,7 +113,7 @@ describe('model.base', () => {
             expect(i_1).not.toBe(instance, 'changed value of ref');
             let i_2 = instance.set('ref', reference);
 
-            expect(instance.set('prop', new ReferencedModel(null))).not.toBe(instance, 'new value for ref');
+            expect(instance.set('ref', new ReferencedModel(null))).not.toBe(instance, 'new value for ref');
 
         })
     });

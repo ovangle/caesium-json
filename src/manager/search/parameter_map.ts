@@ -3,7 +3,7 @@ import {Map} from 'immutable';
 import {isDefined, forEachOwnProperty} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 
-import {ArgumentError} from '../../exceptions';
+import {ArgumentError} from '../../model/exceptions';
 
 import {SearchParameter, Matcher, Refiner} from './parameter';
 import {StringMap} from '../../json_codecs/interfaces';

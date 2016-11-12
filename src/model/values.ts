@@ -1,6 +1,6 @@
 import {Map} from 'immutable';
 import {isBlank, isDefined} from 'caesium-core/lang';
-import {ArgumentError} from '../exceptions';
+import {ArgumentError} from './exceptions';
 import {ModelBase} from './base';
 import {PropertyMetadata, RefPropertyMetadata, BasePropertyMetadata} from './metadata';
 

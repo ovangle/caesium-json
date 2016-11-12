@@ -7,10 +7,7 @@ import {Type, isBlank, isDefined} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
-import {
-    InvalidMetadata, StateException, PropertyNotFoundException, ArgumentError
-} from "../exceptions";
-import {ModelNotFoundException} from './exceptions';
+import {InvalidMetadata, ModelNotFoundException, PropertyNotFoundException, ArgumentError} from './exceptions';
 import {num} from '../json_codecs';
 
 import {ModelOptions, BasePropertyOptions, defaultPropertyOptions, PropertyOptions, RefPropertyOptions} from './decorators';
@@ -112,13 +109,15 @@ export class BasePropertyMetadata {
     checkValid(modelMetadata: ModelMetadata): void {
         //TODO: This check is incorrect (however, it doesn't matter at the moment).
         // Need to do a property check when we change how ref properties work.
-        if (!this.isMulti && this.type === Object) {
+
+        if (!isDefined(this.codec) && !this.isMulti && this.type === Object) {
             throw new InvalidMetadata(
                 `Could not resolve the type of property ${this.name}. ` +
                 `If the property is not a primitive type, a List, a Date or a subtype of ModelBase` +
                 `then a specific codec needs to be provided in the property options.`
             );
         }
+
         if (_RESERVED_PROPERTY_NAMES.contains(this.name))
             throw new InvalidMetadata(`${this.name} is a reserved name and cannot be the name of a property`);
     }

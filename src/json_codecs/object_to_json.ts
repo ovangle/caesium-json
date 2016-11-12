@@ -19,7 +19,7 @@ import {isBlank, isDefined} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 
 import {JsonObject} from './interfaces';
-import {EncodingException} from '../exceptions';
+import {EncodingException} from './exceptions';
 import {camelCaseToSnakeCase} from './string_case_converters';
 
 
