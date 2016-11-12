@@ -32,9 +32,11 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
 
     get(type: Type, prop: string, receiver: any) {
         if (prop === '__model_metadata__' || prop === 'prototype') {
-            let metadata = buildModelMetadata(type, receiver);
-            this.__model_metadata__ = metadata;
-            this.__prototype__ = prepareType(type, metadata);
+            if (!isDefined(this.__model_metadata__)) {
+                let metadata = buildModelMetadata(type, receiver);
+                this.__model_metadata__ = metadata;
+                this.__prototype__ = prepareType(type, metadata);
+            }
         }
 
         switch (prop) {
@@ -53,7 +55,9 @@ function prepareType(type: Type, metadata: ModelMetadata) {
     let prototype = type.prototype;
 
     let descriptorMap = metadata.ownProperties
-        .flatMap(property => property.valueAccessor.descriptors);
+        .flatMap(property => property.valueAccessor.descriptors)
+        .filter((descriptor: PropertyDescriptor, propOrRef: string) => !prototype.hasOwnProperty(propOrRef));
+
 
     return Object.defineProperties(prototype, descriptorMap.toObject());
 }

@@ -43,6 +43,7 @@ export class Invalid_RefNameInvalid extends ModelBase {
     }
 }
 
+
 describe('model.metadata', () => {
     describe('ModelMetadata', () => {
 
@@ -75,7 +76,8 @@ describe('model.metadata', () => {
             expect(() => ModelMetadata.forType(Invalid_PropertyReservedName)).toThrow();
         });
 
-        it('should not be possible to contribute an untyped property', () => {
+        // Codec is mandatory at the moment, so it doesn't matter if properties are untyped
+        xit('should not be possible to contribute an untyped property', () => {
             expect(() => ModelMetadata.forType(Invalid_UntypedProperty)).toThrow();
         })
 
@@ -89,10 +91,6 @@ describe('model.metadata', () => {
     });
 
     describe('RefPropertyMetadata', () => {
-
-        it('should not be possible to contribute to the model if one of the model properties is the referenced property', () => {
-            expect(() => ModelMetadata.forType(Invalid_RefNameInvalid)).toThrow();
-        });
 
         it('should have default values for the basic property attributes', () => {
             var property = ModelMetadata.forType(Test.ModelOneProperty).properties.get('prop');
