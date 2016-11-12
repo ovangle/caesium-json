@@ -1,8 +1,8 @@
 module.exports = function(config) {
 
-    var appBase    = 'base/';       // transpiled app JS and map files
-    var srcBase = 'src/';       // app source TS files
-    var appAssets  = 'base/app/'; // component assets fetched by Angular's compiler
+    var appBase     = 'base/';       // transpiled app JS and map files
+    var srcBase     = 'src/';       // app source TS files
+    var appAssets   = 'base/app/'; // component assets fetched by Angular's compiler
 
     var testBase    = 'test/';       // transpiled test JS and map files
     var testSrcBase = 'test/';       // test source TS files
@@ -30,8 +30,8 @@ module.exports = function(config) {
             'node_modules/systemjs/dist/system.src.js',
 
             // Polyfills
-            'node_modules/core-js/client/shim.js',
-            'node_modules/es6-shim/es6-shim.js',
+            //'node_modules/core-js/client/shim.js',
+            //'node_modules/es6-shim/es6-shim.js',
             'node_modules/reflect-metadata/Reflect.js',
 
             // zone.js
