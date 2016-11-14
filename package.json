@@ -10,8 +10,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "tsc && concurrently \"tsc -w\" \"karma start karma.conf.js\"",
-    "test-once": "tsc && karma start karma.conf.js --single-run",
+    "test": "karma start karma.conf.js",
+    "test-once": "karma start karma.conf.js --single-run",
     "prepare": "python3 tools/prepare",
     "clean": "python3 tools/clean"
   },
