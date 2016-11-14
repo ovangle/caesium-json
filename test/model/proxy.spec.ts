@@ -3,7 +3,9 @@ import {ModelBase} from '../../src/model/base';
 
 import {str} from '../../src/json_codecs';
 
-@Model({kind: 'test::ExistingPropretyName'})
+import * as Test from './models';
+
+@Model({kind: 'test::ExistingPropertyName'})
 export class ExistingPropertyName extends ModelBase {
     get existingProperty() { return 'the existing property'; }
 

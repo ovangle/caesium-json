@@ -47,11 +47,26 @@ export class Invalid_RefNameInvalid extends ModelBase {
 describe('model.metadata', () => {
     describe('ModelMetadata', () => {
 
-        it('should be possible to get the Metadata of an model', () => {
+        it('should be possible to get the Metadata of a model type', () => {
             let metadata = ModelMetadata.forType(Test.ModelNoProperties);
             expect(metadata.kind).toEqual('model::ModelNoProperties');
             expect(metadata.isAbstract).toEqual(false);
         });
+
+        it('should be possible to get the Metadata for a model subtype', () => {
+            console.log('SuperType meta', ModelMetadata.forType(Test.ModelSupertype));
+            console.log('Subtype meta', ModelMetadata.forType(Test.ModelSubtype));
+            let metadata = ModelMetadata.forType(Test.ModelSubtype)
+            expect(metadata.kind).toEqual('model::ModelSubtype');
+        });
+
+        it('should be possible to get the Metadata for a model instance', () => {
+            let m1 = new Test.ModelNoProperties(null);
+            expect(ModelMetadata.forInstance(m1)).toBe(ModelMetadata.forType(Test.ModelNoProperties));
+
+            let m2 = new Test.ModelSubtype(null);
+            expect(ModelMetadata.forInstance(m2)).toBe(ModelMetadata.forType(Test.ModelSubtype));
+        })
 
         it('should throw when trying to create a ModelMetadata with an invalid `kind`', () => {
             expect(() => ModelMetadata.forType(Invalid_Kind)).toThrow();

@@ -25,7 +25,7 @@ describe('model.decorators', () => {
             expect(Object.isFrozen(m)).toBe(true, 'Instance should be frozen');
 
             let modelSubtype = new Test.ModelSubtype(null);
-            expect(modelSubtype instanceof Test.ModelNoProperties).toBe(true, 'Should preserve prototype chain');
+            expect(modelSubtype instanceof Test.ModelSupertype).toBe(true, 'Should preserve prototype chain');
             expect(modelSubtype instanceof Test.ModelSubtype).toBe(true, 'Also an instance of subtype');
             expect(Object.isFrozen(modelSubtype)).toBe(true, 'Subtypes should also be frozen');
         });

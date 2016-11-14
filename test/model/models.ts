@@ -1,7 +1,7 @@
 import {List} from 'immutable';
 import {Type} from 'caesium-core/lang';
 
-import {createModelFactory} from '../../src/model/factory';
+import {createModelFactory, ModelFactory} from '../../src/model/factory';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 
@@ -17,15 +17,17 @@ export class ModelNoProperties extends ModelBase {
     }
 }
 
-@Model({kind: 'model::ModelSubtype'})
-export class ModelSubtype extends ModelNoProperties {
-    static constructorCount = 0;
-
+@Model({kind: 'model::ModelSupertype', isAbstract: true})
+export class ModelSupertype extends ModelBase {
     constructor(id: number) {
         super(id);
+    }
+}
 
-        //console.log('Super returns', s);
-        //ModelSubtype.constructorCount += 1;
+@Model({kind: 'model::ModelSubtype', superType: ModelSupertype})
+export class ModelSubtype extends ModelSupertype {
+    constructor(id: number) {
+        super(id);
     }
 
     foo(arg: any) {
@@ -163,6 +165,18 @@ export class PropertyOptions extends ModelBase {
         public writeOnly:string
     ) {
         super(id, defaultValue, writeOnly);
+    }
+}
+
+@Model({kind: 'model::StaticCreate'})
+export class WithFactory extends ModelBase {
+    static create = createModelFactory(WithFactory);
+
+    constructor(
+        id: number,
+        @Property('name', {codec: str}) public name: string
+    ) {
+        super(id, name);
     }
 }
 

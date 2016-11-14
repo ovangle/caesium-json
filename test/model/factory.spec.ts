@@ -9,6 +9,8 @@ import {ModelMetadata} from '../../src/model/metadata';
 import {str, list} from '../../src/json_codecs';
 import {createModelFactory, copyModel} from '../../src/model/factory';
 
+import * as Test from './models';
+
 @Model({kind: 'test::MyModel'})
 class MyModel extends ModelBase {
     constructor(
@@ -154,6 +156,14 @@ describe('model.factory', () => {
                 listProp: List(['a', 'b', 'c'])
             });
             expect(() => copyModel(instance, [{propName: 'nonExistentProp', value: 42}])).toThrow();
+        });
+
+        it('should be possible to define a model factory as a static member of a class definition', () => {
+            let factory = Test.WithFactory.create;
+            expect(factory).toEqual(jasmine.any(Function));
+
+            expect(factory({name: 'name'}))
+                .toEqual(new Test.WithFactory(null, 'name'));
         });
 
     });
