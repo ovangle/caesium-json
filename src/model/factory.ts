@@ -15,45 +15,45 @@ export interface ModelConstructor<T extends ModelBase> extends Function {
     new (...args: any[]): T;
 }
 
+// A unique token to identify a property that is assigned a reference factory.
 export const _DEFERRED_MODEL_FACTORY = <ModelFactory<any>>{};
 
-export function createModelFactory<T extends ModelBase>(objOrType: Type | T): ModelFactory<T> {
-    if (!isFunction(objOrType)) {
-        let obj: T = <T>objOrType;
-        return (properties: {[prop: string]: any}) => copyModel<T>(obj, properties);
-    }
+/**
+ * Using a model's declared constructor is cumbersome on anything but
+ * the most trivial model definitions.
+ *
+ * Returns a factory function which accepts a map of property names
+ * to their respective types.
+ *
+ * This function is treated specially to allow for a reference to the
+ * containing type to be passed to the factory function.
+ *
+ * eg.
+ * @Model(...)
+ * class A {
+ *      // You should *never* reference the current type from the body
+ *      // of the class except in this particular circumstance.
+ *      static create = createModelFactory<A>(A);
+ *
+ *      // It is fine, however to reference the type from inside a static
+ *      // function, so this is OK.
+ *      static foo() {
+ *          return functionThatAcceptsAModelType(A);
+ *      }
+ *
+ *      constructor(...) {}
+ * }
+ *
+ *
+ * @param objOrType
+ * @returns {any}
+ */
+export function createModelFactory<T extends ModelBase>(type: Type): ModelFactory<T> {
+    type = resolveForwardRef(type);
+    let modelMeta: ModelMetadata = (type as any).__model_metadata__;
 
-    let type: Type = resolveForwardRef(<Type>objOrType);
-
-    let modelMeta: ModelMetadata;
-    /// createModelFactory should be the only time we refer to the type in a static context
-    /// eg.
-    /// class Model extends ModelBase {
-    ///   static create = createModelFactory(Model);
-    /// }
-    ///
-    /// This is compiled by typescript into
-    /// class Model extends ModelBase {}
-    /// Model.create = createModelFactory(Model);
-    /// ___decorate(Model, /* omitted */)
-    ///
-    /// Note that using the metadata within a static method is OK, because '__decorate'
-    /// will have been called by the time the function body is executed (and thus references
-    /// to the type will return the proxied instance.
-    ///
-    /// ie. the following would always be valid:
-    /// class Model extends ModelBase {
-    ///   static create = createModelFactory(Model);
-    /// }
-    ///
-    /// The static method is defined _before_ the  decorator is applied, so we need
-    /// to look up the bare type, rather than the type proxy.
-    if ('__model_metadata__' in type) {
-        // We could also be called before ModelMetadata is actually defined
-        modelMeta = (type as any).__model_metadata__;
-    } else {
-        // Defer the creation of the model factory until the type has been annotated.
-        // The real model factory will be provided by the proxy.
+    if (!isDefined(modelMeta)) {
+        // Metadata might not be available to the
         return _DEFERRED_MODEL_FACTORY;
     }
 

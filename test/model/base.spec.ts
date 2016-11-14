@@ -103,7 +103,6 @@ describe('model.base', () => {
 
         });
 
-
         it('setting a reference value to reference will not return a new instance of the model', () => {
             // This is important, since a large selling point of immutability in angular
             // is to reduce change detection overhead.
@@ -114,7 +113,17 @@ describe('model.base', () => {
             let i_2 = instance.set('ref', reference);
 
             expect(instance.set('ref', new ReferencedModel(null))).not.toBe(instance, 'new value for ref');
+        });
 
+        it('should be possible to get and set values on a subtype', () => {
+            let s = new Test.OneSubtypeProperty(null, 'hello', 'world');
+            expect(s.prop).toEqual('hello', 'Should be able to get inherited properties');
+            expect(s.newProp).toEqual('world', 'Should be able to get the subtype property');
+
+            s = s.set('prop', 'goodbye');
+            expect(s.prop).toBe('goodbye', 'Should have mutated the inherited prop');
+            s = s.set('newProp', 'everyone');
+            expect(s.newProp).toEqual('everyone', 'Should have set the subtype property');
         })
     });
 });

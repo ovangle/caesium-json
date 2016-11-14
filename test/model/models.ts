@@ -1,5 +1,9 @@
 import {List} from 'immutable';
+
+import {forwardRef} from '@angular/core';
+
 import {Type} from 'caesium-core/lang';
+
 
 import {createModelFactory, ModelFactory} from '../../src/model/factory';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
@@ -17,6 +21,7 @@ export class ModelNoProperties extends ModelBase {
     }
 }
 
+
 @Model({kind: 'model::ModelSupertype', isAbstract: true})
 export class ModelSupertype extends ModelBase {
     constructor(id: number) {
@@ -26,6 +31,9 @@ export class ModelSupertype extends ModelBase {
 
 @Model({kind: 'model::ModelSubtype', superType: ModelSupertype})
 export class ModelSubtype extends ModelSupertype {
+
+    static create = createModelFactory(forwardRef(() => ModelSubtype));
+
     constructor(id: number) {
         super(id);
     }
@@ -50,10 +58,26 @@ export class ModelOneProperty extends ModelBase {
     }
 }
 
-@Model({kind: 'model::OnePropertySubtype', superType: ModelOneProperty})
-export class OnePropertySubtype extends ModelOneProperty {
+
+@Model({kind:'model::OneSuepertypeProperty', isAbstract: true})
+export class OneSupertypeProperty extends ModelBase {
+    static create(args: {prop?: ModelNoProperties}): ModelOneProperty {
+        return <ModelOneProperty>createModelFactory(ModelOneProperty)(args);
+    }
+
     constructor(
         public id: number,
+        @Property('prop', {codec: str}) public prop: string,
+        ...args: any[] // Subtype arguments.
+    ) {
+        super(id, prop, ...args);
+    }
+}
+
+@Model({kind: 'model::OnePropertySubtype', superType: OneSupertypeProperty})
+export class OneSubtypeProperty extends OneSupertypeProperty {
+    constructor(
+        id: number, prop: string,
         @Property('newProp', {codec: str}) public newProp: string,
     ) {
         super(id, newProp);

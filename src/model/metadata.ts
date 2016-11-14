@@ -262,7 +262,9 @@ export class ModelMetadata {
 
     kind: string;
 
-    // The model type that is being managed.
+    /**
+     * The annotated type of the model.
+     */
     type: Type;
 
     /// Basic support for model extensions.
@@ -328,7 +330,7 @@ export class ModelMetadata {
         ownProperties: OrderedMap<string,PropertyMetadata>,
         options: ModelOptions
     ) {
-        this.type = resolveForwardRef(type);
+        this.type = type && resolveForwardRef(type);
         this.kind = options.kind;
         this.ownProperties = ownProperties;
 
@@ -421,7 +423,7 @@ function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadat
     return OrderedMap<string,BasePropertyMetadata>(ownProperties.map(prop => [prop.name, prop]));
 }
 
-export function buildModelMetadata(type: Type, typeProxy: any): ModelMetadata {
+export function buildModelMetadata(type: Type, typeProxy?: any): ModelMetadata {
 
     if (type === ModelBase) {
         return ModelMetadata._modelBaseMetadata;
