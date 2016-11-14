@@ -1,4 +1,4 @@
-import {List, OrderedMap} from 'immutable';
+import {List, OrderedMap, Set} from 'immutable';
 
 import {resolveForwardRef} from '@angular/core';
 import {isDefined, Type, forEachOwnProperty} from 'caesium-core/lang';
@@ -12,6 +12,37 @@ export interface ModelTypeProxy extends Type {
     ___model_metadata__: ModelMetadata;
 }
 
+/// Standard method names of Object.prototype and Function.prototype.
+/// These method names should always be passed to the underlying type.
+const DO_NOT_INTERCEPT = Set<string>([
+    '__proto__',
+    '__noSuchMethod__',
+    '__defineGetter__',
+    '__defineSetter__',
+    '__lookupGetter__',
+    '__lookupSetter__',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'getOwnPropertyDescriptor',
+    'hasOwnPropertyDescriptor',
+    'propertyIsEnumerable',
+    'toSource',
+    'toString',
+    'watch',
+    'unwatch',
+    'valueOf',
+    'arguments',
+    'caller',
+    'length',
+    'name',
+    'displayName',
+    'apply',
+    'bind',
+    'call',
+    'isGenerator',
+    'toSource'
+]);
+
 export class ModelTypeProxyHandler implements ProxyHandler<Type> {
     private __model_metadata__: ModelMetadata;
     private __prototype__: any;
@@ -24,33 +55,27 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
         return Object.freeze(obj);
     }
 
-    has(type: Type, prop: string): boolean {
-        if (prop === '__model_metadata__') {
-            return true;
-        }
-        return prop in type;
-    }
-
     get(type: Type, prop: string, receiver: any): any {
-        let defer = false;
+        if (DO_NOT_INTERCEPT.has(prop)) {
+            return (type as any)[prop];
+        }
 
-        if (prop === '__model_metadata__' || prop === 'prototype') {
-            if (type.name !== receiver.name) {
-                if (prop === 'prototype')
-                    return receiver.prototype;
-                // In statements within the static context of a subtype,
-                // the decorators have not been applied to to type yet.
-                //
-                // Thus we have to have a `null` ModelMetadata.
-                return undefined;
-            } else {
-                if (!isDefined(this.__model_metadata__)) {
-                    let metadata = buildModelMetadata(type, receiver);
-                    this.__model_metadata__ = metadata;
-                    this.__prototype__ = prepareType(type, metadata);
-                }
-            }
+        if (prop === '__model_metadata__' && type.name !== receiver.name) {
+            // In statements within the static context of a subtype,
+            // the decorators have not been applied to to type yet,
+            // so we have no metadata.
 
+            // ES6 classes inherit static methods, but this is obviously
+            // the wrong thing to do for the metadata, which applies
+            // only to the type it was defined as
+            return undefined;
+        }
+
+        // Build and cache values for the metadata and prototype for the underlying type.
+        if (!isDefined(this.__model_metadata__)) {
+            let metadata = buildModelMetadata(type, receiver);
+            this.__model_metadata__ = metadata;
+            this.__prototype__ = prepareType(type, metadata, receiver);
         }
 
         switch (prop) {
@@ -65,7 +90,7 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
     }
 }
 
-function prepareType(type: Type, metadata: ModelMetadata) {
+function prepareType(type: Type, metadata: ModelMetadata, receiver: any) {
     let prototype = type.prototype;
 
     // If we have added a static factory to the type, make sure
@@ -76,7 +101,7 @@ function prepareType(type: Type, metadata: ModelMetadata) {
 
     forEachOwnProperty(type, (value, key) => {
         if (value === _DEFERRED_MODEL_FACTORY) {
-            (type as any)[key] = createModelFactory(type);
+            (type as any)[key] = createModelFactory(receiver);
         }
     });
 

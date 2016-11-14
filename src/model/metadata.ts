@@ -240,10 +240,11 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 export class ModelMetadata {
 
     static forType(type: Type): ModelMetadata {
-        if ('__model_metadata__' in type) {
-            return (type as any).__model_metadata__;
+        let metadata = (type as any).__model_metadata__;
+        if (!isDefined(metadata)) {
+            throw new ModelNotFoundException(type);
         }
-        throw new ModelNotFoundException(type);
+        return metadata;
     }
 
     static forInstance(model: any): ModelMetadata {

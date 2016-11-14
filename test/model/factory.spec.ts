@@ -160,7 +160,7 @@ describe('model.factory', () => {
 
         it('should be possible to define a model factory as a static member of a class definition', () => {
             let factory = Test.WithFactory.create;
-            expect(factory).toEqual(jasmine.any(Function));
+            //expect(factory).toEqual(jasmine.any(Function));
 
             expect(factory({name: 'name'}))
                 .toEqual(new Test.WithFactory(null, 'name'));

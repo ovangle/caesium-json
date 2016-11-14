@@ -23,6 +23,4 @@ describe('model.type_proxy', () => {
         let foo = new ExistingPropertyName(null, 'overwritten by the property descriptor');
         expect(foo.existingProperty).toBe('the existing property');
     });
-
-    it('should not be possible to access ')
 });
