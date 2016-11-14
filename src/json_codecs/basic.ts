@@ -21,17 +21,25 @@ export const str: Codec<string,string> = identity;
 export const num: Codec<number,number> = identity;
 export const bool: Codec<boolean,boolean> = identity;
 
+/**
+ * Codec between string representing a calendar date with no time information.
+ *
+ * It is assumed that the date passed from the server represents UTC midnight
+ * on the specified day.
+ *
+ * @type {{encode: ((date:Date)=>(any|string)); decode: ((value:string)=>(any|Date))}}
+ */
 export const date: Codec<Date,string> = {
     encode: (date: Date) => {
         if (isBlank(date))
             return date as any;
         var m = moment(date);
-        return m.format('YYYY-MM-DD');
+        return m.utc().format('YYYY-MM-DD');
     },
     decode: (value: string) => {
         if (isBlank(value))
             return value as any;
-        var m = moment(value, 'YYYY-MM-DD', true);
+        var m = moment.utc(value, 'YYYY-MM-DD', true);
         if (!m.isValid()) {
             throw new EncodingException(`Not a valid date format (use YYYY-MM-DD) ${value}`)
         }

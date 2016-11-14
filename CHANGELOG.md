@@ -33,7 +33,8 @@
   All multi-word parameters need to be changed to camelCase
 
 - No longer exports an 'exceptions' subpackage.
-
+- readOnly properties are no longer coerced to `null`.
+- ID is no longer a required property
 
 - Another huge refactor of http. Renamed 'http' package to 'manager'
 - Manager is no longer exported from model

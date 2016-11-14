@@ -1,10 +1,9 @@
 
 import {List, Map} from 'immutable';
 import {identity} from 'caesium-core/codec';
-import {str, bool, num, date, list, map} from '../../src/json_codecs/basic';
+import {str, bool, num, date, dateTime, list, map} from '../../src/json_codecs/basic';
 
-
-xdescribe('json_codecs.basic', () => {
+describe('json_codecs.basic', () => {
     describe('str', () => {
         it('should be just an identity codec', () => {
             expect(str).toBe(identity);
@@ -20,6 +19,23 @@ xdescribe('json_codecs.basic', () => {
             expect(bool).toBe(identity);
         });
     });
+    describe('dateTime', () => {
+        it('should be able to encode and decode blank values', () => {
+            expect(dateTime.encode(null)).toBeNull('encode null');
+            expect(dateTime.decode(null)).toBeNull('decode null');
+            expect(dateTime.encode(undefined)).toBeUndefined('encode undefined');
+            expect(dateTime.decode(undefined)).toBeUndefined('decode undefined');
+        });
+
+        it('should be able to encode a date as an ISO string', () => {
+            expect(dateTime.encode(new Date(0))).toBe('1970-01-01T00:00:00.000Z');
+        });
+
+        it('should be able to decode an ISO string into a date', () => {
+            expect(dateTime.decode('1970-01-01T00:00:00Z')).toEqual(new Date(0));
+        });
+    });
+
     describe('date', () => {
         it('should be able to encode and decode blank values', () => {
             expect(date.encode(null)).toBeNull('encode null');
@@ -28,14 +44,15 @@ xdescribe('json_codecs.basic', () => {
             expect(date.decode(undefined)).toBeUndefined('decode undefined');
         });
 
-        it('should be able to encode a date as an ISO string', () => {
-            expect(date.encode(new Date(0))).toBe('1970-01-01T00:00:00.000Z');
+        it('should be able to encode a date in the format YYYY-MM-DD', () => {
+            expect(date.encode(new Date(0))).toBe('1970-01-01');
         });
 
-        it('should be able to decode an ISO string into a date', () => {
-            expect(date.decode('1970-01-01T00:00:00Z')).toEqual(new Date(0));
+        it('should be able to decode a date in the format YYYY-MM-DD to a date', () => {
+            expect(date.decode('1970-01-01')).toEqual(new Date(0));
         });
     });
+
 
     describe('map', () => {
         it('should not be able to encode or decode blank values', () => {

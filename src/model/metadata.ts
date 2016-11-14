@@ -143,7 +143,8 @@ export class PropertyMetadata extends BasePropertyMetadata {
    static idProperty(name?: string) {
         name = name || 'id';
         let _idPropertyOptions = Object.assign({}, defaultPropertyOptions, {
-            codec: num, readOnly: true, allowNull: true
+            codec: num, readOnly: true, allowNull: true, required: false,
+            defaultValue: () => null
         });
 
         return new PropertyMetadata(ModelBase, name, Number, _idPropertyOptions);

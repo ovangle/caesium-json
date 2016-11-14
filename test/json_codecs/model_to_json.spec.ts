@@ -1,35 +1,51 @@
 import {List} from 'immutable';
+import {forwardRef} from '@angular/core';
 import {Model, Property, ModelBase} from '../../src/model';
-import {createModelFactory} from '../../src/model/factory';
-import {str, date, num, list} from '../../src/json_codecs/basic';
+import {createModelFactory, ModelFactory} from '../../src/model/factory';
+import {str, dateTime, num, list} from '../../src/json_codecs/basic';
 import {model} from '../../src/json_codecs/model_to_json';
 import {ModelMetadata} from "../../src/model/metadata";
-/*
+
 // Models for model converter test.
 @Model({kind: 'test::MyModel', isAbstract: true})
-class MyModel extends ModelBase {
-    @Property({codec: str})
-    name:string;
-
-    @Property({codec: list(str)})
-    aliases:List<string>;
-
-    @Property({codec: date})
-    birthday:Date;
+export class MyModel extends ModelBase {
+    //static create = createModelFactory<MyModel>(MyModel);
+    constructor(
+        id: number,
+        @Property('name', {codec: str})
+        public name: string,
+        @Property('aliases', {codec: list(str)})
+        public aliases: List<string>,
+        @Property('birthday', {codec: dateTime, allowNull: true})
+        public birthday: Date,
+        ...args: any[]
+    ) {
+        super(id, name, aliases, birthday, ...args);
+    }
 }
 
 @Model({kind: 'test::Submodel', superType: MyModel})
-class SubModel extends MyModel {
-    @Property({codec: str})
-    submodelProperty:string;
+export class SubModel extends MyModel {
+
+    static create = createModelFactory<SubModel>(SubModel);
+
+    constructor(
+        id: number,
+        name: string,
+        aliases: List<string>,
+        birthday: Date,
+        @Property('submodelProperty', {codec: str, allowNull: true})
+        submodelProperty:string
+    ) {
+        super(id, name, aliases, birthday, submodelProperty);
+    }
 }
 
 describe('json_codecs.model_to_json', () => {
     it('should be possible to encode a model as json', () => {
         var codec = model(SubModel);
 
-        var modelFactory = createModelFactory<MyModel>(ModelMetadata.forType(SubModel));
-        var instance = modelFactory({
+        let instance = SubModel.create({
             name: 'henry',
             aliases: List(['hank']),
             birthday: new Date(0),
@@ -37,7 +53,6 @@ describe('json_codecs.model_to_json', () => {
         });
 
         expect(codec.encode(instance)).toEqual({
-            id: null,
             kind: 'test::Submodel',
             name: 'henry',
             aliases: ['hank'],
@@ -47,16 +62,17 @@ describe('json_codecs.model_to_json', () => {
     });
 
     it('should be possible to decode a model from json', () => {
-        var codec = model<MyModel>(SubModel);
+        let codec = model<MyModel>(SubModel);
 
-        var modelJson = {
+        let modelJson = {
             kind: 'test::MyModel',
             name: 'john',
             aliases: ['jack', 'jo'],
             birthday: '1970-01-01T00:00:00.000Z'
         };
 
-        var instance = codec.decode(modelJson);
+        let instance = codec.decode(modelJson);
+
         expect(instance).toEqual(jasmine.any(MyModel));
         expect(instance.name).toBe('john');
         expect(instance.aliases).toEqual(List(['jack', 'jo']));
@@ -70,5 +86,16 @@ describe('json_codecs.model_to_json', () => {
         expect(codec.encode(undefined)).toBeUndefined('encode undefined');
         expect(codec.decode(undefined)).toBeUndefined('decode undefined');
     });
+
+    it('should not output the \'id\' field if the field is `null`', () => {
+        let instance = SubModel.create({id: null, name: 'Johny nameless', aliases: List()});
+        let encoded = model(SubModel).encode(instance);
+        expect(encoded['id']).toBeUndefined();
+
+        // TODO: The check for readOnly properties should be made here,
+        // not on encode
+        instance = instance.set('id', 4023);
+        encoded = model(SubModel).encode(instance);
+        expect(encoded['id']).toBe(4023);
+    });
 });
-*/

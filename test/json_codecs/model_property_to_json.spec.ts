@@ -10,64 +10,58 @@ const stringReversingCodec: Codec<string,string> = {
     decode: (input: string) => input.split('').reverse().join('')
 };
 
-/*
 @Model({kind: 'test::PropertyRestrictions'})
 class PropertyRestrictions extends ModelBase {
-    @Property({codec: stringReversingCodec})
-    customCodecProperty: string;
-
-    @Property({codec: num, readOnly: true})
-    readOnlyProperty:number;
-
-    @Property({codec: num, writeOnly: true})
-    writeOnlyProperty:number;
-
-    @Property({codec: num, required: true, allowNull: true})
-    requiredProperty:number;
-
-    @Property({codec: num, allowNull: false, required: false})
-    notNullableProperty:number;
-
+    constructor(
+        id: number,
+        @Property('customCodecProperty', {codec: stringReversingCodec})
+        public customCodecProperty: string,
+        @Property('readOnlyProperty', {codec: num, readOnly: true})
+        public readOnlyProperty: number,
+        @Property('writeOnlyProperty', {codec: num, writeOnly: true})
+        public writeOnlyProperty: number,
+        @Property('requiredProperty', {codec: num, required: true, allowNull: true})
+        public requiredProperty: number,
+        @Property('notNullableProperty', {codec: num, allowNull: false, required: false})
+        public notNullableProperty: number
+    ) {
+        super(id, customCodecProperty, readOnlyProperty, writeOnlyProperty,
+            requiredProperty, notNullableProperty);
+    }
 }
 
+describe('json_codecs.model_property_to_json', () => {
+    describe('PropertyCodec', () => {
+        var metadata = ModelMetadata.forType(PropertyRestrictions);
 
-describe('PropertyCodec', () => {
-    var metadata = ModelMetadata.forType(PropertyRestrictions);
+        it('should use the property codec when encoding and decoding', () => {
+            var codec = new PropertyCodec(metadata.properties.get('customCodecProperty'));
+            expect(codec.encode('hello world')).toBe('dlrow olleh');
+            expect(codec.decode('hello world')).toBe('dlrow olleh');
+        });
 
-    it('should use the property codec when encoding and decoding', () => {
-        var codec = new PropertyCodec(metadata.properties.get('customCodecProperty'));
-        expect(codec.encode('hello world')).toBe('dlrow olleh');
-        expect(codec.decode('hello world')).toBe('dlrow olleh');
-    });
+        it('should error on decode when the property is writeOnly', () => {
+            var codec = new PropertyCodec(metadata.properties.get('writeOnlyProperty'));
+            expect(() => codec.decode(42)).toThrow();
+            expect(codec.encode(42)).toBe(42);
+        });
 
-    it('should error on decode when the property is writeOnly', () => {
-        var codec = new PropertyCodec(metadata.properties.get('writeOnlyProperty'));
-        expect(() => codec.decode(42)).toThrow();
-        expect(codec.encode(42)).toBe(42);
-    });
+        it('should error on encode when the value is required and undefined', () => {
+            var codec = new PropertyCodec(metadata.properties.get('requiredProperty'));
+            expect(() => codec.encode(undefined)).toThrow();
+            expect(codec.encode(42)).toBe(42, 'should encode normal values');
+            expect(codec.encode(null)).toBeNull('should encode null');
 
-    it('should return `undefined` on encode when the property is readOnly', () => {
-        var codec = new PropertyCodec(metadata.properties.get('readOnlyProperty'))
-        expect(codec.encode(42)).toBeUndefined();
-        expect(codec.decode(42)).toBe(42);
-    });
+            expect(codec.decode(undefined)).toBeUndefined('should not error on decode');
+        });
 
-    it('should error on encode when the value is required and undefined', () => {
-        var codec = new PropertyCodec(metadata.properties.get('requiredProperty'));
-        expect(() => codec.encode(undefined)).toThrow();
-        expect(codec.encode(42)).toBe(42, 'should encode normal values');
-        expect(codec.encode(null)).toBeNull('should encode null');
+        it('should error on encode when the property is not nullable', () => {
+            var codec = new PropertyCodec(metadata.properties.get('notNullableProperty'));
+            expect(() => codec.encode(null)).toThrow();
+            expect(codec.encode(42)).toBe(42, 'should encode normal values');
+            expect(codec.encode(undefined)).toBeUndefined('should encode undefined');
 
-        expect(codec.decode(undefined)).toBeUndefined('should not error on decode');
-    });
-
-    it('should error on encode when the property is not nullable', () => {
-        var codec = new PropertyCodec(metadata.properties.get('notNullableProperty'));
-        expect(() => codec.encode(null)).toThrow();
-        expect(codec.encode(42)).toBe(42, 'should encode normal values');
-        expect(codec.encode(undefined)).toBeUndefined('should encode undefined');
-
-        expect(codec.decode(null)).toBeNull('should not error on decode');
+            expect(codec.decode(null)).toBeNull('should not error on decode');
+        });
     });
 });
-*/

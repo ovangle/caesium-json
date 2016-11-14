@@ -82,8 +82,8 @@ export class ValueAccessor implements Accessor<PropertyMetadata> {
         if (ref)
             throw new ArgumentError('Cannot edit ref of basic property');
 
-        if (!isDefined(value) || value === this.get(modelValues, ref)) {
-            // If the value hasn't changed, don't update the model values.
+        if (value === this.get(modelValues, ref)) {
+            // If the value isn't being set (can't set to undefined)
             return modelValues;
         }
 

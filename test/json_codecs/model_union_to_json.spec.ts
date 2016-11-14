@@ -6,17 +6,26 @@ import {union} from "../../src/json_codecs/model_union_to_json";
 import {createModelFactory} from '../../src/model/factory';
 import {ModelMetadata} from "../../src/model/metadata";
 
-/*
 @Model({kind: 'test::ModelA'})
 class ModelA extends ModelBase {
-    @Property({codec: identity})
-    propOne: string
+    constructor(
+        id: number,
+        @Property('propOne', {codec: identity})
+        propOne: string
+    ) {
+        super(id, propOne);
+    }
 }
 
 @Model({kind: 'test::ModelB'})
 class ModelB extends ModelBase {
-    @Property({codec: identity})
-    propTwo: string;
+    constructor(
+        id: number,
+        @Property('propTwo', {codec: identity})
+        propTwo: string
+    ) {
+        super(id, propTwo);
+    }
 }
 
 describe('json_codecs.model_union_to_json', () => {
@@ -42,22 +51,18 @@ describe('json_codecs.model_union_to_json', () => {
     });
 
     it('should be possible to encode an instance based on its type', () => {
-        var modelFactoryA = createModelFactory<ModelA>(ModelMetadata.forType(ModelA));
-        var instanceA = modelFactoryA({propOne: 'hello world'});
+        var instanceA = new ModelA(null, 'hello world');
 
 
         expect(codec.encode(instanceA)).toEqual({
             kind: 'test::ModelA',
-            id: null,
             prop_one: 'hello world'
         });
 
-        var modelFactoryB = createModelFactory<ModelB>(ModelMetadata.forType(ModelB));
-        var instanceB = modelFactoryB({propTwo: 'goodbye'});
+        var instanceB = new ModelB(null, 'goodbye');
 
         expect(codec.encode(instanceB)).toEqual({
             kind: 'test::ModelB',
-            id: null,
             prop_two: 'goodbye'
         });
     });
@@ -68,9 +73,6 @@ describe('json_codecs.model_union_to_json', () => {
         expect(codec.encode(undefined)).toBeUndefined('encode undefined');
         expect(codec.decode(undefined)).toBeUndefined('decode undefined');
     });
-
-
 });
-*/
 
 
