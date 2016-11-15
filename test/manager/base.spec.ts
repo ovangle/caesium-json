@@ -14,7 +14,7 @@ import {RequestFactory, ModelHttpModule} from '../../src/manager/http';
 import {ManagerOptions, ManagerBase, SearchParameter} from '../../src/manager';
 import {InvalidMetadata} from '../../src/model/exceptions';
 
-import {MockRequestFactory, MockResponse} from './request_factory.mock';
+import {MockRequestFactory, MockRequest} from './request_factory.mock';
 
 @Model({kind: 'test::MyModel'})
 export class MyModel extends ModelBase {
@@ -122,14 +122,12 @@ describe('manager.base', () => {
         it('should be possible to get a model by id', inject(
             [RequestFactory, MyModelManager],
             (requestFactory: MockRequestFactory, manager: MyModelManager) => {
-                requestFactory.sent$.subscribe((response: MockResponse<MyModel>)=> {
-                    let request = response.request;
-
+                requestFactory.sent$.subscribe((request: MockRequest)=> {
                     expect(request.method).toBe(RequestMethod.Get);
-                    expect(request.path).toEqual(['mymodel', '54321']);
+                    expect(request.path).toEqual(['test', '12345']);
                     expect(request.query).toEqual({});
 
-                    response.respond(new MyModel(12345));
+                    request.respond({status: 200, body: new MyModel(12345)});
                 });
 
                 manager.getById(12345).forEach(model => {
@@ -141,15 +139,14 @@ describe('manager.base', () => {
         it('saving a model with null ID should POST to server', inject(
             [RequestFactory, MyModelManager],
             (requestFactory: MockRequestFactory, manager: MyModelManager) => {
-                requestFactory.sent$.subscribe((response) => {
-                    let request = response.request;
+                requestFactory.sent$.subscribe((request) => {
 
                     expect(request.method).toEqual(RequestMethod.Post);
-                    expect(request.path).toEqual(['mymodel', 'create']);
+                    expect(request.path).toEqual(['test', 'create']);
                     expect(request.body).toEqual({kind: 'test::MyModel', id: null});
 
                     let created = new MyModel(42);
-                    response.respond(created);
+                    request.respond({status: 200, body: created});
                 });
 
                 let model = new MyModel(null);
@@ -165,15 +162,12 @@ describe('manager.base', () => {
         it('saving a model with not-null ID should PUT to server', inject(
             [RequestFactory, MyModelManager],
             (requestFactory: MockRequestFactory, manager: MyModelManager) => {
-                requestFactory.sent$.subscribe((response) => {
-                    let request = response.request;
-
+                requestFactory.sent$.subscribe((request) => {
                     expect(request.method).toEqual(RequestMethod.Put);
-                    expect(request.path).toEqual(['mymodel', '48']);
+                    expect(request.path).toEqual(['test', '48']);
                     expect(request.body).toEqual({kind: 'test::MyModel', id: 48});
 
-                    let created = new MyModel(48);
-                    response.respond(created);
+                    request.respond({status: 200, body: new MyModel(48)});
                 });
 
                 let model = new MyModel(48);

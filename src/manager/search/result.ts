@@ -5,6 +5,8 @@ import 'rxjs/add/operator/reduce';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/concatMap';
 
+import 'rxjs/add/operator/do';
+
 import {Seq, Iterable, List, Range} from 'immutable';
 import {Observable} from 'rxjs/Observable';
 
@@ -83,7 +85,7 @@ export class SearchResult<T> {
         }
 
         var request = this._createPageRequest(this.nextPageId);
-        var response = request.send(this._createSearchPageHandler())
+        return request.send(this._createSearchPageHandler())
             .map(page => this._addPage(page));
     }
 
@@ -97,7 +99,13 @@ export class SearchResult<T> {
             .toArray();
 
         return Observable.from(requests)
-            .concatMap((request) => request.send(this._createSearchPageHandler()))
+            .concatMap((request) => {
+                return request.send(this._createSearchPageHandler())
+                    .map(model=> {
+                        console.log('Received', model);
+                        return model;
+                    })
+            })
             .reduce((result:SearchResult<T>, page:SearchResultPage<T>) => result._addPage(page), this);
     }
 

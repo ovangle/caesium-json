@@ -4,13 +4,13 @@ import {List} from 'immutable';
 
 import {identityConverter} from 'caesium-core/converter';
 
-import {Search, SearchResult} from '../../src/manager/search';
+import {Search, SearchResult} from '../../../src/manager/search';
 
-import {ModelMetadata} from '../../src/model/metadata';
+import {ModelMetadata} from '../../../src/model/metadata';
 
-import {SearchParameter} from "../../src/manager/search/parameter";
-import {SearchParameterMap} from '../../src/manager/search/parameter_map';
-import {RequestFactory} from "../../src/manager/http/request_factory";
+import {SearchParameter} from "../../../src/manager/search/parameter";
+import {SearchParameterMap} from '../../../src/manager/search/parameter_map';
+import {RequestFactory} from "../../../src/manager/http/request_factory";
 
 /**
  * Used for testing SearchResult.

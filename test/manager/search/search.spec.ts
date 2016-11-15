@@ -3,6 +3,8 @@ import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/first';
 import 'rxjs/add/operator/reduce';
 
+import {async} from '@angular/core/testing';
+
 import {identityConverter} from 'caesium-core/converter';
 
 import {ModelMetadata} from '../../../src/model/metadata';
@@ -10,9 +12,8 @@ import {JsonObject} from '../../../src/json_codecs';
 import {RequestFactory} from '../../../src/manager/http';
 import {Search, SearchParameter} from '../../../src/manager/search';
 
-import {MockRequestFactory} from '../request_factory.mock';
+import {MockRequestFactory, MockRequest} from '../request_factory.mock';
 
-/*
 const MODEL_KIND = 'test::MyModel';
 const SEARCH_ENDPOINT = 'search';
 const SEARCH_PAGE_SIZE = 5;
@@ -22,23 +23,23 @@ function isSubstring(modelValue: string, paramValue: string) {
     return modelValue.includes(paramValue);
 }
 
-function _mkSearch(
-    parameters: SearchParameter[],
-    handler: RequestHandler
+function mkSearch(
+    factory: MockRequestFactory,
+    parameters: SearchParameter[]
 ): Search<any> {
-    var request = new MockRequestFactory(handler);
-    return new Search<any>(request, ['path', 'to', 'search'], parameters, identityConverter, SEARCH_PAGE_SIZE, 'p');
+    return new Search<any>(factory, ['path', 'to', 'search'], parameters, identityConverter, SEARCH_PAGE_SIZE, 'p');
 }
 
-function _errHandler(path: string[], query: {[param: string]: string}, body: JsonObject): JsonObject {
-    throw 'Request handler should not be called';
-}
+const PARAMS = [{name: 'a', encoder: identityConverter}]
 
 // Disabled while testing manager.request
-xdescribe('manager.search', () => {
+describe('manager.search', () => {
     describe('Search', () => {
         it('should be possible to get/set/delete a parameter value', () => {
-            var search = _mkSearch([{name: 'a', encoder: identityConverter}], _errHandler);
+            let factory = new MockRequestFactory();
+
+            var search = mkSearch(factory, [{name: 'a', encoder: identityConverter, matcher: isSubstring}]);
+
             expect(search.hasParamValue('a')).toBe(false, 'uninitialized parameter');
             expect(search.getParamValue('a')).toBeUndefined('no notSetValue');
             expect(search.getParamValue('a', 0)).toBe(0, 'should use notSetValue');
@@ -49,14 +50,17 @@ xdescribe('manager.search', () => {
 
             search.deleteParamValue('a');
             expect(search.hasParamValue('a')).toBe(false, 'value deleted');
+
+            factory.dispose();
         });
 
         it('mutating parameters should update the result stack', () => {
-            var search = _mkSearch([{
+            let factory = new MockRequestFactory();
+            let search = mkSearch(factory, [{
                 name: 'a',
                 encoder: identityConverter,
                 matcher: isSubstring
-            }], _errHandler);
+            }]);
 
             function getResultStackParams(search: Search<any>): string[] {
                 return (search as any)._resultStack
@@ -80,31 +84,37 @@ xdescribe('manager.search', () => {
             expect(getResultStackParams(search)).toEqual(['']);
         });
 
-        it('should be possible to submit an empty search to the server', (done) => {
-            function requestHandler(path: string[], query: {[param: string]: string}, body: JsonObject): JsonObject {
-                expect(query['p']).toEqual('1', 'should add a pageId parameter to the search');
-                return {
+        it('should be possible to submit an empty search to the server', async(() => {
+            let factory = new MockRequestFactory();
+            factory.sent$.subscribe((request) => {
+                expect(request.query['p']).toEqual('1', 'should add a pageId parameter to the search');
+
+                request.respond({
                     status: 200,
                     body: {page_id: 1, last_page: true, items: [{a: '30'}]}
-                };
-            }
-            var search = _mkSearch([{name: 'a', encoder: identityConverter}], requestHandler);
+                });
+            })
+
+            var search = mkSearch(factory, [{name: 'a', encoder: identityConverter}]);
             expect(search.hasParamValue('a')).toBe(false, 'No parameters set');
             expect(search.result.items.toArray()).toEqual([], 'no pages loaded');
 
-            return search.result.loadNextPage().toPromise().then((result) => {
+            search.result.loadNextPage().forEach((result) => {
                 expect(result.items.toArray()).toEqual([{a: '30'}]);
-                done();
-            });
-        });
+            })  .catch(fail)
+                .then(_ => factory.dispose());
+        }));
 
 
-        it('should be possible to search a data source', (done) => {
-            var search = _mkSearch([{
+        it('should be possible to search a data source', async(() => {
+            let factory = new MockRequestFactory();
+            factory.sent$.subscribe(searchCountries);
+
+            var search = mkSearch(factory, [{
                 name: 'name',
                 encoder: identityConverter,
-                matcher: (modelValue, paramValue) => modelValue.includes(paramValue)
-            }], searchCountries);
+                matcher: (modelValue: any, paramValue: any) => modelValue.includes(paramValue)
+            }]);
 
             var loadEmptySearchPage = search.result.loadNextPage().toPromise().then((result) => {
                 expect(result.items.toArray()).toEqual([
@@ -168,25 +178,25 @@ xdescribe('manager.search', () => {
                 expect(search.result.items.toArray()).toEqual([
                     {name: 'Åland Islands', code: 'AX'},
                 ]);
-            }).catch((err) => fail(err)).then((_) => done());
-        });
+            }).catch(fail).then(_ => factory.dispose());
+        }));
     });
 });
 
-function searchCountries(path: string[], query: {[param: string]: string}, body: JsonObject): JsonObject {
-    var name_param = query['name'] || '';
+function searchCountries(request: MockRequest): void {
+    var name_param = request.query['name'] || '';
     var matches = COUNTRIES.filter((c) => c.name.includes(name_param));
 
-    var pageId = Number.parseInt(query['p']);
+    var pageId = Number.parseInt(request.query['p']);
 
-    return {
+    request.respond({
         status: 200,
         body: {
             page_id: pageId,
             items: matches.slice((pageId - 1) * SEARCH_PAGE_SIZE, pageId * SEARCH_PAGE_SIZE),
             last_page: pageId * SEARCH_PAGE_SIZE >= matches.length
         }
-    }
+    });
 }
 
 const COUNTRIES = [
@@ -434,4 +444,3 @@ const COUNTRIES = [
     {name: 'Zambia', code: 'ZM'},
     {name: 'Zimbabwe', code: 'ZW'}
 ];
-*/
