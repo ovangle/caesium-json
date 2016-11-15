@@ -42,7 +42,7 @@
                 main: 'index',
                 defaultExtension: 'js'
             },
-            'src/manager/request': {
+            'src/manager/http': {
                 main: 'index',
                 defaultExtension: 'js'
             },

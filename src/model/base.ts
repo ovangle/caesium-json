@@ -1,4 +1,7 @@
 import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/operator/map';
+
+
 import {List} from 'immutable';
 import {isDefined, isBlank, forEachOwnProperty} from 'caesium-core/lang';
 
@@ -16,8 +19,9 @@ export class ModelBase {
      * The server-assigned id of the model.
      */
     get id(): any {
-        // Optimization.
-        return this.__modelValues__.values.get('id');
+        // slight optimization
+        let idValue = this.__modelValues__.values.get('id');
+        return isDefined(idValue) ? idValue : null;
     }
 
     // Do we really need to keep the metadata on the model?
@@ -147,9 +151,7 @@ export class ModelBase {
             return Observable.of(resolved);
         }
 
-        //TODO: What about 404 responses?
         return manager.getById(idValue)
-            .handle({select: 200, decoder: manager.modelCodec})
             .map((foreignModel) => this.set(refName, foreignModel));
     }
 }

@@ -31,7 +31,8 @@ class ModelB extends ModelBase {
 describe('json_codecs.model_union_to_json', () => {
     var codec = union(ModelA, ModelB);
     it('should be possible to decode a json object based on it\'s kind', () => {
-        var jsonDataA = {
+        var jsonDataA: any = {
+            id: null,
             kind: 'test::ModelA',
             prop_one: 'hello world'
         };
@@ -40,7 +41,8 @@ describe('json_codecs.model_union_to_json', () => {
         expect(instanceA).toEqual(jasmine.any(ModelA));
         expect(instanceA.propOne).toBe('hello world');
 
-        var jsonDataB = {
+        var jsonDataB: any = {
+            id: null,
             kind: 'test::ModelB',
             prop_two: 'goodbye'
         };
@@ -55,6 +57,7 @@ describe('json_codecs.model_union_to_json', () => {
 
 
         expect(codec.encode(instanceA)).toEqual({
+            id: null,
             kind: 'test::ModelA',
             prop_one: 'hello world'
         });
@@ -62,6 +65,7 @@ describe('json_codecs.model_union_to_json', () => {
         var instanceB = new ModelB(null, 'goodbye');
 
         expect(codec.encode(instanceB)).toEqual({
+            id: null,
             kind: 'test::ModelB',
             prop_two: 'goodbye'
         });

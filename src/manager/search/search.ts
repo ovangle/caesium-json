@@ -9,22 +9,23 @@ import {Codec, isCodec, getDecoder} from 'caesium-core/codec';
 
 import {JsonObject} from '../../json_codecs';
 
-import {ModelHttp} from '../model_http';
-import {RequestFactory} from '../request';
+import {RequestFactory} from '../http';
 import {SearchParameterMap} from './parameter_map';
 import {SearchParameter} from './parameter';
 import {SearchResultPage} from './result_page';
 import {SearchResult} from './result';
 
 export const SEARCH_PAGE_SIZE = new OpaqueToken('cs_search_page_size');
+export const defaultSearchPageSize = 20;
 /**
  * The query parameter to set when requesting a particular
  * page of results.
  */
 export const SEARCH_PAGE_QUERY_PARAM = new OpaqueToken('cs_search_page_query_param');
+export const defaultSearchPageQueryParam = 'p';
 
 export interface SearchOptions {
-    http: ModelHttp;
+    request: RequestFactory;
     kind: string;
     parameters: {[name: string]: SearchParameterMap};
 }
@@ -45,6 +46,7 @@ export class Search<T> {
 
     constructor(
         requestFactory: RequestFactory,
+        public path: string[],
         parameters: SearchParameter[],
         itemDecoder: Codec<T,JsonObject> | Converter<JsonObject,T>,
         pageSize: number,
@@ -137,6 +139,7 @@ export class Search<T> {
     reset(): Search<T> {
         return new Search<T>(
             this._requestFactory,
+            this.path,
             this._parameterDefns,
             this.itemDecoder,
             this.pageSize,

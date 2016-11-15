@@ -5,6 +5,10 @@
 
 ### Features
 - Removed es6-shim dependency
+
+#### model
+
+
 - Added model references
     Models can now define `@RefProperty` attributes, which can be used as foreign
     keys to other models.
@@ -12,10 +16,19 @@
     Models can now be annotated as `'isAbstract: true'`, to provide better support
     for inheritance between models
 
+#### json_codecs
+
 - Added `enumToString` codec to the `json_codecs` module
 - Added `recordToJson` codec to the `json_codecs` module
 - All models now have an `id` property
     The id can be of any type as long as it can be encoded using an identity codec.
+
+#### Manager
+- Replaced manager.request module with manager.http module, improving the experience
+  for working with managed models.
+- Added ModelManager.save method, which
+    - POSTs the model to <managerPath>/create if the id is `null`
+    - PUTs the model to <managerPath>/<modelId> if the id is present.
 
 ### Bugfixes
 - Factory created model instances now inherit methods defined on the model
@@ -25,7 +38,8 @@
 - Removed dependency on Angular internals
 
 
-## Breaking changes
+### Breaking changes
+- Removed ModelManager.create method
 - New model definition API.
 - Now requires Native (not transpiled) ES6 Proxy
 - Upgraded @angular/ dependencies to ^2.0.0
@@ -33,14 +47,17 @@
   All multi-word parameters need to be changed to camelCase
 
 - No longer exports an 'exceptions' subpackage.
-- readOnly properties are no longer coerced to `null`.
-- ID is no longer a required property
+- readOnly properties are no longer coerced to `null`
+- ID is no longer a requred property
+- Removed old ModelHttp, Request (and related) and Resposne classes
+- Added Request class, with directly streaming observable interfaces.
 
-- Another huge refactor of http. Renamed 'http' package to 'manager'
+#### manager
 - Manager is no longer exported from model
+- Remove ModelManager.create method
+- Remove ModelManager.getAllByReferenceMethod
 - Manager now has no decorator
 - Any models which are base types for other models must be annotated with `isAbstract: true`
-
 
 
 ## 0.1.0

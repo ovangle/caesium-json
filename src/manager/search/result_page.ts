@@ -6,7 +6,6 @@ import {ValueError} from 'caesium-core/exception';
 
 import {JsonObject, EncodingException} from '../../json_codecs';
 
-import {ResponseHandler} from '../request';
 import {SearchParameterMap} from './parameter_map';
 
 export interface SearchResultPage<T> {
@@ -36,49 +35,33 @@ export function refinePage<T>(page: SearchResultPage<T>, refinedParams: SearchPa
     }
 }
 
-export class SearchResultPageHandler<T> implements ResponseHandler<SearchResultPage<T>> {
-    parameters: SearchParameterMap;
-    // The number of items to skip in the raw response.
-    skip: number;
+export function searchResultPageHandler<T>(
+    parameters: SearchParameterMap,
+    itemDecoder: Converter<JsonObject,T>,
+    skip?: number
+): Converter<JsonObject, SearchResultPage<T>> {
 
-    itemDecoder: Converter<JsonObject,T>;
-
-    select = 200;
-
-    constructor(
-        params: SearchParameterMap,
-        itemDecoder: Converter<JsonObject,T>,
-        skip?: number
-    ) {
-        this.parameters = params;
-        this.itemDecoder = itemDecoder;
-        this.skip = skip;
-    }
-
-    decoder = (this.decode).bind(this);
-
-    decode(obj: JsonObject): SearchResultPage<T> {
-        if (isBlank(obj) ||
-                !Array.isArray(obj['items']) ||
-                !isNumber(obj['page_id']) ||
-                !isBoolean(obj['last_page'])) {
+    function convert(obj: JsonObject): SearchResultPage<T> {
+        if (isBlank(obj) || !Array.isArray(obj['items']) || !isNumber(obj['page_id']) || !isBoolean(obj['last_page'])) {
             throw new EncodingException('Invalid result page: ' + JSON.stringify(obj));
         }
 
         var responseItems = List<JsonObject>(obj['items'])
             .toSeq()
-            .map<T>((item) => this.itemDecoder(item))
-            .filter((item) => this.parameters.matches(item));
+            .map<T>((item) => itemDecoder(item))
+            .filter((item) => parameters.matches(item));
 
-        if (isDefined(this.skip) && this.skip > 0) {
-            responseItems = responseItems.skip(this.skip);
+        if (isDefined(skip) && skip > 0) {
+            responseItems = responseItems.skip(skip);
         }
 
         return {
-            parameters: this.parameters,
+            parameters: parameters,
             items: responseItems.toList(),
             isLastPage: obj['last_page'],
         }
     }
+
+    return convert;
 }
 

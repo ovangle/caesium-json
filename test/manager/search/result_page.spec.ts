@@ -2,7 +2,7 @@ import {List} from 'immutable';
 import {identityConverter} from 'caesium-core/converter';
 
 import {SearchParameterMap} from '../../../src/manager/search/parameter_map';
-import {refinePage, SearchResultPageHandler} from "../../../src/manager/search/result_page";
+import {refinePage, searchResultPageHandler} from "../../../src/manager/search/result_page";
 
 
 function isSubstring(modelValue: string, paramValue: string) {
@@ -44,12 +44,12 @@ describe('manager.search.result_page', () => {
 
     describe('SearchResultPageHandler', () => {
         it('should be possible to decode a raw result page', () => {
-            var handler = new SearchResultPageHandler<{a:number}>(
+            var handler = searchResultPageHandler<{a:number}>(
                 paramMap,
                 identityConverter
             );
 
-            var decoded = handler.decoder({
+            var decoded = handler({
                 items: [{a: 1}, {a: 2}, {a: 3}],
                 page_id: 1,
                 last_page: true
@@ -60,12 +60,12 @@ describe('manager.search.result_page', () => {
         });
 
         it('should use the provided decoder when decoding the page results', () => {
-            var handler = new SearchResultPageHandler<{a:number}>(
+            var handler = searchResultPageHandler<{a:number}>(
                 paramMap,
                 (obj:{b:number}) => ({a: obj.b})
             );
 
-            var decoded = handler.decoder({
+            var decoded = handler({
                 items: [{b: 1}, {b: 2}, {b: 3}],
                 page_id: 1,
                 last_page: true
@@ -76,13 +76,13 @@ describe('manager.search.result_page', () => {
         });
 
         it('should skip any items which are not requested in the page', () => {
-            var handler = new SearchResultPageHandler<{a:number}>(
+            var handler = searchResultPageHandler<{a:number}>(
                 paramMap,
                 identityConverter,
                 2
             );
 
-            var decoded = handler.decoder({
+            var decoded = handler({
                 parameters: paramMap,
                 items: [{a: 1}, {a: 2}, {a: 3}],
                 page_id: 1,

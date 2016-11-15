@@ -46,6 +46,7 @@ describe('json_codecs.model_to_json', () => {
         var codec = model(SubModel);
 
         let instance = SubModel.create({
+            id: null,
             name: 'henry',
             aliases: List(['hank']),
             birthday: new Date(0),
@@ -53,6 +54,7 @@ describe('json_codecs.model_to_json', () => {
         });
 
         expect(codec.encode(instance)).toEqual({
+            id: null,
             kind: 'test::Submodel',
             name: 'henry',
             aliases: ['hank'],
@@ -64,7 +66,8 @@ describe('json_codecs.model_to_json', () => {
     it('should be possible to decode a model from json', () => {
         let codec = model<MyModel>(SubModel);
 
-        let modelJson = {
+        let modelJson: any = {
+            id: null,
             kind: 'test::MyModel',
             name: 'john',
             aliases: ['jack', 'jo'],
@@ -85,17 +88,5 @@ describe('json_codecs.model_to_json', () => {
         expect(codec.decode(null)).toBeNull('decode null');
         expect(codec.encode(undefined)).toBeUndefined('encode undefined');
         expect(codec.decode(undefined)).toBeUndefined('decode undefined');
-    });
-
-    it('should not output the \'id\' field if the field is `null`', () => {
-        let instance = SubModel.create({id: null, name: 'Johny nameless', aliases: List()});
-        let encoded = model(SubModel).encode(instance);
-        expect(encoded['id']).toBeUndefined();
-
-        // TODO: The check for readOnly properties should be made here,
-        // not on encode
-        instance = instance.set('id', 4023);
-        encoded = model(SubModel).encode(instance);
-        expect(encoded['id']).toBe(4023);
     });
 });

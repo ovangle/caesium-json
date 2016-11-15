@@ -4,7 +4,7 @@ import {resolveForwardRef} from '@angular/core';
 import {isDefined, Type, forEachOwnProperty} from 'caesium-core/lang';
 
 import {ModelBase} from './base';
-import {ModelConstructor, _DEFERRED_MODEL_FACTORY, createModelFactory} from './factory';
+import {ModelConstructor, createModelFactory, _DEFERRED_MODEL_FACTORY} from './factory';
 import {ModelMetadata, buildModelMetadata} from './metadata';
 
 
@@ -44,8 +44,11 @@ const DO_NOT_INTERCEPT = Set<string>([
 ]);
 
 export class ModelTypeProxyHandler implements ProxyHandler<Type> {
+    // A reference to the ModelMetadata of the type.
     private __model_metadata__: ModelMetadata;
-    private __prototype__: any;
+
+    // The prepared prototype of the type.
+    private prototype: any;
 
     construct(type: Type, argArray: any[], receiver: any) {
         let metadata = this.get(type, '__model_metadata__', receiver);
@@ -75,17 +78,21 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
         if (!isDefined(this.__model_metadata__)) {
             let metadata = buildModelMetadata(type, receiver);
             this.__model_metadata__ = metadata;
-            this.__prototype__ = prepareType(type, metadata, receiver);
+            this.prototype = prepareType(type, metadata, receiver);
         }
 
         switch (prop) {
             case '__model_metadata__':
                 return this.__model_metadata__;
             case 'prototype':
-                return this.__prototype__;
-            default:
-                return (type as any)[prop];
+                return this.prototype;
+        }
 
+        let value = (type as any)[prop];
+        if (value === _DEFERRED_MODEL_FACTORY) {
+            return createModelFactory(receiver);
+        } else {
+            return value;
         }
     }
 }
@@ -100,6 +107,11 @@ function prepareType(type: Type, metadata: ModelMetadata, receiver: any) {
     // This only works in the specific case of a model factory.
 
     forEachOwnProperty(type, (value, key) => {
+        /*
+        if (value instanceof DeferredValue) {
+            type[key] = (<DeferredValue<any>>value).provideMetadata(metadata);
+        }
+         */
         if (value === _DEFERRED_MODEL_FACTORY) {
             (type as any)[key] = createModelFactory(receiver);
         }

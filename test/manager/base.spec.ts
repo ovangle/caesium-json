@@ -1,30 +1,24 @@
 import 'rxjs/add/operator/toPromise';
 import {List} from 'immutable';
 
+import {Inject, forwardRef} from '@angular/core';
+import {TestBed, inject} from '@angular/core/testing';
+import {RequestMethod, HttpModule} from '@angular/http';
+
 import {Type} from 'caesium-core/lang';
 
-import {itemList} from '../../src/json_codecs';
+import {JsonObject, itemList} from '../../src/json_codecs';
 import {Model, ModelBase, RefProperty} from '../../src/model';
+
+import {RequestFactory, ModelHttpModule} from '../../src/manager/http';
 import {ManagerOptions, ManagerBase, SearchParameter} from '../../src/manager';
-import {RequestMethod} from '../../src/manager/request/interfaces';
-import {RawResponse, RequestOptions} from "../../src/manager/model_http";
 import {InvalidMetadata} from '../../src/model/exceptions';
 
-import {MockModelHttp} from './model_http.mock';
-
-function _mkManagerOptions(requestHandler?: (options: RequestOptions) => RawResponse): ManagerOptions {
-    function _errHandler(options: RequestOptions): RawResponse {
-        throw 'Should not submit a request to the server'
-    }
-    requestHandler = requestHandler || _errHandler;
-
-    return new ManagerOptions(new MockModelHttp(requestHandler))
-}
-
-
+import {MockRequestFactory, MockResponse} from './request_factory.mock';
 
 @Model({kind: 'test::MyModel'})
-export class MyModel extends ModelBase {}
+export class MyModel extends ModelBase {
+}
 
 export class MyModelManager extends ManagerBase<MyModel> {
     constructor(options: ManagerOptions) {
@@ -58,130 +52,138 @@ class ReferencingModel extends ModelBase {
 }
 
 export class AbstractModelManager extends ManagerBase<AbstractModel> {
+    constructor(options: ManagerOptions) {
+        super(options);
+    }
+
     getModelType(): Type { return AbstractModel; }
     getModelSubtypes(): Type[] { return [AbstractModelImpl1, AbstractModelImpl2]; }
     getSearchParameters(): SearchParameter[] { return undefined; }
 }
 
 
+/// Manager is broken temporarily.
 describe('manager.base', () => {
-    describe('.create()', () => {
-        it('should create the model', () => {
-            var manager = new MyModelManager(_mkManagerOptions());
-            var instance = manager.create(MyModel, {});
-            expect(instance).toEqual(jasmine.any(MyModel));
+    describe('ManagerBase', () => {
+        beforeEach(() => {
+            TestBed.configureTestingModule({
+                imports: [HttpModule],
+                providers: [
+                    {provide: RequestFactory, useClass: MockRequestFactory},
+                    ManagerOptions,
+                    MyModelManager,
+                    AbstractModelManager
+                ]
+            });
         });
 
-        it('should create the appropriate subtype of an abstract type', () => {
-            var manager = new AbstractModelManager(_mkManagerOptions());
-            var instance1 = manager.create(AbstractModelImpl1, {});
-            expect(instance1).toEqual(
-                jasmine.any(AbstractModelImpl1),
-                'should create an instance of AbstractModelImp1'
-            );
-
-            var instance2 = manager.create(AbstractModelImpl2, {});
-            expect(instance2).toEqual(
-                jasmine.any(AbstractModelImpl2),
-                'should create an instance of AbstractModelImpl2'
-            );
-        });
-
-        it('should throw if the type is not a registered subtype', () => {
-            var manager = new AbstractModelManager(_mkManagerOptions());
-            expect(() => manager.create(MyModel, {}))
-                .toThrow(jasmine.any(InvalidMetadata));
-        });
-    });
-    describe('.modelCodec()', () => {
-        it('should return a bare model codec for a non abstract type', () => {
-            var manager = new MyModelManager(_mkManagerOptions());
+        it('should return a bare model codec for a non abstract type', inject([MyModelManager], (manager: MyModelManager) => {
             var codec = manager.modelCodec;
 
-            expect(codec.encode(manager.create(MyModel, {})))
-                .toEqual({id: null, 'kind': 'test::MyModel'});
+            let instance = new MyModel(null);
+
+            // Should use the ModelCodec for the model.
+            expect(manager.modelCodec.encode(instance))
+                .toEqual({kind: 'test::MyModel', id: null});
 
             expect(codec.decode({'kind': 'test::MyModel'}))
                 .toEqual(jasmine.any(MyModel));
-        });
+        }));
 
-        it('should return a union codec for an abstract type', () => {
-            var manager = new AbstractModelManager(_mkManagerOptions());
-            var codec = manager.modelCodec;
+        it('should return a union codec for an abstract type', inject(
+            [AbstractModelManager],
+            (manager: AbstractModelManager) => {
+                var codec = manager.modelCodec;
 
-            expect(codec.encode(manager.create(AbstractModelImpl1, {})))
-                .toEqual(
-                    {'kind': 'test::AbstractModelImpl1', id: null},
-                    'should encode as AbstractModelImpl1'
-                );
-            expect(codec.encode(manager.create(AbstractModelImpl2, {})))
-                .toEqual(
-                    {'kind': 'test::AbstractModelImpl2', id: null},
-                    'should encode as AbstractModelImpl2'
-                );
+                let model1 = new AbstractModelImpl1(null);
+                let model2 = new AbstractModelImpl2(null);
 
-            expect(codec.decode({'kind': 'test::AbstractModelImpl1'}))
-                .toEqual(jasmine.any(AbstractModelImpl1),
-                     'should decode as AbstractModelImpl1');
-            expect(codec.decode({'kind': 'test::AbstractModelImpl2'}))
-                .toEqual(jasmine.any(AbstractModelImpl2),
-                    'should decode as AbstractModelImpl2')
+                expect(codec.encode(model1))
+                    .toEqual(
+                        {kind: 'test::AbstractModelImpl1', id: null},
+                        'should encode as AbstractModelImpl1'
+                    );
+                expect(codec.encode(model2))
+                    .toEqual(
+                        {kind: 'test::AbstractModelImpl2', id: null},
+                        'should encode as AbstractModelImpl2'
+                    );
 
-        });
-    });
-    describe('.getById()', () => {
-        it('should be possible to get a model by id', (done) => {
-            function requestHandler(options: RequestOptions): RawResponse {
-                expect(options.method).toBe(RequestMethod.Get);
-                expect(options.endpoint).toBe('12345');
+                expect(codec.decode({'kind': 'test::AbstractModelImpl1'}))
+                    .toEqual(jasmine.any(AbstractModelImpl1),
+                        'should decode as AbstractModelImpl1');
+                expect(codec.decode({'kind': 'test::AbstractModelImpl2'}))
+                    .toEqual(jasmine.any(AbstractModelImpl2),
+                        'should decode as AbstractModelImpl2')
+            })
+        );
 
-                return {
-                    status: 200,
-                    body: {kind: 'test::MyModel', id: 12345}
-                }
-            }
 
-            var manager = new MyModelManager(_mkManagerOptions(requestHandler));
+        it('should be possible to get a model by id', inject(
+            [RequestFactory, MyModelManager],
+            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+                requestFactory.sent$.subscribe((response: MockResponse<MyModel>)=> {
+                    let request = response.request;
 
-            manager.getById(12345)
-                .handle({select: 200, decoder: manager.modelCodec}).toPromise()
-                .then((myModel) => {
-                    expect(myModel).toEqual(jasmine.any(MyModel));
-                    expect(myModel.id).toEqual(12345);
+                    expect(request.method).toBe(RequestMethod.Get);
+                    expect(request.path).toEqual(['mymodel', '54321']);
+                    expect(request.query).toEqual({});
+
+                    response.respond(new MyModel(12345));
+                });
+
+                manager.getById(12345).forEach(model => {
+                    expect(model).toEqual(new MyModel(12345));
                 })
-                .catch((err) => fail(err))
-                .then((_) => done());
-        });
+            })
+        );
+
+        it('saving a model with null ID should POST to server', inject(
+            [RequestFactory, MyModelManager],
+            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+                requestFactory.sent$.subscribe((response) => {
+                    let request = response.request;
+
+                    expect(request.method).toEqual(RequestMethod.Post);
+                    expect(request.path).toEqual(['mymodel', 'create']);
+                    expect(request.body).toEqual({kind: 'test::MyModel', id: null});
+
+                    let created = new MyModel(42);
+                    response.respond(created);
+                });
+
+                let model = new MyModel(null);
+
+                manager.save(model).forEach((saved) => {
+                    expect(saved.id).toEqual(42)
+                });
+
+            })
+        );
+
+
+        it('saving a model with not-null ID should PUT to server', inject(
+            [RequestFactory, MyModelManager],
+            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+                requestFactory.sent$.subscribe((response) => {
+                    let request = response.request;
+
+                    expect(request.method).toEqual(RequestMethod.Put);
+                    expect(request.path).toEqual(['mymodel', '48']);
+                    expect(request.body).toEqual({kind: 'test::MyModel', id: 48});
+
+                    let created = new MyModel(48);
+                    response.respond(created);
+                });
+
+                let model = new MyModel(48);
+
+                manager.save(model).forEach((saved) => {
+                    expect(saved.id).toEqual(48)
+                });
+
+            })
+        );
     });
-
-
-    describe('.getAllByReference()', () => {
-        it('should be possible to obtain all models which agree on a foreign key', (done) => {
-            function requestHandler(options:RequestOptions) {
-                expect(options.method).toBe(RequestMethod.Get);
-                expect(options.endpoint).toBe('');
-                expect(options.params).toEqual({refId: '12345'});
-
-                return {
-                    status: 200,
-                    body: {items: [{id: 10011, ref_id: 12345}, {id: 23456, ref_id: 12345}]}
-                };
-            }
-
-            var manager = new MyModelManager(_mkManagerOptions(requestHandler));
-
-            var myModel = {id: 12345} as any;
-
-            return manager.getAllByReference('refId', myModel)
-                .handle({select: 200, decoder: itemList<MyModel>(manager.modelCodec)})
-                .toPromise().then((refModels:List<ReferencingModel>) => {
-                    expect(refModels.count()).toBe(2);
-                    expect(refModels.get(0).id).toEqual(10011, 'should have a refModel with `id=10011`');
-                    expect(refModels.get(1).id).toEqual(23456, 'should have a refModel with `id=23456`');
-                })
-                .catch((err) => fail(err))
-                .then((_) => done());
-        });
-    });
-});
+})
 

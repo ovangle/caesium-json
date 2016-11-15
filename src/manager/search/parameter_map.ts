@@ -6,7 +6,6 @@ import {Converter} from 'caesium-core/converter';
 import {ArgumentError} from '../../model/exceptions';
 
 import {SearchParameter, Matcher, Refiner} from './parameter';
-import {StringMap} from '../../json_codecs/interfaces';
 
 /// The default accessor is to interpret the parameter name as a property name
 function _defaultAccessor(propName: string): (model: any) => any {
@@ -83,7 +82,7 @@ export class SearchParameterMap {
         );
     }
 
-    valuesToStringMap(): StringMap {
+    valuesToStringMap(): {[p: string]: string} {
         return this._paramValues
             .map((value, param) => this.getEncoder(param)(value))
             .toObject();

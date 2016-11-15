@@ -121,8 +121,6 @@ export class BasePropertyMetadata {
         if (_RESERVED_PROPERTY_NAMES.contains(this.name))
             throw new InvalidMetadata(`${this.name} is a reserved name and cannot be the name of a property`);
     }
-
-
 }
 
 /**
@@ -142,12 +140,17 @@ export class PropertyMetadata extends BasePropertyMetadata {
      */
    static idProperty(name?: string) {
         name = name || 'id';
-        let _idPropertyOptions = Object.assign({}, defaultPropertyOptions, {
-            codec: num, readOnly: true, allowNull: true, required: false,
-            defaultValue: () => null
-        });
+        // Be explicit about the options, the decorators module may not be loaded.
+        let idPropertyOptions: PropertyOptions = {
+            codec: num,
+            readOnly: true,
+            allowNull: true,
+            required: false,
+            defaultValue: () => null,
+            isMulti: false
+        };
 
-        return new PropertyMetadata(ModelBase, name, Number, _idPropertyOptions);
+        return new PropertyMetadata(ModelBase, name, Number, idPropertyOptions);
    }
 
     isRef = false;
@@ -425,7 +428,16 @@ function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadat
     return OrderedMap<string,BasePropertyMetadata>(ownProperties.map(prop => [prop.name, prop]));
 }
 
-export function buildModelMetadata(type: Type, typeProxy?: any): ModelMetadata {
+/**
+ * Build a new ModelMetadata instance
+ *
+ * @param type
+ * The type being annotated.
+ * @param receiver
+ * The proxy that is being built for the type.
+ * @returns {ModelMetadata}
+ */
+export function buildModelMetadata(type: Type, receiver: any): ModelMetadata {
 
     if (type === ModelBase) {
         return ModelMetadata._modelBaseMetadata;
@@ -435,7 +447,6 @@ export function buildModelMetadata(type: Type, typeProxy?: any): ModelMetadata {
         throw new ModelNotFoundException(type);
     }
 
-
     let options = Reflect.getMetadata('model:options', type);
 
     if (isDefined(options.superType)) {
@@ -444,7 +455,7 @@ export function buildModelMetadata(type: Type, typeProxy?: any): ModelMetadata {
         options.superType = superTypeMeta.type;
     }
 
-    let metadata = new ModelMetadata(typeProxy, buildOwnPropertyMap(type), options);
+    let metadata = new ModelMetadata(receiver, buildOwnPropertyMap(type), options);
     metadata.checkValid();
     return metadata;
 }

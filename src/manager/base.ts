@@ -1,3 +1,5 @@
+import {Observable} from 'rxjs/Observable';
+
 import {Injectable, Inject, Optional} from '@angular/core';
 
 import {Type, isDefined, isBlank} from 'caesium-core/lang';
@@ -11,21 +13,33 @@ import {ModelMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
 
 import {model, union, JsonObject} from '../json_codecs';
+import {RequestFactory, Request} from './http';
 
-import {ModelHttp} from './model_http';
-import {RequestFactory, Response} from './request';
-
-import {Search, SearchParameter, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM} from './search';
+import {Search, SearchParameter,
+    SEARCH_PAGE_SIZE, defaultSearchPageSize,
+    SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
+} from './search';
 
 // TODO: This is all that is required for a manager to be injectable.
+//      export const MY_MODEL_MANAGER = new OpaqueToken('model_manager')
+//
+//      // Provider
+//      CaesiumModel.provideManagers([
+//          { manager: MY_MODEL_MANAGER, for: MyModel, related: [RELATED_MODEL_MANAGER] }
+//      ])
+//
+//
+//
 //      class MyComponent {
-//          constructor(@Inject(MY_MODEL_MANAGER) public mode {}
+//          constructor(@Inject(MY_MODEL_MANAGER) public manager: ModelManager<MyModel>) {
+//          }
 //
 //      }
 
 //    @Injectable()
-//    export class MyModelManager implements ModelManager<MyModel> {
-//          public type: MyModel;
+//    export class MyModelManager extends Manager<MyModel> {
+//          public type = MyModel;
+//          public path = ['mymodel'];
 //    }
 //
 
@@ -39,34 +53,17 @@ export class ManagerOptions {
     static DefaultSearchPageSize = 20;
     static DefaultSearchPageQueryParam = 'page';
 
-    http: ModelHttp;
-    searchPageSize: number;
-    searchPageQueryParam: string;
-
     constructor(
-        http: ModelHttp,
-        @Optional() @Inject(SEARCH_PAGE_SIZE) searchPageSize?: number,
-        @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) searchPageQueryParam?: string
-    ) {
-        this.http = http;
-        if (isBlank(searchPageSize)) {
-            this.searchPageSize = ManagerOptions.DefaultSearchPageSize;
-        } else {
-            this.searchPageSize = searchPageSize;
-        }
-
-        if (isBlank(searchPageQueryParam)) {
-            this.searchPageQueryParam = ManagerOptions.DefaultSearchPageQueryParam;
-        } else {
-            this.searchPageQueryParam = searchPageQueryParam;
-        }
-
-    }
+        public request: RequestFactory,
+        @Optional() @Inject(SEARCH_PAGE_SIZE) public searchPageSize: number = defaultSearchPageSize,
+        @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) public searchPageQueryParam: string = defaultSearchPageQueryParam
+    ) {}
 }
 
+
+@Injectable()
 export abstract class ManagerBase<T extends ModelBase> {
-    http: ModelHttp;
-    _requestFactory: RequestFactory;
+    request: RequestFactory;
     searchPageSize: number;
     searchPageQueryParam: string;
 
@@ -90,9 +87,13 @@ export abstract class ManagerBase<T extends ModelBase> {
         return ModelMetadata.forType(this.getModelType());
     }
 
+    get path(): Array<string> {
+        let [path, type] = this.__metadata.kind.split('::');
+        return path.split('.');
+    }
+
     constructor(options: ManagerOptions) {
-        this.http = options.http;
-        this._requestFactory = new RequestFactory(this.http, this.__metadata);
+        this.request = options.request;
         this.searchPageSize = options.searchPageSize;
         this.searchPageQueryParam = options.searchPageQueryParam;
     }
@@ -104,21 +105,6 @@ export abstract class ManagerBase<T extends ModelBase> {
         if (!Array.isArray(subtypes))
             return false;
         return subtypes.some((stype) => stype === type);
-    }
-
-    /// Create a new instance of the modelType.
-    create(subtype: Type, args: {[propName: string]: any}): T {
-        var factory: ModelFactory<T>;
-        if (this.__metadata.isAbstract) {
-            var modelSubtypes = this.getModelSubtypes();
-            if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {
-                throw new TypeError(`Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`);
-            }
-            factory = createModelFactory<T>(subtype);
-        } else {
-            factory = createModelFactory<T>(this.getModelType());
-        }
-        return factory(args);
     }
 
     @memoize()
@@ -137,59 +123,39 @@ export abstract class ManagerBase<T extends ModelBase> {
         return this._getDefaultJsonCodec();
     }
 
-    getById(id: any): Response {
-        var request = this._requestFactory.get(id.toString());
-        return request.send();
+
+    getById(id: any, options?: {ignoreCache?: boolean}): Observable<T> {
+        let params: {[key: string]: string} = {};
+
+        if (options && options.ignoreCache) {
+            // Add a cache busting parameter to be ignored by the server
+            params['cache'] = `${new Date().valueOf()}`;
+        }
+
+        return this.request
+            .get([...this.path, id.toString()], params)
+            .send(this.modelCodec);
     }
 
-    /**
-     * Get all models with the specified foreign key value.
-     *
-     * For example, given the model
-     *
-     *      @Model({kind: 'example::MyModel'})
-     *      export abstract class MyModel extends ModelBase {
-     *          @RefProperty({refName: 'foreign'})
-     *          foreignId: number;
-     *          foreign: ForeignModel;
-     *      }
-     *
-     * and the model
-     *
-     *      @Model({kind: 'example::ForeignModel'})
-     *      export abstract class ForeignModel extends ModelBase {
-     *      }
-     *
-     * Then the 'getByReferences('foreignId', foreignModel)' method on the MyModel manager
-     * would submit a request:
-     *
-     *      http://host_href/example?foreign_id=<foreignModel.id>
-     *
-     * would return a response
-     * {
-     *  items: [<all MyModel instances where myModel.foreignId === foreignModel.id>]
-     * }
-     *
-     * NOTE:
-     * The 'items' key should be present in all responses to this method, even if the
-     * relationship is one-to-one.
-     *
-     *
-     * @param foreignModel
-     * @param refName
-     * @returns {Response}
-     */
-    getAllByReference(refName: string, foreignModel: ModelBase) : Response {
-        var request = this._requestFactory.get('');
-        request.setRequestParameters({
-            [refName]: foreignModel.id.toString()
-        });
-        return request.send();
+
+    save(model: T): Observable<T> {
+        let request: Request;
+
+        if (model.id === null) {
+            request = this.request.post([...this.path, 'create']);
+        } else {
+            request = this.request.put([...this.path, `${model.id}`]);
+        }
+
+        return request
+            .setRequestBody(model, this.modelCodec)
+            .send(this.modelCodec);
     }
 
     search(): Search<T> {
         return new Search<T>(
-            this._requestFactory,
+            this.request,
+            this.path,
             this.getSearchParameters(),
             this.modelCodec,
             this.searchPageSize,

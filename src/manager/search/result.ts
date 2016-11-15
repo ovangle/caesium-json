@@ -2,20 +2,21 @@ import 'rxjs/add/observable/from';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/throw';
 import 'rxjs/add/operator/reduce';
+import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/concatMap';
-
-//TODO: remove
-import 'rxjs/add/operator/toPromise';
 
 import {Seq, Iterable, List, Range} from 'immutable';
 import {Observable} from 'rxjs/Observable';
 
+import {Converter} from 'caesium-core/converter';
 import {memoize} from 'caesium-core/decorators';
 
+import {JsonObject} from '../../json_codecs';
+
 import {Search} from './search';
-import {StateException, Response, Get} from '../request';
+import {Request, RequestFactory} from '../http';
 import {SearchParameterMap} from './parameter_map';
-import {SearchResultPage, refinePage, SearchResultPageHandler} from "./result_page";
+import {SearchResultPage, refinePage, searchResultPageHandler} from "./result_page";
 
 export class SearchResult<T> {
 
@@ -32,7 +33,6 @@ export class SearchResult<T> {
         this.pages = pages || List<SearchResultPage<T>>();
 
     }
-
 
     get items() {
         return this._getItems();
@@ -62,17 +62,15 @@ export class SearchResult<T> {
         return this.pages.last().isLastPage;
     }
 
-    private _createPageRequest(pageId:number):Get {
-        var request = this.search._requestFactory.get('');
-        var requestParams = this.parameters.valuesToStringMap();
-        requestParams[this.search.pageQueryParam] = pageId.toString();
+    private _createPageRequest(pageId:number):Request {
+        var params = this.parameters.valuesToStringMap();
+        params[this.search.pageQueryParam] = pageId.toString();
 
-        request.setRequestParameters(requestParams);
-        return request;
+        return this.search._requestFactory.get(this.search.path, params);
     }
 
-    private _createSearchPageHandler():SearchResultPageHandler<T> {
-        return new SearchResultPageHandler<T>(
+    private _createSearchPageHandler() {
+        return searchResultPageHandler<T>(
             this.parameters,
             this.search.itemDecoder,
             this.skipNextPageItems
@@ -85,9 +83,8 @@ export class SearchResult<T> {
         }
 
         var request = this._createPageRequest(this.nextPageId);
-        var response = request.send();
-        return response.handle<SearchResultPage<T>>(this._createSearchPageHandler())
-            .map((page) => this._addPage(page));
+        var response = request.send(this._createSearchPageHandler())
+            .map(page => this._addPage(page));
     }
 
     /**
@@ -100,14 +97,8 @@ export class SearchResult<T> {
             .toArray();
 
         return Observable.from(requests)
-            .concatMap((request) => {
-                var response = request.send();
-                return response.handle(this._createSearchPageHandler())
-                    .map((page:SearchResultPage<T>) => {
-                        return page;
-                    })
-            })
-            .reduce((result:SearchResult<T>, page:SearchResultPage<T>) => result._addPage(page), this)
+            .concatMap((request) => request.send(this._createSearchPageHandler()))
+            .reduce((result:SearchResult<T>, page:SearchResultPage<T>) => result._addPage(page), this);
     }
 
     loadAllPages(maxParallelRequests:number = 5):Observable<SearchResult<T>> {
