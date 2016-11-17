@@ -38,7 +38,7 @@ export interface BasePropertyOptions {
     allowNull?: boolean;
     isMulti?: boolean;
 
-    // TODO: clientOnly?: boolean;
+    default?: any | (() => any);
 }
 
 export const defaultBasePropertyOptions: BasePropertyOptions = {
@@ -50,10 +50,7 @@ export const defaultBasePropertyOptions: BasePropertyOptions = {
 };
 
 export interface PropertyOptions extends BasePropertyOptions {
-    // TODO: initial: T
-    defaultValue?: () => any;
     codec: Codec<any,any>;
-    // TODO: validators: ValidatorFn<T>[]
     isMulti?: boolean;
 }
 

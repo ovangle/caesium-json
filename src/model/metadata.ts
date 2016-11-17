@@ -3,7 +3,7 @@ import {OrderedMap, Set, List, Map, Iterable} from 'immutable';
 
 import {forwardRef, resolveForwardRef} from '@angular/core';
 
-import {Type, isBlank, isDefined} from 'caesium-core/lang';
+import {Type, isBlank, isDefined, isFunction} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
 import {Codec, identity} from 'caesium-core/codec';
 
@@ -33,8 +33,8 @@ let _typeCache = new WeakMap<Type,ModelMetadata>();
 
 
 export class BasePropertyMetadata {
-    defaultValue: () => any;
 
+    default: () => any;
     /**
      * True if this property is a reference property.
      */
@@ -97,6 +97,13 @@ export class BasePropertyMetadata {
         this.required = options.required;
         this.allowNull = options.allowNull;
         this.isMulti = options.isMulti;
+
+        this.default = function () {
+            if (isFunction(options.default)) {
+                return (options.default as () => any)();
+            }
+            return options.default;
+        }
     }
 
     /**
@@ -146,7 +153,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
             readOnly: true,
             allowNull: true,
             required: false,
-            defaultValue: () => null,
+            default: null,
             isMulti: false
         };
 
@@ -154,12 +161,6 @@ export class PropertyMetadata extends BasePropertyMetadata {
    }
 
     isRef = false;
-
-    /**
-     * A function which provides a default value for the property.
-     * If `null`, the property has no default value.
-     */
-    defaultValue: () => any;
 
     /// The attribute on the model, in the lowerCamelCase form of the attribute.
     /// Values for the property will be present on the serialized resource under the conversion of this attribute name
@@ -169,7 +170,6 @@ export class PropertyMetadata extends BasePropertyMetadata {
 
     constructor(modelType: Type, name: string, paramType: Type, options: PropertyOptions) {
         super(modelType, name, paramType, options);
-        this.defaultValue = options.defaultValue;
         this.codec = options.codec;
         this.valueAccessor = <Accessor<this>>new ValueAccessor(this);
         Object.freeze(this);
@@ -219,8 +219,6 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
      * The type of the referenced model
      */
     refType: Type;
-
-    defaultValue: () => null;
 
     codec = identity;
 
@@ -363,7 +361,7 @@ export class ModelMetadata {
         });
     }
 
-    getProperty(propNameOrRefName: string): PropertyMetadata {
+    getProperty(propNameOrRefName: string): BasePropertyMetadata {
         let propName: string;
         if (this.refNameMap.has(propNameOrRefName)) {
             propName = this.refNameMap.get(propNameOrRefName);
@@ -375,16 +373,6 @@ export class ModelMetadata {
         }
         return this.properties.get(propName);
     }
-
-
-    checkHasPropertyOrRef(propNameOrRefName: string): void {
-        var hasProperty = this.properties.has(propNameOrRefName)
-            || this.refNameMap.has(propNameOrRefName);
-        if (!hasProperty) {
-            throw new PropertyNotFoundException(propNameOrRefName, this);
-        }
-    }
-
 
     toString() { return `ModelMetadata(${this.kind})`}
 
@@ -398,7 +386,6 @@ export class ModelMetadata {
             .toKeyedSeq();
     }
 }
-
 
 function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadata> {
     let propArgs = List<{isRef: boolean, args: any[]}>(Reflect.getMetadata('model:properties', type))

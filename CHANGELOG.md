@@ -8,13 +8,14 @@
 
 #### model
 
-
 - Added model references
     Models can now define `@RefProperty` attributes, which can be used as foreign
     keys to other models.
 - Support for abstract model types
     Models can now be annotated as `'isAbstract: true'`, to provide better support
     for inheritance between models
+- Can now pass an immutable value to PropertyOptions.default
+
 
 #### json_codecs
 

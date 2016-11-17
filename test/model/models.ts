@@ -179,19 +179,6 @@ export class ModelMixedProperties extends ModelBase {
     }
 }
 
-@Model({kind: 'model::PropertyOptions'})
-export class PropertyOptions extends ModelBase {
-    private constructor(
-        id: number,
-        @Property('defaultValue', {codec: str, defaultValue: () => 'the default value'})
-        public defaultValue: string,
-        @Property('writeOnly', {codec: str, defaultValue: () => 'is write only'})
-        public writeOnly:string
-    ) {
-        super(id, defaultValue, writeOnly);
-    }
-}
-
 @Model({kind: 'model::StaticCreate'})
 export class WithFactory extends ModelBase {
     static create = createModelFactory(WithFactory);
@@ -202,6 +189,22 @@ export class WithFactory extends ModelBase {
     ) {
         super(id, name);
     }
+}
+
+@Model({kind: 'model::PropertyOptions'})
+export class PropertyOptions extends ModelBase {
+    private constructor(
+        id: number,
+        @Property('noOptions')
+        public noOptions: boolean,
+        @Property('valueDefault', {codec: str, default: 'default value'})
+        public valueDefault: string,
+        @Property('callableDefault', {codec: str, default: () => 'return value'})
+        public callableDefault: string
+    ) {
+        super(id, noOptions, valueDefault, callableDefault);
+    }
+
 }
 
 

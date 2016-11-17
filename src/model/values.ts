@@ -73,7 +73,7 @@ export class ValueAccessor implements Accessor<PropertyMetadata> {
         let value = modelValues.values.get(this.property.name);
         if (!isDefined(value)) {
             // Assume everything is immutable and return whatever the default value is.
-            return this.property.defaultValue();
+            return this.property.default();
         }
         return value;
     }

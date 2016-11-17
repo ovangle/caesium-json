@@ -73,12 +73,6 @@ describe('model.metadata', () => {
             expect(() => ModelMetadata.forType(Test.ModelNoProperties)).not.toThrow();
         });
 
-        it('should be possible to check whether the model has a given property', () => {
-            let metadata = ModelMetadata.forType(Test.ModelOneProperty);
-            expect(() => metadata.checkHasPropertyOrRef('prop')).not.toThrow();
-            expect(() => metadata.checkHasPropertyOrRef('noProp')).toThrow();
-        });
-
         it('should be possible to get a name from an associated property name', () => {
             let metadata = ModelMetadata.forType(Test.ModelOneRefProperty);
             expect(metadata.refNameMap.get('prop')).toBe('propId');
@@ -122,5 +116,18 @@ describe('model.metadata', () => {
             expect(multiProp.isMulti).toBe(true);
             // TODO: Need to test mutation and access to property.
         });
+
+        it('should have the defaault value for instances', () => {
+            let metadata = ModelMetadata.forType(Test.PropertyOptions);
+
+            let noOptions = metadata.properties.get('noOptions');
+            expect(noOptions.default()).toBeUndefined('No default provided');
+
+            let valueDefault = metadata.properties.get('valueDefault');
+            expect(valueDefault.default()).toBe('default value');
+
+            let callableDefault = metadata.properties.get('callableDefault');
+            expect(callableDefault.default()).toBe('return value');
+        })
     });
 });

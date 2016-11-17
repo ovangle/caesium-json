@@ -21,10 +21,10 @@ describe('model.values', () => {
     describe('ValueAccessor', () => {
 
         it('should initialize a property to it\'s default value', () => {
-            let accessor = getAccessor(Test.PropertyOptions, 'defaultValue');
+            let accessor = getAccessor(Test.PropertyOptions, 'valueDefault');
             let modelValues = mkModelValues();
 
-            expect(accessor.get(modelValues, false)).toBe('the default value');
+            expect(accessor.get(modelValues, false)).toBe('default value');
             expect(() => accessor.get(modelValues, true)).toThrow();
         });
 

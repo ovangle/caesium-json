@@ -17,7 +17,7 @@ class MyModel extends ModelBase {
         id: number,
         @Property('prop', {codec: str})
         public prop: string,
-        @Property('listProp', {codec: list(str), defaultValue: List, isMulti: true})
+        @Property('listProp', {codec: list(str), default: List, isMulti: true})
         public listProp: List<string>,
         // @Property('ref')
         // public ref: MyBackRefModel
@@ -55,7 +55,7 @@ describe('model.factory', () => {
             var factory = createModelFactory<MyModel>(MyModel);
             var instance = factory({});
             expect(instance).toEqual(jasmine.any(MyModel));
-            expect(instance.prop).toBeNull();
+            expect(instance.prop).toBeUndefined();
         });
 
         it('should provide default values for any properties with a defaultValue', () => {
