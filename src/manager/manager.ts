@@ -1,6 +1,6 @@
 import {Observable} from 'rxjs/Observable';
 
-import {Injectable, Inject, Optional} from '@angular/core';
+import {Injectable, Inject, Optional, Provider, OpaqueToken} from '@angular/core';
 
 import {Type, isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
@@ -43,84 +43,61 @@ import {Search, SearchParameter,
 //    }
 //
 
-/**
- * Rather than expect all manager implementations to declare @Injectable
- * _and_ the correct parameters, this class encapsulates all injectable
- * parameters for the model manager.
- */
-@Injectable()
-export class ManagerOptions {
-    static DefaultSearchPageSize = 20;
-    static DefaultSearchPageQueryParam = 'page';
 
-    constructor(
-        public request: RequestFactory,
-        @Optional() @Inject(SEARCH_PAGE_SIZE) public searchPageSize: number = defaultSearchPageSize,
-        @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) public searchPageQueryParam: string = defaultSearchPageQueryParam
-    ) {}
+export interface ManagerConfig {
+    /**
+     * The type of the model we are providing a manager for.
+     */
+        type: Type;
+
+    /**
+     * The subtypes of the model.
+     */
+    subtypes?: Type[];
+}
+
+export function provideManager(token: string | OpaqueToken, config: ManagerConfig): Provider {
+    return {
+        provide: token,
+        useFactory: (requests: RequestFactory, searchPageSize: number, searchPageQueryParam: string) => {
+            return new ModelManager(config.type, config.subtypes || [], requests, searchPageSize, searchPageQueryParam)
+        },
+        deps: [RequestFactory, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM]
+    };
 }
 
 
 @Injectable()
-export abstract class ManagerBase<T extends ModelBase> {
-    request: RequestFactory;
+export class ModelManager<T extends ModelBase> {
     searchPageSize: number;
     searchPageQueryParam: string;
 
-
-    abstract getModelType(): Type/*<T>*/;
-
-    /**
-     * Get a list of the proper subtypes of the model.
-     */
-    abstract getModelSubtypes(): Type/*<U extends T>*/[];
-
-    /**
-     * Get the search parameters that are applicable to the `search` exposed by
-     * this manager.
-     *
-     * If the model does not support any search, should return `undefined`
-     */
-    abstract getSearchParameters(): SearchParameter[];
-
-    protected get __metadata(): ModelMetadata {
-        return ModelMetadata.forType(this.getModelType());
+    protected get __metadata__(): ModelMetadata {
+        return ModelMetadata.forType(this.type);
     }
 
     get path(): Array<string> {
-        let [path, type] = this.__metadata.kind.split('::');
+        let [path, type] = this.__metadata__.kind.split('::');
         return path.split('.');
     }
 
-    constructor(options: ManagerOptions) {
-        this.request = options.request;
-        this.searchPageSize = options.searchPageSize;
-        this.searchPageQueryParam = options.searchPageQueryParam;
+    constructor(
+        public type: Type,
+        public subtypes: Type[],
+        public request: RequestFactory,
+        @Optional() @Inject(SEARCH_PAGE_SIZE) searchPageSize: number = defaultSearchPageSize,
+        @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) searchPageQueryParam: string = defaultSearchPageQueryParam
+    ) {
+        this.searchPageSize = isBlank(searchPageSize) ? defaultSearchPageSize : searchPageSize;
+        this.searchPageQueryParam = isBlank(searchPageQueryParam) ? defaultSearchPageQueryParam : searchPageQueryParam;
     }
 
-    isManagerFor(type: Type): boolean {
-        if (type === this.getModelType())
-            return true;
-        var subtypes = this.getModelSubtypes();
-        if (!Array.isArray(subtypes))
-            return false;
-        return subtypes.some((stype) => stype === type);
-    }
-
-    @memoize()
-    private _getDefaultJsonCodec(): Codec<T,JsonObject> {
-        var modelSubtypes = this.getModelSubtypes();
-        if (Array.isArray(modelSubtypes) && modelSubtypes.length > 0) {
-            return union(...this.getModelSubtypes());
-        } else if (this.__metadata.isAbstract) {
-            throw new InvalidMetadata('A manager for an abstract model type must provide a nonempty list of subtypes');
-        } else {
-            return model<T>(this.getModelType());
-        }
-    }
 
     get modelCodec(): Codec<T,JsonObject> {
-        return this._getDefaultJsonCodec();
+        if (this.subtypes.length > 0) {
+            return union(...this.subtypes);
+        }
+        return model<T>(this.type);
     }
 
 
@@ -152,11 +129,11 @@ export abstract class ManagerBase<T extends ModelBase> {
             .send(this.modelCodec);
     }
 
-    search(): Search<T> {
+    search(parameters: SearchParameter[]): Search<T> {
         return new Search<T>(
             this.request,
             this.path,
-            this.getSearchParameters(),
+            parameters,
             this.modelCodec,
             this.searchPageSize,
             this.searchPageQueryParam

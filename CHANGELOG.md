@@ -5,6 +5,7 @@
 
 ### Features
 - Removed es6-shim dependency
+- Added Models module for support of @angular-2.0.0
 
 #### model
 
@@ -15,6 +16,7 @@
     Models can now be annotated as `'isAbstract: true'`, to provide better support
     for inheritance between models
 - Can now pass an immutable value to PropertyOptions.default
+- Renamed 'ModelBase.resolveProperty' to 'ModelBase.resolve'
 
 
 #### json_codecs
@@ -25,6 +27,9 @@
     The id can be of any type as long as it can be encoded using an identity codec.
 
 #### Manager
+- Renamed ManagerBase to ModelManager, and removed ManagerOptions dependency.
+  If methods which extend the manager base are needed, Manager can still be
+  subclassed appropriately.
 - Replaced manager.request module with manager.http module, improving the experience
   for working with managed models.
 - Added ModelManager.save method, which

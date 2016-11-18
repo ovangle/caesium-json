@@ -1,7 +1,7 @@
 import 'rxjs/add/operator/toPromise';
 import {List} from 'immutable';
 
-import {Inject, forwardRef} from '@angular/core';
+import {Inject, forwardRef, OpaqueToken} from '@angular/core';
 import {TestBed, inject} from '@angular/core/testing';
 import {RequestMethod, HttpModule} from '@angular/http';
 
@@ -11,7 +11,12 @@ import {JsonObject, itemList} from '../../src/json_codecs';
 import {Model, ModelBase, RefProperty} from '../../src/model';
 
 import {RequestFactory, ModelHttpModule} from '../../src/manager/http';
-import {ManagerOptions, ManagerBase, SearchParameter} from '../../src/manager';
+import {
+    SEARCH_PAGE_SIZE, defaultSearchPageSize,
+    SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
+} from '../../src/manager/search';
+import {ModelManager, SearchParameter} from '../../src/manager';
+import {provideManager} from '../../src/manager/manager';
 import {InvalidMetadata} from '../../src/model/exceptions';
 
 import {MockRequestFactory, MockRequest} from './request_factory.mock';
@@ -20,18 +25,13 @@ import {MockRequestFactory, MockRequest} from './request_factory.mock';
 export class MyModel extends ModelBase {
 }
 
-export class MyModelManager extends ManagerBase<MyModel> {
-    constructor(options: ManagerOptions) {
-        super(options);
-    }
+export const MY_MODEL_MANAGER = new OpaqueToken('MyModelManager');
 
-    getModelType() { return MyModel; }
-    getModelSubtypes(): Type[] { return []; }
-    getSearchParameters(): SearchParameter[] { return undefined; }
-}
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
 export class AbstractModel extends ModelBase {}
+
+export const ABSTRACT_MODEL_MANAGER = new OpaqueToken('AbstractModelManager');
 
 @Model({kind: 'test::AbstractModelImpl1', superType: AbstractModel})
 export class AbstractModelImpl1 extends AbstractModel {}
@@ -51,15 +51,6 @@ class ReferencingModel extends ModelBase {
     }
 }
 
-export class AbstractModelManager extends ManagerBase<AbstractModel> {
-    constructor(options: ManagerOptions) {
-        super(options);
-    }
-
-    getModelType(): Type { return AbstractModel; }
-    getModelSubtypes(): Type[] { return [AbstractModelImpl1, AbstractModelImpl2]; }
-    getSearchParameters(): SearchParameter[] { return undefined; }
-}
 
 
 /// Manager is broken temporarily.
@@ -70,14 +61,18 @@ describe('manager.base', () => {
                 imports: [HttpModule],
                 providers: [
                     {provide: RequestFactory, useClass: MockRequestFactory},
-                    ManagerOptions,
-                    MyModelManager,
-                    AbstractModelManager
+                    {orovide: SEARCH_PAGE_QUERY_PARAM, useValue: 'a stupid page query parameter value'},
+                    {provide: SEARCH_PAGE_SIZE, useValue: defaultSearchPageSize},
+                    {provide: SEARCH_PAGE_QUERY_PARAM, useValue: defaultSearchPageQueryParam},
+                    provideManager(MY_MODEL_MANAGER, {type: MyModel}),
+                    provideManager(ABSTRACT_MODEL_MANAGER, {type: AbstractModel, subtypes: [AbstractModelImpl1, AbstractModelImpl2]})
                 ]
             });
         });
 
-        it('should return a bare model codec for a non abstract type', inject([MyModelManager], (manager: MyModelManager) => {
+        it('should return a bare model codec for a non abstract type', inject([MY_MODEL_MANAGER], (manager: ModelManager<MyModel>) => {
+            expect(manager.searchPageQueryParam).toBe(defaultSearchPageQueryParam);
+
             var codec = manager.modelCodec;
 
             let instance = new MyModel(null);
@@ -91,8 +86,8 @@ describe('manager.base', () => {
         }));
 
         it('should return a union codec for an abstract type', inject(
-            [AbstractModelManager],
-            (manager: AbstractModelManager) => {
+            [ABSTRACT_MODEL_MANAGER],
+            (manager: ModelManager<AbstractModel>) => {
                 var codec = manager.modelCodec;
 
                 let model1 = new AbstractModelImpl1(null);
@@ -120,8 +115,8 @@ describe('manager.base', () => {
 
 
         it('should be possible to get a model by id', inject(
-            [RequestFactory, MyModelManager],
-            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+            [RequestFactory, MY_MODEL_MANAGER],
+            (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
                 requestFactory.sent$.subscribe((request: MockRequest)=> {
                     expect(request.method).toBe(RequestMethod.Get);
                     expect(request.path).toEqual(['test', '12345']);
@@ -137,8 +132,8 @@ describe('manager.base', () => {
         );
 
         it('saving a model with null ID should POST to server', inject(
-            [RequestFactory, MyModelManager],
-            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+            [RequestFactory, MY_MODEL_MANAGER],
+            (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
                 requestFactory.sent$.subscribe((request) => {
 
                     expect(request.method).toEqual(RequestMethod.Post);
@@ -159,9 +154,8 @@ describe('manager.base', () => {
         );
 
 
-        it('saving a model with not-null ID should PUT to server', inject(
-            [RequestFactory, MyModelManager],
-            (requestFactory: MockRequestFactory, manager: MyModelManager) => {
+        it('saving a model with not-null ID should PUT to server',
+            inject([RequestFactory, MY_MODEL_MANAGER], (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
                 requestFactory.sent$.subscribe((request) => {
                     expect(request.method).toEqual(RequestMethod.Put);
                     expect(request.path).toEqual(['test', '48']);

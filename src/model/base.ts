@@ -7,7 +7,7 @@ import {isDefined, isBlank, forEachOwnProperty} from 'caesium-core/lang';
 
 import {itemList} from '../json_codecs';
 import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
-import {ManagerBase} from '../manager';
+import {ModelManager} from '../manager';
 
 import {copyModel, ModelConstructor} from './factory';
 import {initialModelValues, ModelValues, isModelValues, mutateModelValues} from './values';
@@ -126,10 +126,7 @@ export class ModelBase {
     }
 
 
-    resolveProperty(
-        manager:ManagerBase<ModelBase /* typeof this */>,
-        propNameOrRefName:string
-    ):Observable<ModelBase /* typeof this */> {
+    resolve(manager:ModelManager<this>, propNameOrRefName:string):Observable<this> {
         if (this.isResolved(propNameOrRefName)) {
             return Observable.of(this);
         }
