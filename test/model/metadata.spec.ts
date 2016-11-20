@@ -77,6 +77,14 @@ describe('model.metadata', () => {
             let metadata = ModelMetadata.forType(Test.ModelOneRefProperty);
             expect(metadata.refNameMap.get('prop')).toBe('propId');
         });
+
+        it('should be possible to get the path to a model', () => {
+            let modelNoProperties = ModelMetadata.forType(Test.ModelNoProperties);
+            expect(modelNoProperties.path).toEqual(['model']);
+
+            let complexPath = ModelMetadata.forType(Test.ComplexPath);
+            expect(complexPath.path).toEqual(['model', 'path', 'to', 'resource']);
+        });
     });
 
     describe('PropertyMetadata', () => {

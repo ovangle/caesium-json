@@ -21,6 +21,13 @@ export class ModelNoProperties extends ModelBase {
     }
 }
 
+@Model({kind: 'model.path.to.resource::ComplexPath'})
+export class ComplexPath extends ModelBase {
+    constructor(id: number) {
+        super(id);
+    }
+}
+
 
 @Model({kind: 'model::ModelSupertype', isAbstract: true})
 export class ModelSupertype extends ModelBase {

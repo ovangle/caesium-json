@@ -13,6 +13,16 @@ export interface ModelOptions {
     kind: string;
     superType?: Type;
     isAbstract?: boolean;
+
+    /**
+     * Function which takes an encoded instance of the type and
+     * returns the appropriate subtype of the model.
+     *
+     * Only needs to be provided for abstract models.
+     *
+     * @param obj
+     */
+    selectSubtype?: (obj: any) => Type;
 }
 
 export function Model(options: ModelOptions): (cls: any) => any {

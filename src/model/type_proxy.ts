@@ -100,6 +100,9 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
 function prepareType(type: Type, metadata: ModelMetadata, receiver: any) {
     let prototype = type.prototype;
 
+    // Override the prototype's constructor with the proxy.
+    prototype.constructor = receiver;
+
     // If we have added a static factory to the type, make sure
     // we use it properly.
 

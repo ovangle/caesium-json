@@ -7,9 +7,11 @@ import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
 import {ValueError} from 'caesium-core/exception';
 
-import {ModelFactory, createModelFactory} from '../model/factory';
-import {InvalidMetadata} from '../model/exceptions';
+
 import {ModelMetadata} from '../model/metadata';
+import {MetadataProvider} from '../model/metadata_provider';
+import {ModelFactory, createModelFactory} from '../model/factory';
+import {InvalidMetadata, ModelNotFoundException} from '../model/exceptions';
 import {ModelBase} from '../model/base';
 
 import {model, union, JsonObject} from '../json_codecs';
@@ -20,71 +22,16 @@ import {Search, SearchParameter,
     SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
 } from './search';
 
-// TODO: This is all that is required for a manager to be injectable.
-//      export const MY_MODEL_MANAGER = new OpaqueToken('model_manager')
-//
-//      // Provider
-//      CaesiumModel.provideManagers([
-//          { manager: MY_MODEL_MANAGER, for: MyModel, related: [RELATED_MODEL_MANAGER] }
-//      ])
-//
-//
-//
-//      class MyComponent {
-//          constructor(@Inject(MY_MODEL_MANAGER) public manager: ModelManager<MyModel>) {
-//          }
-//
-//      }
-
-//    @Injectable()
-//    export class MyModelManager extends Manager<MyModel> {
-//          public type = MyModel;
-//          public path = ['mymodel'];
-//    }
-//
-
-
-export interface ManagerConfig {
-    /**
-     * The type of the model we are providing a manager for.
-     */
-        type: Type;
-
-    /**
-     * The subtypes of the model.
-     */
-    subtypes?: Type[];
-}
-
-export function provideManager(token: string | OpaqueToken, config: ManagerConfig): Provider {
-    return {
-        provide: token,
-        useFactory: (requests: RequestFactory, searchPageSize: number, searchPageQueryParam: string) => {
-            return new ModelManager(config.type, config.subtypes || [], requests, searchPageSize, searchPageQueryParam)
-        },
-        deps: [RequestFactory, SEARCH_PAGE_SIZE, SEARCH_PAGE_QUERY_PARAM]
-    };
-}
-
 
 @Injectable()
-export class ModelManager<T extends ModelBase> {
+export class ModelManager {
     searchPageSize: number;
     searchPageQueryParam: string;
 
-    protected get __metadata__(): ModelMetadata {
-        return ModelMetadata.forType(this.type);
-    }
-
-    get path(): Array<string> {
-        let [path, type] = this.__metadata__.kind.split('::');
-        return path.split('.');
-    }
-
     constructor(
-        public type: Type,
-        public subtypes: Type[],
-        public request: RequestFactory,
+        private metadatas: MetadataProvider,
+        public requests: RequestFactory,
+
         @Optional() @Inject(SEARCH_PAGE_SIZE) searchPageSize: number = defaultSearchPageSize,
         @Optional() @Inject(SEARCH_PAGE_QUERY_PARAM) searchPageQueryParam: string = defaultSearchPageQueryParam
     ) {
@@ -92,16 +39,22 @@ export class ModelManager<T extends ModelBase> {
         this.searchPageQueryParam = isBlank(searchPageQueryParam) ? defaultSearchPageQueryParam : searchPageQueryParam;
     }
 
-
-    get modelCodec(): Codec<T,JsonObject> {
-        if (this.subtypes.length > 0) {
-            return union(...this.subtypes);
+    public getModelCodec<T extends ModelBase>(type: Type/*<T>*/ | T): Codec<T,JsonObject> {
+        let metadata = this.metadatas.for(type);
+        if (metadata.isAbstract) {
+            let subtypeMetadatas = this.metadatas.leafMetadatasForType(metadata.type);
+            return union(...(subtypeMetadatas.map(meta => meta.type).toArray()));
         }
-        return model<T>(this.type);
+        return model<T>(metadata.type);
+    }
+
+    public getPath(type: Type/*<T>*/): Array<string> {
+        let metadata = this.metadatas.for(type);
+        return metadata.path;
     }
 
 
-    getById(id: any, options?: {ignoreCache?: boolean}): Observable<T> {
+    getById<T extends ModelBase>(type: Type/*<T>*/, id: any, options?: {ignoreCache?: boolean}): Observable<T> {
         let params: {[key: string]: string} = {};
 
         if (options && options.ignoreCache) {
@@ -109,32 +62,40 @@ export class ModelManager<T extends ModelBase> {
             params['cache'] = `${new Date().valueOf()}`;
         }
 
-        return this.request
-            .get([...this.path, id.toString()], params)
-            .send(this.modelCodec);
+        return this.requests
+            .get([...this.getPath(type), id.toString()], params)
+            .send(this.getModelCodec<T>(type));
     }
 
 
-    save(model: T): Observable<T> {
+    /**
+     * Save an instance of the model.
+     *
+     * If the type is provided, it must be an abstract supertype of the type of the model.
+     * @param model
+     * @param type
+     * @returns {Observable<Codec<any, JsonObject>>}
+     */
+    save<T extends ModelBase>(model: T): Observable<T> {
         let request: Request;
+        let metadata = this.metadatas.for(model);
+        let codec = this.getModelCodec<T>(model);
 
         if (model.id === null) {
-            request = this.request.post([...this.path, 'create']);
+            request = this.requests.post([...metadata.path, 'create']);
         } else {
-            request = this.request.put([...this.path, `${model.id}`]);
+            request = this.requests.put([...metadata.path, `${model.id}`]);
         }
 
-        return request
-            .setRequestBody(model, this.modelCodec)
-            .send(this.modelCodec);
+        return request.setRequestBody(model, codec).send<T>(codec);
     }
 
-    search(parameters: SearchParameter[]): Search<T> {
+    search<T extends ModelBase>(type: Type /*<T>*/, parameters: SearchParameter[]): Search<T> {
         return new Search<T>(
-            this.request,
-            this.path,
+            this.requests,
+            this.getPath(type),
             parameters,
-            this.modelCodec,
+            this.getModelCodec<T>(type),
             this.searchPageSize,
             this.searchPageQueryParam
         );

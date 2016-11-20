@@ -9,6 +9,7 @@ import {Type} from 'caesium-core/lang';
 
 import {JsonObject, itemList} from '../../src/json_codecs';
 import {Model, ModelBase, RefProperty} from '../../src/model';
+import {Models} from '../../src/module';
 
 import {RequestFactory, ModelHttpModule} from '../../src/manager/http';
 import {
@@ -16,7 +17,6 @@ import {
     SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
 } from '../../src/manager/search';
 import {ModelManager, SearchParameter} from '../../src/manager';
-import {provideManager} from '../../src/manager/manager';
 import {InvalidMetadata} from '../../src/model/exceptions';
 
 import {MockRequestFactory, MockRequest} from './request_factory.mock';
@@ -24,8 +24,6 @@ import {MockRequestFactory, MockRequest} from './request_factory.mock';
 @Model({kind: 'test::MyModel'})
 export class MyModel extends ModelBase {
 }
-
-export const MY_MODEL_MANAGER = new OpaqueToken('MyModelManager');
 
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
@@ -51,44 +49,43 @@ class ReferencingModel extends ModelBase {
     }
 }
 
-
-
-/// Manager is broken temporarily.
 describe('manager.base', () => {
     describe('ManagerBase', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                imports: [HttpModule],
+                imports: [HttpModule,
+                    Models.provideMetadata([
+                        MyModel,
+                        {type: AbstractModel, subtypes: [AbstractModelImpl1, AbstractModelImpl2]}
+                    ])
+                ],
                 providers: [
                     {provide: RequestFactory, useClass: MockRequestFactory},
-                    {orovide: SEARCH_PAGE_QUERY_PARAM, useValue: 'a stupid page query parameter value'},
+
                     {provide: SEARCH_PAGE_SIZE, useValue: defaultSearchPageSize},
                     {provide: SEARCH_PAGE_QUERY_PARAM, useValue: defaultSearchPageQueryParam},
-                    provideManager(MY_MODEL_MANAGER, {type: MyModel}),
-                    provideManager(ABSTRACT_MODEL_MANAGER, {type: AbstractModel, subtypes: [AbstractModelImpl1, AbstractModelImpl2]})
+                    ModelManager
                 ]
             });
         });
 
-        it('should return a bare model codec for a non abstract type', inject([MY_MODEL_MANAGER], (manager: ModelManager<MyModel>) => {
+        it('should return a bare model codec for a non abstract type', inject([ModelManager], (manager: ModelManager) => {
             expect(manager.searchPageQueryParam).toBe(defaultSearchPageQueryParam);
-
-            var codec = manager.modelCodec;
+            let codec = manager.getModelCodec(MyModel);
 
             let instance = new MyModel(null);
 
             // Should use the ModelCodec for the model.
-            expect(manager.modelCodec.encode(instance))
+            expect(codec.encode(instance))
                 .toEqual({kind: 'test::MyModel', id: null});
 
             expect(codec.decode({'kind': 'test::MyModel'}))
                 .toEqual(jasmine.any(MyModel));
         }));
 
-        it('should return a union codec for an abstract type', inject(
-            [ABSTRACT_MODEL_MANAGER],
-            (manager: ModelManager<AbstractModel>) => {
-                var codec = manager.modelCodec;
+        it('should return a union codec for an abstract type', inject([ModelManager],
+            (manager: ModelManager) => {
+                var codec = manager.getModelCodec(AbstractModel);
 
                 let model1 = new AbstractModelImpl1(null);
                 let model2 = new AbstractModelImpl2(null);
@@ -115,8 +112,8 @@ describe('manager.base', () => {
 
 
         it('should be possible to get a model by id', inject(
-            [RequestFactory, MY_MODEL_MANAGER],
-            (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
+            [RequestFactory, ModelManager],
+            (requestFactory: MockRequestFactory, manager: ModelManager) => {
                 requestFactory.sent$.subscribe((request: MockRequest)=> {
                     expect(request.method).toBe(RequestMethod.Get);
                     expect(request.path).toEqual(['test', '12345']);
@@ -125,15 +122,15 @@ describe('manager.base', () => {
                     request.respond({status: 200, body: new MyModel(12345)});
                 });
 
-                manager.getById(12345).forEach(model => {
+                manager.getById<MyModel>(MyModel, 12345).forEach(model => {
                     expect(model).toEqual(new MyModel(12345));
                 })
             })
         );
 
         it('saving a model with null ID should POST to server', inject(
-            [RequestFactory, MY_MODEL_MANAGER],
-            (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
+            [RequestFactory, ModelManager],
+            (requestFactory: MockRequestFactory, manager: ModelManager) => {
                 requestFactory.sent$.subscribe((request) => {
 
                     expect(request.method).toEqual(RequestMethod.Post);
@@ -154,8 +151,9 @@ describe('manager.base', () => {
         );
 
 
-        it('saving a model with not-null ID should PUT to server',
-            inject([RequestFactory, MY_MODEL_MANAGER], (requestFactory: MockRequestFactory, manager: ModelManager<MyModel>) => {
+        it('saving a model with not-null ID should PUT to server', inject(
+            [RequestFactory, ModelManager],
+            (requestFactory: MockRequestFactory, manager: ModelManager) => {
                 requestFactory.sent$.subscribe((request) => {
                     expect(request.method).toEqual(RequestMethod.Put);
                     expect(request.path).toEqual(['test', '48']);

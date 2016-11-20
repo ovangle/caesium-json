@@ -125,8 +125,7 @@ export class ModelBase {
         return property.valueAccessor.has(this.__modelValues__, true);
     }
 
-
-    resolve(manager:ModelManager<this>, propNameOrRefName:string):Observable<this> {
+    resolve(manager:ModelManager, propNameOrRefName:string):Observable<this> {
         if (this.isResolved(propNameOrRefName)) {
             return Observable.of(this);
         }
@@ -148,7 +147,7 @@ export class ModelBase {
             return Observable.of(resolved);
         }
 
-        return manager.getById(idValue)
+        return manager.getById(this.__metadata__.type, idValue)
             .map((foreignModel) => this.set(refName, foreignModel));
     }
 }

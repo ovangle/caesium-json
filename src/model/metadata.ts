@@ -1,7 +1,7 @@
 import {OrderedMap, Set, List, Map, Iterable} from 'immutable';
 
 
-import {forwardRef, resolveForwardRef} from '@angular/core';
+import {forwardRef, resolveForwardRef, OpaqueToken} from '@angular/core';
 
 import {Type, isBlank, isDefined, isFunction} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
@@ -339,6 +339,11 @@ export class ModelMetadata {
 
         this.superType = options.superType;
         this.isAbstract = !!options.isAbstract;
+    }
+
+    get path(): string[] {
+        let [resource, type] = this.kind.split('::');
+        return resource.split('.');
     }
 
     checkValid() {
