@@ -13,7 +13,7 @@ import {Codec, isCodec, getDecoder, getEncoder} from 'caesium-core/codec';
 import {ValueError} from 'caesium-core/exception';
 
 
-import {JsonObject} from '../../json_codecs';
+import {JsonObject} from '../../json_codecs/index';
 import {camelCaseToSnakeCase} from '../../json_codecs/string_case_converters';
 
 export interface Request {

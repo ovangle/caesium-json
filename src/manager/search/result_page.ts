@@ -4,7 +4,7 @@ import {isBlank, isDefined, isNumber, isBoolean} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
 import {ValueError} from 'caesium-core/exception';
 
-import {JsonObject, EncodingException} from '../../json_codecs';
+import {JsonObject, EncodingException} from '../../json_codecs/index';
 
 import {SearchParameterMap} from './parameter_map';
 

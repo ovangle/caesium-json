@@ -14,8 +14,8 @@ import {ModelFactory, createModelFactory} from '../model/factory';
 import {InvalidMetadata, ModelNotFoundException, PropertyNotFoundException} from '../model/exceptions';
 import {ModelBase} from '../model/base';
 
-import {model, itemList, union, JsonObject} from '../json_codecs';
-import {RequestFactory, Request} from './http';
+import {model, itemList, union, JsonObject} from '../json_codecs/index';
+import {RequestFactory, Request} from './http/index';
 
 import {Search, SearchParameter,
     SEARCH_PAGE_SIZE, defaultSearchPageSize,
