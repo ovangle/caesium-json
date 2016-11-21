@@ -47,7 +47,7 @@ describe('model.metadata_provider', () => {
             (provider: MetadataProvider) => {
                 let modelNoProperties = ModelMetadata.forType(Test.ModelNoProperties);
                 expect(provider.for(Test.ModelNoProperties)).toBe(modelNoProperties, 'should obtain metadata for types');
-                expect(provider.for(new Test.ModelNoProperties(null))).toBe(modelNoProperties, 'should obtain metadata for instances');
+                expect(provider.for(new Test.ModelNoProperties())).toBe(modelNoProperties, 'should obtain metadata for instances');
             }
         ));
 

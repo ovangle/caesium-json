@@ -6,7 +6,7 @@ import {InvalidMetadata} from '../../src/model';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 import {ModelMetadata} from '../../src/model/metadata';
-import {str, list} from '../../src/json_codecs';
+import {str, num, list} from '../../src/json_codecs';
 import {createModelFactory, copyModel} from '../../src/model/factory';
 
 import * as Test from './models';
@@ -14,7 +14,6 @@ import * as Test from './models';
 @Model({kind: 'test::MyModel'})
 class MyModel extends ModelBase {
     constructor(
-        id: number,
         @Property('prop', {codec: str})
         public prop: string,
         @Property('listProp', {codec: list(str), default: List, isMulti: true})
@@ -26,7 +25,7 @@ class MyModel extends ModelBase {
         // @Property('multiRef', {itemType: forwardRef(() => AbstractModel)})
         public multiRef: Set<AbstractModel>
     ) {
-        super(id, prop, listProp, refId, multiRef);
+        super(prop, listProp, refId, multiRef);
     }
 
     public ref: MyBackRefModel;
@@ -46,6 +45,12 @@ class AbstractModel extends ModelBase {
 
 @Model({kind: 'test::MyModel'})
 class MyBackRefModel extends ModelBase {
+    constructor(
+        @Property('id', {key: true, codec: num})
+        public id: number
+    ) {
+        super(id);
+    }
 }
 
 
@@ -163,7 +168,7 @@ describe('model.factory', () => {
             //expect(factory).toEqual(jasmine.any(Function));
 
             expect(factory({name: 'name'}))
-                .toEqual(new Test.WithFactory(null, 'name'));
+                .toEqual(new Test.WithFactory('name'));
         });
 
     });

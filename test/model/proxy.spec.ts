@@ -10,17 +10,16 @@ export class ExistingPropertyName extends ModelBase {
     get existingProperty() { return 'the existing property'; }
 
     constructor(
-        id: number,
         @Property('existingProperty', {codec: str})
-            existingProperty: string
+        existingProperty: string
     ) {
-        super(id, existingProperty);
+        super(existingProperty);
     }
 }
 
 describe('model.type_proxy', () => {
     it('should not overwrite an existing property of the class', () => {
-        let foo = new ExistingPropertyName(null, 'overwritten by the property descriptor');
+        let foo = new ExistingPropertyName('overwritten by the property descriptor');
         expect(foo.existingProperty).toBe('the existing property');
     });
 });

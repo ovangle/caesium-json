@@ -70,7 +70,7 @@ describe('model.values', () => {
     describe('RefAccessor', () => {
         it('should get a property reference', () => {
             let accessor = getAccessor(Test.ModelOneRefProperty, 'propId');
-            let reference = new Test.ModelNoProperties(12345);
+            let reference = new Test.Managed(12345);
             let values = mkModelValues(
                 {propId: 12345},
                 {propId: reference}
@@ -82,7 +82,7 @@ describe('model.values', () => {
         it('should set a property reference ID', () => {
             let accessor = getAccessor(Test.ModelOneRefProperty, 'propId');
 
-            let reference = new Test.ModelNoProperties(54321);
+            let reference = new Test.Managed(54321);
 
             let initial = mkModelValues();
             let updated = accessor.set(initial, reference.id, /* setRef: */ false);
@@ -94,7 +94,7 @@ describe('model.values', () => {
         it('should set a property reference', () => {
             let accessor = getAccessor(Test.ModelOneRefProperty, 'propId');
 
-            let reference = new Test.ModelNoProperties(54321);
+            let reference = new Test.Managed(54321);
 
             let initial = mkModelValues();
             let updated = accessor.set(initial, reference, /* setRef */ true);

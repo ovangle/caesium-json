@@ -6,6 +6,7 @@ import {isDefined, Type, forEachOwnProperty} from 'caesium-core/lang';
 import {ModelBase} from './base';
 import {ModelConstructor, createModelFactory, _DEFERRED_MODEL_FACTORY} from './factory';
 import {ModelMetadata, buildModelMetadata} from './metadata';
+import {ArgumentError} from './exceptions';
 
 
 export interface ModelTypeProxy extends Type {
@@ -14,7 +15,7 @@ export interface ModelTypeProxy extends Type {
 
 /// Standard method names of Object.prototype and Function.prototype.
 /// These method names should always be passed to the underlying type.
-const DO_NOT_INTERCEPT = Set<string>([
+const DO_NOT_INTERCEPT = Set<string | symbol>([
     '__proto__',
     '__noSuchMethod__',
     '__defineGetter__',
@@ -52,13 +53,15 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
 
     construct(type: Type, argArray: any[], receiver: any) {
         let metadata = this.get(type, '__model_metadata__', receiver);
-        argArray = [metadata, ...argArray];
+
+        // See note on ModelBase.constructor
+        argArray = [metadata, argArray];
 
         let obj = Reflect.construct(ModelBase, argArray, receiver);
         return Object.freeze(obj);
     }
 
-    get(type: Type, prop: string, receiver: any): any {
+    get(type: Type, prop: string | symbol, receiver: any): any {
         if (DO_NOT_INTERCEPT.has(prop)) {
             return (type as any)[prop];
         }
@@ -86,6 +89,12 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
                 return this.__model_metadata__;
             case 'prototype':
                 return this.prototype;
+            case Symbol.toPrimitive:
+                return (hint: string) => {
+                    if (hint === 'string')
+                        return type.toString();
+                    throw new ArgumentError(`Cannot convert '${type}' to primitive type ${hint}`);
+                }
         }
 
         let value = (type as any)[prop];

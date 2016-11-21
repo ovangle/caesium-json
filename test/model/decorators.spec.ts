@@ -19,12 +19,12 @@ describe('model.decorators', () => {
     describe('Model', () => {
 
         it('should be possible to create an instance of a model', () => {
-            let m = new Test.ModelNoProperties(null);
+            let m = new Test.ModelNoProperties();
             expect(m instanceof Test.ModelNoProperties).toBe(true, 'Should be an instance of the type');
             expect(m instanceof ModelBase).toBe(true, 'Every model should be an instance of ModelBase');
             expect(Object.isFrozen(m)).toBe(true, 'Instance should be frozen');
 
-            let modelSubtype = new Test.ModelSubtype(null);
+            let modelSubtype = new Test.ModelSubtype();
             expect(modelSubtype instanceof Test.ModelSupertype).toBe(true, 'Should preserve prototype chain');
             expect(modelSubtype instanceof Test.ModelSubtype).toBe(true, 'Also an instance of subtype');
             expect(Object.isFrozen(modelSubtype)).toBe(true, 'Subtypes should also be frozen');
@@ -44,7 +44,7 @@ describe('model.decorators', () => {
 
             let properties: any[] = Reflect.getMetadata('model:properties', ModelOneProperty);
             // An extra arg was passed for subtypes.
-            expect(properties.length).toBe(3);
+            expect(properties.length).toBe(2);
             let ownProperties = properties.filter(prop => prop !== null);
             expect(ownProperties).toEqual([{isRef: false, args: jasmine.any(Array)}]);
             expect(ownProperties[0].args.slice(1,3)).toEqual(['prop', String]);
@@ -76,7 +76,7 @@ describe('model.decorators', () => {
         it('should add the property to the \'model.properties\' key of the type', () => {
             let ModelOneRefProperty = _getProxiedType(Test.ModelOneRefProperty);
             let properties: any[] = Reflect.getMetadata('model:properties', ModelOneRefProperty);
-            expect(properties.length).toBe(2);
+            expect(properties.length).toBe(1);
             let ownProperties = properties.filter(prop => prop !== null);
             expect(ownProperties).toEqual([{isRef: true, args: jasmine.any(Array)}]);
             expect(ownProperties[0].args.slice(1,3)).toEqual(['propId', Number]);

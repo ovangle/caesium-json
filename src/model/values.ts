@@ -36,6 +36,11 @@ export function mutateModelValues(modelValues: ModelValues, mutate: (mutator: Mo
 export interface Accessor<T extends BasePropertyMetadata> {
     property: T;
 
+    /**
+     * The name under which the accessor value is stored in model values.
+     */
+    name: string;
+
     // A descriptor which should be added to the
     descriptors: [string, PropertyDescriptor][];
 
@@ -55,8 +60,12 @@ export class ValueAccessor implements Accessor<PropertyMetadata> {
 
     get descriptors(): [string, PropertyDescriptor][] {
         return [
-            accessorDescriptor(this, this.property.name)
+            accessorDescriptor(this, this.name)
         ];
+    }
+
+    get name(): string {
+        return this.property.name;
     }
 
     has(modelValues: ModelValues, ref: boolean): boolean {
@@ -70,7 +79,7 @@ export class ValueAccessor implements Accessor<PropertyMetadata> {
         if (ref)
             throw new ArgumentError('Cannot edit ref of basic property');
 
-        let value = modelValues.values.get(this.property.name);
+        let value = modelValues.values.get(this.name);
         if (!isDefined(value)) {
             // Assume everything is immutable and return whatever the default value is.
             return this.property.default();
@@ -88,25 +97,25 @@ export class ValueAccessor implements Accessor<PropertyMetadata> {
         }
 
         return Object.assign({}, modelValues, {
-            values: modelValues.values.set(this.property.name, value)
+            values: modelValues.values.set(this.name, value)
         });
     }
 
     clear(modelValues: ModelValues): ModelValues {
         return Object.assign({}, modelValues, {
-            values: modelValues.values.remove(this.property.name)
+            values: modelValues.values.remove(this.name)
         });
     }
 }
 
 export class RefAccessor implements Accessor<RefPropertyMetadata> {
-    private _idAccessor: ValueAccessor;
+    private _idAccessor: RefKeyAccessor;
 
     constructor(
         public property: RefPropertyMetadata,
         private _idProperty: PropertyMetadata
     ) {
-        this._idAccessor = new ValueAccessor(_idProperty);
+        this._idAccessor = new RefKeyAccessor(_idProperty, property.name);
     }
 
     get descriptors(): [string, PropertyDescriptor][] {
@@ -116,12 +125,16 @@ export class RefAccessor implements Accessor<RefPropertyMetadata> {
         ];
     }
 
+    get name(): string {
+        return this.property.name;
+    }
+
     has(modelValues: ModelValues, ref: boolean) {
         let idValue = this._idAccessor.get(modelValues, false);
         if (!ref || idValue === null) {
             return this._idAccessor.has(modelValues, /* hasRef */ false);
         }
-        return modelValues.resolvedRefs.has(this.property.name);
+        return modelValues.resolvedRefs.has(this.name);
     }
 
     get(modelValues: ModelValues, ref: boolean): any {
@@ -131,13 +144,13 @@ export class RefAccessor implements Accessor<RefPropertyMetadata> {
             return idValue;
         }
 
-        let refValue = modelValues.resolvedRefs.get(this.property.name);
+        let refValue = modelValues.resolvedRefs.get(this.name);
         if (idValue === null && !isDefined(refValue)) {
             // If the key is null, the reference is always resolved.
             return null;
         }
 
-        return modelValues.resolvedRefs.get(this.property.name);
+        return modelValues.resolvedRefs.get(this.name);
     }
 
     set(modelValues: ModelValues, value: any, ref: boolean): ModelValues {
@@ -155,7 +168,7 @@ export class RefAccessor implements Accessor<RefPropertyMetadata> {
         let idValue: any;
         if (value === null) {
             idValue = null;
-        } else if (value instanceof ModelBase) {
+        } else if ('id' in value) {
             idValue = value.id;
         } else {
             throw new TypeError(
@@ -165,24 +178,37 @@ export class RefAccessor implements Accessor<RefPropertyMetadata> {
         }
 
         return {
-            values: modelValues.values.set(this.property.name, idValue),
-            resolvedRefs: modelValues.resolvedRefs.set(this.property.name, value)
+            values: modelValues.values.set(this.name, idValue),
+            resolvedRefs: modelValues.resolvedRefs.set(this.name, value)
         };
     }
 
     clear(modelValues: ModelValues): ModelValues {
         return {
-            values: modelValues.values.remove(this.property.name),
-            resolvedRefs: modelValues.resolvedRefs.remove(this.property.name)
+            values: modelValues.values.remove(this.name),
+            resolvedRefs: modelValues.resolvedRefs.remove(this.name)
         };
     }
 
 }
 
+export class RefKeyAccessor extends ValueAccessor {
+    // Access a Reference key value.
+    // The name of the property is always the name of the key on the foreign model,
+    // so it is overriden with the name of the reference property.
+    constructor(property: PropertyMetadata, private refName: string) {
+        super(property);
+    }
+
+    get name() {
+        return this.refName;
+    }
+}
+
 
 
 function accessorDescriptor(accessor: Accessor<any>, propNameOrRefName: string): [string, PropertyDescriptor] {
-    let getRef = propNameOrRefName !== accessor.property.name;
+    let getRef = propNameOrRefName !== accessor.name;
 
     /*
      * NOTE:

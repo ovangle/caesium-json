@@ -9,22 +9,20 @@ import {ModelMetadata} from "../../src/model/metadata";
 @Model({kind: 'test::ModelA'})
 class ModelA extends ModelBase {
     constructor(
-        id: number,
         @Property('propOne', {codec: identity})
         propOne: string
     ) {
-        super(id, propOne);
+        super(propOne);
     }
 }
 
 @Model({kind: 'test::ModelB'})
 class ModelB extends ModelBase {
     constructor(
-        id: number,
         @Property('propTwo', {codec: identity})
         propTwo: string
     ) {
-        super(id, propTwo);
+        super(propTwo);
     }
 }
 
@@ -32,7 +30,6 @@ describe('json_codecs.model_union_to_json', () => {
     var codec = union(ModelA, ModelB);
     it('should be possible to decode a json object based on it\'s kind', () => {
         var jsonDataA: any = {
-            id: null,
             kind: 'test::ModelA',
             prop_one: 'hello world'
         };
@@ -42,7 +39,6 @@ describe('json_codecs.model_union_to_json', () => {
         expect(instanceA.propOne).toBe('hello world');
 
         var jsonDataB: any = {
-            id: null,
             kind: 'test::ModelB',
             prop_two: 'goodbye'
         };
@@ -53,19 +49,17 @@ describe('json_codecs.model_union_to_json', () => {
     });
 
     it('should be possible to encode an instance based on its type', () => {
-        var instanceA = new ModelA(null, 'hello world');
+        var instanceA = new ModelA('hello world');
 
 
         expect(codec.encode(instanceA)).toEqual({
-            id: null,
             kind: 'test::ModelA',
             prop_one: 'hello world'
         });
 
-        var instanceB = new ModelB(null, 'goodbye');
+        var instanceB = new ModelB('goodbye');
 
         expect(codec.encode(instanceB)).toEqual({
-            id: null,
             kind: 'test::ModelB',
             prop_two: 'goodbye'
         });

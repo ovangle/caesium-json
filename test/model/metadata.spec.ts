@@ -61,10 +61,10 @@ describe('model.metadata', () => {
         });
 
         it('should be possible to get the Metadata for a model instance', () => {
-            let m1 = new Test.ModelNoProperties(null);
+            let m1 = new Test.ModelNoProperties();
             expect(ModelMetadata.forInstance(m1)).toBe(ModelMetadata.forType(Test.ModelNoProperties));
 
-            let m2 = new Test.ModelSubtype(null);
+            let m2 = new Test.ModelSubtype();
             expect(ModelMetadata.forInstance(m2)).toBe(ModelMetadata.forType(Test.ModelSubtype));
         })
 
@@ -125,7 +125,7 @@ describe('model.metadata', () => {
             // TODO: Need to test mutation and access to property.
         });
 
-        it('should have the defaault value for instances', () => {
+        it('should have the default value for instances', () => {
             let metadata = ModelMetadata.forType(Test.PropertyOptions);
 
             let noOptions = metadata.properties.get('noOptions');

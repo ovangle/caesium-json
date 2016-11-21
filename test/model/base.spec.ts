@@ -4,7 +4,7 @@ import {Model, Property, RefProperty} from "../../src/model/decorators";
 import {ModelMetadata} from '../../src/model/metadata';
 import {ModelBase} from '../../src/model/base';
 import {createModelFactory} from '../../src/model/factory';
-import {str} from '../../src/json_codecs';
+import {str, num} from '../../src/json_codecs';
 
 //TODO: Move all models defined here to models.
 import * as Test from './models';
@@ -12,7 +12,10 @@ import * as Test from './models';
 
 @Model({kind: 'test::ReferencedModel'})
 class ReferencedModel extends ModelBase {
-    constructor(id: number) {
+    constructor(
+        @Property('id', {key: true, codec: num})
+        public id: number
+    ) {
         super(id);
     }
 }
@@ -20,13 +23,12 @@ class ReferencedModel extends ModelBase {
 @Model({kind: 'test::ReferencingModel'})
 class ReferencingModel extends ModelBase {
     constructor(
-        id: number,
         @RefProperty('refId', {refName: 'ref', refType: forwardRef(() => ReferencedModel)})
         public refId: number,
         @RefProperty('multiRefId', {refName: 'multiRef', refType: forwardRef(() => ReferencedModel), isMulti: true})
         public multiRefId: List<number>
     ) {
-        super(id, refId, multiRefId);
+        super(refId, multiRefId);
     }
     ref: ReferencedModel;
     multiRef: List<ReferencedModel>;
@@ -50,12 +52,7 @@ describe('model.base', () => {
         it('should not be possible to directly set a value on the model', () => {
             let factory = createModelFactory<Test.ModelOneProperty>(Test.ModelOneProperty);
             var instance = factory({prop: 'hello world'});
-            expect(() => {
-                instance.id = 4239
-            }).toThrow();
-            expect(() => {
-                instance.prop = 'hello'
-            }).toThrow();
+            expect(() => { instance.prop = 'hello' }).toThrow();
         });
 
         it('should be possible to set the value of a property on a model', () => {
@@ -70,9 +67,8 @@ describe('model.base', () => {
         it('setting the value to an equal reference will not return a new instance of the model', () => {
             // This is important, since a large selling point of immutability in angular
             // is to reduce change detection overhead.
-            let instance = new Test.ModelOneProperty(null, 'hello world');
+            let instance = new Test.ModelOneProperty('hello world');
             expect(instance.set('prop', 'hello world')).toBe(instance, 'should be same ref');
-
         })
 
         it('should not be possible to get the value of a nonexistent property from a model', () => {
@@ -106,7 +102,7 @@ describe('model.base', () => {
         it('setting a reference value to reference will not return a new instance of the model', () => {
             // This is important, since a large selling point of immutability in angular
             // is to reduce change detection overhead.
-            let instance = new ReferencingModel(1, 2, List([3,4,5]));
+            let instance = new ReferencingModel(2, List([3,4,5]));
             let reference = new ReferencedModel(88);
             let i_1 = instance.set('ref', reference);
             expect(i_1).not.toBe(instance, 'changed value of ref');
@@ -116,7 +112,7 @@ describe('model.base', () => {
         });
 
         it('should be possible to get and set values on a subtype', () => {
-            let s = new Test.OneSubtypeProperty(null, 'hello', 'world');
+            let s = new Test.OneSubtypeProperty('hello', 'world');
             expect(s.prop).toEqual('hello', 'Should be able to get inherited properties');
             expect(s.newProp).toEqual('world', 'Should be able to get the subtype property');
 

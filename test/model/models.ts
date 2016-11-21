@@ -4,7 +4,6 @@ import {forwardRef} from '@angular/core';
 
 import {Type} from 'caesium-core/lang';
 
-
 import {createModelFactory, ModelFactory} from '../../src/model/factory';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
@@ -15,24 +14,24 @@ import {str, num, bool} from '../../src/json_codecs';
 export class ModelNoProperties extends ModelBase {
     static constructorRunCount = 0;
 
-    constructor(id: number) {
-        super(id);
+    constructor() {
+        super();
         ModelNoProperties.constructorRunCount++;
     }
 }
 
 @Model({kind: 'model.path.to.resource::ComplexPath'})
 export class ComplexPath extends ModelBase {
-    constructor(id: number) {
-        super(id);
+    constructor() {
+        super();
     }
 }
 
 
 @Model({kind: 'model::ModelSupertype', isAbstract: true})
 export class ModelSupertype extends ModelBase {
-    constructor(id: number) {
-        super(id);
+    constructor() {
+        super();
     }
 }
 
@@ -41,8 +40,8 @@ export class ModelSubtype extends ModelSupertype {
 
     static create = createModelFactory(forwardRef(() => ModelSubtype));
 
-    constructor(id: number) {
-        super(id);
+    constructor() {
+        super();
     }
 
     foo(arg: any) {
@@ -57,11 +56,10 @@ export class ModelOneProperty extends ModelBase {
     }
 
     constructor(
-        public id: number,
         @Property('prop', {codec: str}) public prop: string,
         ...args: any[] // Subtype arguments.
     ) {
-        super(id, prop, ...args);
+        super(prop, ...args);
     }
 }
 
@@ -73,33 +71,59 @@ export class OneSupertypeProperty extends ModelBase {
     }
 
     constructor(
-        public id: number,
         @Property('prop', {codec: str}) public prop: string,
         ...args: any[] // Subtype arguments.
     ) {
-        super(id, prop, ...args);
+        super(prop, ...args);
     }
 }
 
 @Model({kind: 'model::OnePropertySubtype', superType: OneSupertypeProperty})
 export class OneSubtypeProperty extends OneSupertypeProperty {
     constructor(
-        id: number, prop: string,
+        prop: string,
         @Property('newProp', {codec: str}) public newProp: string,
     ) {
-        super(id, newProp);
+        super(newProp);
     }
 }
 
 @Model({kind: 'model::ModelTwoProperties'})
 export class ModelTwoProperties extends ModelBase {
     constructor(
-        public id: number,
         @Property('propOne', {codec: str}) public propOne: string,
         @Property('propTwo', {codec: str}) public propTwo: string
     ) {
-        super(id, propOne, propTwo);
+        super(propOne, propTwo);
     }
+}
+
+@Model({kind: 'model::Managed'})
+export class Managed extends ModelBase {
+    constructor(
+        @Property('id', {key: true, codec: num})
+        public id: number
+    ) {
+        super(id);
+    }
+}
+
+@Model({kind: 'model::ManagedSupertype', isAbstract: true})
+export class ManagedSupertype extends ModelBase {
+    constructor(
+        @Property('id', {key: true, codec: num})
+        public id: number,
+        ...args: any[]
+    ) {
+        super(id, args);
+    }
+}
+
+@Model({kind: 'model::ManagedSubtype', superType: ManagedSupertype})
+export class ManagedSubtype extends ManagedSupertype {
+    constructor(
+        public id: number
+    ) { super(id); }
 }
 
 @Model({kind: 'model::ModelOneRefProperty'})
@@ -113,11 +137,10 @@ export class ModelOneRefProperty extends ModelBase {
 
     //FIXME: Should be constructor(@Property(ModelNoProperties) public prop: Observable<ModelNoProperties>
     private constructor(
-        public id: number,
-        @RefProperty('propId', {refType: ModelNoProperties, refName: 'prop'})
+        @RefProperty('propId', {refType: Managed, refName: 'prop'})
         public propId: number,
     ) {
-        super(id, propId);
+        super(propId);
     }
 }
 
@@ -161,28 +184,26 @@ export class ModelOneRefProperty extends ModelBase {
 @Model({kind: 'model::OneMultiRefProperty'})
 export class OneMultiRefProperty extends ModelBase {
     constructor(
-        public id: number,
-        @RefProperty('multiPropId', {refType: ModelNoProperties, refName: 'multiProp', isMulti: true})
+        @RefProperty('multiPropId', {refType: Managed, refName: 'multiProp', isMulti: true})
         public multiPropId: List<number>
     ) {
-        super(id, multiPropId);
+        super(multiPropId);
     }
 }
 
 @Model({kind: 'model::ModelMixedProperties'})
 export class ModelMixedProperties extends ModelBase {
     private constructor(
-        id: number,
-        @RefProperty('propOne', {refType: ModelNoProperties, refName: 'propOne'})
+        @RefProperty('propOne', {refType: Managed, refName: 'propOneRef'})
         public propOne: number = 4,
         @Property('propTwo',{codec: str})
         public propTwo: String,
         @Property('propThree', {codec: str})
         public propThree: String,
-        @RefProperty('propFour', {refType: ModelSubtype, refName: 'propFour'})
+        @RefProperty('propFour', {refType: ManagedSubtype, refName: 'propFourRef'})
         public propFour: number
     ) {
-        super(id, propOne, propTwo, propThree, propFour);
+        super(propOne, propTwo, propThree, propFour);
     }
 }
 
@@ -191,25 +212,23 @@ export class WithFactory extends ModelBase {
     static create = createModelFactory(WithFactory);
 
     constructor(
-        id: number,
         @Property('name', {codec: str}) public name: string
     ) {
-        super(id, name);
+        super(name);
     }
 }
 
 @Model({kind: 'model::PropertyOptions'})
 export class PropertyOptions extends ModelBase {
     private constructor(
-        id: number,
-        @Property('noOptions')
+        @Property('noOptions', {codec: bool})
         public noOptions: boolean,
         @Property('valueDefault', {codec: str, default: 'default value'})
         public valueDefault: string,
         @Property('callableDefault', {codec: str, default: () => 'return value'})
         public callableDefault: string
     ) {
-        super(id, noOptions, valueDefault, callableDefault);
+        super(noOptions, valueDefault, callableDefault);
     }
 
 }

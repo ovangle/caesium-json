@@ -3,7 +3,7 @@ import {List, Set, Map} from 'immutable';
 import {Injectable, Inject, Provider, OpaqueToken} from '@angular/core';
 import {Type, isDefined, isFunction} from 'caesium-core/lang';
 
-import {ModelNotFoundException} from './exceptions';
+import {ModelNotFoundException, InvalidMetadata} from './exceptions';
 import {ModelMetadata} from './metadata';
 
 export const TYPE_METADATA = new OpaqueToken('cs_type_metadata');

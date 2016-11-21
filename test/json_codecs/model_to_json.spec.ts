@@ -11,7 +11,6 @@ import {ModelMetadata} from "../../src/model/metadata";
 export class MyModel extends ModelBase {
     //static create = createModelFactory<MyModel>(MyModel);
     constructor(
-        id: number,
         @Property('name', {codec: str})
         public name: string,
         @Property('aliases', {codec: list(str)})
@@ -20,7 +19,7 @@ export class MyModel extends ModelBase {
         public birthday: Date,
         ...args: any[]
     ) {
-        super(id, name, aliases, birthday, ...args);
+        super(name, aliases, birthday, ...args);
     }
 }
 
@@ -30,14 +29,13 @@ export class SubModel extends MyModel {
     static create = createModelFactory<SubModel>(SubModel);
 
     constructor(
-        id: number,
         name: string,
         aliases: List<string>,
         birthday: Date,
         @Property('submodelProperty', {codec: str, allowNull: true})
         submodelProperty:string
     ) {
-        super(id, name, aliases, birthday, submodelProperty);
+        super(name, aliases, birthday, submodelProperty);
     }
 }
 
@@ -46,7 +44,6 @@ describe('json_codecs.model_to_json', () => {
         var codec = model(SubModel);
 
         let instance = SubModel.create({
-            id: null,
             name: 'henry',
             aliases: List(['hank']),
             birthday: new Date(0),
@@ -54,7 +51,6 @@ describe('json_codecs.model_to_json', () => {
         });
 
         expect(codec.encode(instance)).toEqual({
-            id: null,
             kind: 'test::Submodel',
             name: 'henry',
             aliases: ['hank'],
@@ -67,7 +63,6 @@ describe('json_codecs.model_to_json', () => {
         let codec = model<MyModel>(SubModel);
 
         let modelJson: any = {
-            id: null,
             kind: 'test::MyModel',
             name: 'john',
             aliases: ['jack', 'jo'],

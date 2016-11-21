@@ -60,6 +60,18 @@ export const defaultBasePropertyOptions: BasePropertyOptions = {
 };
 
 export interface PropertyOptions extends BasePropertyOptions {
+    /**
+     * Is the property the unique identifier of the model.
+     * Must be of type `String` or `Number`
+     * There can only be at most one key property on a model.
+     *
+     * The following attributes are always `true` for key properties, irrespective of the value
+     * set on the decorator
+     *  - required
+     *  - allowNull
+     *  - default (default is always `null`)
+     */
+    key?: boolean;
     codec: Codec<any,any>;
     isMulti?: boolean;
 }

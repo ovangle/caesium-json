@@ -34,6 +34,11 @@ let _typeCache = new WeakMap<Type,ModelMetadata>();
 
 export class BasePropertyMetadata {
 
+    /**
+     * Is the property the key of the model?
+     */
+    key: boolean;
+
     default: () => any;
     /**
      * True if this property is a reference property.
@@ -87,7 +92,7 @@ export class BasePropertyMetadata {
     /**
      * The value accessor for mutating model values.
      */
-    valueAccessor: Accessor<this>;
+    valueAccessor: Accessor<any>;
 
     constructor(public modelType: Type, public name: string, public type: Type, options: BasePropertyOptions) {
         this.name = name;
@@ -114,19 +119,27 @@ export class BasePropertyMetadata {
      * The property name on the model instance.
      */
     checkValid(modelMetadata: ModelMetadata): void {
-        //TODO: This check is incorrect (however, it doesn't matter at the moment).
-        // Need to do a property check when we change how ref properties work.
-
-        if (!isDefined(this.codec) && !this.isMulti && this.type === Object) {
-            throw new InvalidMetadata(
-                `Could not resolve the type of property ${this.name}. ` +
-                `If the property is not a primitive type, a List, a Date or a subtype of ModelBase` +
-                `then a specific codec needs to be provided in the property options.`
-            );
+        if (this.readOnly && this.writeOnly) {
+            throw new InvalidMetadata('A property cannot be both read and write only');
         }
+
+        if (!isDefined(this.codec))
+            throw new InvalidMetadata(
+                'A codec must be set on the property'
+            );
 
         if (_RESERVED_PROPERTY_NAMES.contains(this.name))
             throw new InvalidMetadata(`${this.name} is a reserved name and cannot be the name of a property`);
+
+        let isNameUnique = modelMetadata.properties
+            .filter(prop => prop !== this && prop.name === this.name)
+            .isEmpty();
+
+        if (!isNameUnique) {
+            throw new InvalidMetadata(
+                `There cannot be two properties with the same name (${this.name} on model ${modelMetadata.type}`
+            );
+        }
     }
 }
 
@@ -135,31 +148,6 @@ export class BasePropertyMetadata {
  * serialized onto the model.
  */
 export class PropertyMetadata extends BasePropertyMetadata {
-   /**
-     * All models have an Id property. The id can be any type, as long as the type can be
-     * converted using an `identity` codec.
-     *
-     * 'id' is never a required property, since models need to be created on the client
-     * before they can be assigned an 'id'.
-     *
-     * @returns {PropertyMetadata}
-     * @constructor
-     */
-   static idProperty(name?: string) {
-        name = name || 'id';
-        // Be explicit about the options, the decorators module may not be loaded.
-        let idPropertyOptions: PropertyOptions = {
-            codec: num,
-            readOnly: true,
-            allowNull: true,
-            required: false,
-            default: null,
-            isMulti: false
-        };
-
-        return new PropertyMetadata(ModelBase, name, Number, idPropertyOptions);
-   }
-
     isRef = false;
 
     /// The attribute on the model, in the lowerCamelCase form of the attribute.
@@ -168,11 +156,39 @@ export class PropertyMetadata extends BasePropertyMetadata {
     /// eg. { helloWorld: 'hello world' }  would be serialized as { "hello_world": "hello world" }
     codec: Codec<any,any>;
 
+    /**
+     * Is the value of this property an instance of ModelBase?
+     *
+     * @returns {boolean}
+     */
+    get isNestedModel(): boolean {
+        return this.type.prototype instanceof ModelBase;
+    }
+
     constructor(modelType: Type, name: string, paramType: Type, options: PropertyOptions) {
         super(modelType, name, paramType, options);
+        this.key = !!options.key;
+
+        if (this.key) {
+            this.readOnly = true;
+            this.writeOnly = false;
+            this.allowNull = true;
+            this.required = true;
+            this.default = () => null;
+        }
+
         this.codec = options.codec;
-        this.valueAccessor = <Accessor<this>>new ValueAccessor(this);
+        this.valueAccessor = new ValueAccessor(this);
         Object.freeze(this);
+    }
+
+    checkValid(modelMetadata: ModelMetadata) {
+        super.checkValid(modelMetadata);
+        if (this.key) {
+            if (this.type !== Number && this.type !== String) {
+                throw new InvalidMetadata('A key property must be either a Number or a String');
+            }
+        }
     }
 
 }
@@ -224,19 +240,56 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 
     isMulti: boolean;
 
+    key = false;
+
     constructor(modelType: Type, name: string, type: Type, options: RefPropertyOptions) {
         super(modelType, name, type, options);
 
         this.refName = options.refName;
-        if (!isDefined(options.refType)) {
-            throw new ArgumentError('Cannot resolve refType. Try a forwardRef');
-        }
-        this.refType = options.refType;
+        this.refType = resolveForwardRef(options.refType);
         this.isMulti = options.isMulti;
-
-        this.valueAccessor = <any>new RefAccessor(this, PropertyMetadata.idProperty(this.name));
-        Object.freeze(this);
     }
+
+    checkValid(modelMeta: ModelMetadata): void {
+        super.checkValid(modelMeta);
+        let foreignModel = ModelMetadata.forType(this.refType);
+
+        if (!foreignModel.isManaged) {
+            throw new InvalidMetadata('Can only declare an @RefProperty where the refType is a managed model');
+        }
+
+        let isRefNameValid = modelMeta.properties
+            .filter(prop => prop.name === this.refName)
+            .isEmpty()
+
+        if (!isRefNameValid) {
+            throw new InvalidMetadata(`refName (${this.refName}) cannot be the same as the name of another property on the model`)
+        }
+
+        let isUniqueRefName = modelMeta.properties
+            .filter(prop => prop instanceof RefPropertyMetadata
+                         && prop !== this
+                         && prop.refName === this.refName)
+            .isEmpty();
+
+        if (!isUniqueRefName)
+            throw new InvalidMetadata(`refName (${this.refName} cannot be the same as the refName of another property on the model`)
+
+    }
+
+    get valueAccessor() {
+        return this._getValueAccessor();
+    }
+
+    @memoize()
+    private _getValueAccessor(): Accessor<any> {
+        let foreignModel = ModelMetadata.forType(this.refType);
+        let foreignKey = foreignModel.keyProperty;
+
+        return new RefAccessor(this, foreignKey);
+    }
+
+
 }
 
 export class ModelMetadata {
@@ -257,9 +310,7 @@ export class ModelMetadata {
 
     static _modelBaseMetadata = new ModelMetadata(
         forwardRef(() => ModelBase),
-        OrderedMap <string, PropertyMetadata>([
-            ['id', PropertyMetadata.idProperty()]
-        ]),
+        OrderedMap <string, PropertyMetadata>(),
         { kind: 'core::ModModelBase' /* TODO: Get rid of fucking kind. */}
     );
 
@@ -287,7 +338,7 @@ export class ModelMetadata {
     /**
      * All properties defined directly on this object.
      */
-    ownProperties: OrderedMap<string,PropertyMetadata>;
+    ownProperties: OrderedMap<string,BasePropertyMetadata>;
 
     // TODO: memoize needs to be applicable to properties.
     // eg.
@@ -328,9 +379,28 @@ export class ModelMetadata {
         return this._getRefNameMap();
     }
 
+    /**
+     * Is this model a managed model?
+     * @returns {boolean}
+     */
+    get isManaged(): boolean {
+        return this.properties.some(prop => prop.key);
+    }
+
+    /**
+     * Get the key property of the model.
+     * @returns {BasePropertyMetadata}
+     */
+    get keyProperty(): PropertyMetadata {
+        return this.properties
+            .filter(prop => prop.key)
+            .first() as PropertyMetadata;
+    }
+
+
     constructor(
         type: Type,
-        ownProperties: OrderedMap<string,PropertyMetadata>,
+        ownProperties: OrderedMap<string,BasePropertyMetadata>,
         options: ModelOptions
     ) {
         this.type = type && resolveForwardRef(type);
@@ -346,7 +416,15 @@ export class ModelMetadata {
         return resource.split('.');
     }
 
-    checkValid() {
+    /**
+     * Validate the model metadata.
+     *
+     * Returns a boolean which can be discarded. The only purpose of the return value
+     * is to cache the result of validation so that it is only performed once, as late
+     * as possible in the bootstrap process.
+     */
+    @memoize()
+    checkValid(): boolean {
         // Constructor shouldn't throw.
         if (!isValidKind(this.kind)) {
             throw new InvalidMetadata(`Invalid kind '${this.kind}' for model. Kind must match ${_VALID_KIND_MATCH}`);
@@ -364,6 +442,12 @@ export class ModelMetadata {
         this.ownProperties.valueSeq().forEach(prop => {
             prop.checkValid(this);
         });
+
+        if (this.properties.filter(prop => prop.key).count() > 2) {
+            throw new InvalidMetadata(`Model ${this.type} can have at most one key property`);
+        }
+
+        return true;
     }
 
     getProperty(propNameOrRefName: string): BasePropertyMetadata {
@@ -381,11 +465,11 @@ export class ModelMetadata {
 
     toString() { return `ModelMetadata(${this.kind})`}
 
-    get valueAccessors(): Iterable.Keyed<string, ValueAccessor> {
+    get valueAccessors(): Iterable.Keyed<string, Accessor<any>> {
         return this._getValueAccessors();
     }
     @memoize()
-    private _getValueAccessors(): Iterable.Keyed<string, ValueAccessor> {
+    private _getValueAccessors(): Iterable.Keyed<string, Accessor<any>> {
         return this.properties
             .map(property => property.valueAccessor)
             .toKeyedSeq();
