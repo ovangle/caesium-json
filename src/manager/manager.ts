@@ -134,6 +134,12 @@ export class ModelManager {
         return request.setRequestBody(model, codec).send<T>(codec);
     }
 
+    delete<T extends ModelBase>(model: T): Observable<void> {
+        let metadata = this.metadatas.for(model);
+        let request = this.requests.delete([...metadata.path, this.getKey(model).toString()]);
+        return request.send((_) => undefined);
+    }
+
     search<T extends ModelBase>(type: Type /*<T>*/, parameters: SearchParameter[]): Search<T> {
         return new Search<T>(
             this.requests,
