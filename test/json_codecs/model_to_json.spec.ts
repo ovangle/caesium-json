@@ -1,10 +1,9 @@
 import {List} from 'immutable';
 import {forwardRef} from '@angular/core';
-import {Model, Property, ModelBase} from '../../src/model';
+import {Model, Property, ModelBase, ModelMetadata} from '../../src/model/index';
 import {createModelFactory, ModelFactory} from '../../src/model/factory';
 import {str, dateTime, num, list} from '../../src/json_codecs/basic';
 import {model} from '../../src/json_codecs/model_to_json';
-import {ModelMetadata} from "../../src/model/metadata";
 
 // Models for model converter test.
 @Model({kind: 'test::MyModel', isAbstract: true})

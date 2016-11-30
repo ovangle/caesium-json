@@ -2,11 +2,11 @@ import {List} from 'immutable';
 
 import {forwardRef} from '@angular/core';
 
-import {InvalidMetadata} from '../../src/model';
+import {InvalidMetadata} from '../../src/model/index';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 import {ModelMetadata} from '../../src/model/metadata';
-import {str, num, list} from '../../src/json_codecs';
+import {str, num, list} from '../../src/json_codecs/index';
 import {createModelFactory, copyModel} from '../../src/model/factory';
 
 import * as Test from './models';

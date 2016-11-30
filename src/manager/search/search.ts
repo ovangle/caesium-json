@@ -7,9 +7,9 @@ import {OpaqueToken} from '@angular/core';
 import {Converter} from 'caesium-core/converter';
 import {Codec, isCodec, getDecoder} from 'caesium-core/codec';
 
-import {JsonObject} from '../../json_codecs';
+import {JsonObject} from '../../json_codecs/index';
 
-import {RequestFactory} from '../http';
+import {RequestFactory} from '../http/index';
 import {SearchParameterMap} from './parameter_map';
 import {SearchParameter} from './parameter';
 import {SearchResultPage} from './result_page';

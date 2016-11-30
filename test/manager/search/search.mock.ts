@@ -4,7 +4,7 @@ import {List} from 'immutable';
 
 import {identityConverter} from 'caesium-core/converter';
 
-import {Search, SearchResult} from '../../../src/manager/search';
+import {Search, SearchResult} from '../../../src/manager/search/index';
 
 import {ModelMetadata} from '../../../src/model/metadata';
 

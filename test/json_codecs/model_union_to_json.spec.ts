@@ -1,10 +1,7 @@
 import {identity} from 'caesium-core/codec';
 
-import {ModelBase} from "../../src/model/base";
-import {Model, Property} from "../../src/model/decorators";
+import {Model, Property, ModelBase, ModelMetadata, createModelFactory} from '../../src/model/index';
 import {union} from "../../src/json_codecs/model_union_to_json";
-import {createModelFactory} from '../../src/model/factory';
-import {ModelMetadata} from "../../src/model/metadata";
 
 @Model({kind: 'test::ModelA'})
 class ModelA extends ModelBase {

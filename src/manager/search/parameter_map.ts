@@ -2,8 +2,8 @@ import {Map} from 'immutable';
 
 import {isDefined, forEachOwnProperty} from 'caesium-core/lang';
 import {Converter} from 'caesium-core/converter';
+import {ArgumentError} from 'caesium-core/exception';
 
-import {ArgumentError} from '../../model/exceptions';
 
 import {SearchParameter, Matcher, Refiner} from './parameter';
 

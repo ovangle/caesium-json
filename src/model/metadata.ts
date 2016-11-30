@@ -5,10 +5,11 @@ import {forwardRef, resolveForwardRef, OpaqueToken} from '@angular/core';
 
 import {Type, isBlank, isDefined, isFunction} from 'caesium-core/lang';
 import {memoize} from 'caesium-core/decorators';
+import {ArgumentError} from 'caesium-core/exception';
 import {Codec, identity} from 'caesium-core/codec';
 
-import {InvalidMetadata, ModelNotFoundException, PropertyNotFoundException, ArgumentError} from './exceptions';
-import {num} from '../json_codecs';
+import {InvalidMetadata, ModelNotFoundException, PropertyNotFoundException} from './exceptions';
+import {num} from '../json_codecs/index';
 
 import {ModelOptions, BasePropertyOptions, defaultPropertyOptions, PropertyOptions, RefPropertyOptions} from './decorators';
 import {ModelConstructor} from './factory';
@@ -28,9 +29,6 @@ export const _RESERVED_PROPERTY_NAMES = Set<string>([
     'set',
     'delete'
 ]);
-
-let _typeCache = new WeakMap<Type,ModelMetadata>();
-
 
 export class BasePropertyMetadata {
 
@@ -94,7 +92,7 @@ export class BasePropertyMetadata {
      */
     valueAccessor: Accessor<any>;
 
-    constructor(public modelType: Type, public name: string, public type: Type, options: BasePropertyOptions) {
+    constructor(public modelType: Type<any>, public name: string, public type: Type<any>, options: BasePropertyOptions) {
         this.name = name;
 
         this.readOnly = options.readOnly;
@@ -165,7 +163,7 @@ export class PropertyMetadata extends BasePropertyMetadata {
         return this.type.prototype instanceof ModelBase;
     }
 
-    constructor(modelType: Type, name: string, paramType: Type, options: PropertyOptions) {
+    constructor(modelType: Type<any>, name: string, paramType: Type<any>, options: PropertyOptions) {
         super(modelType, name, paramType, options);
         this.key = !!options.key;
 
@@ -234,7 +232,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
     /**
      * The type of the referenced model
      */
-    refType: Type;
+    refType: Type<any>;
 
     codec = identity;
 
@@ -242,7 +240,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 
     key = false;
 
-    constructor(modelType: Type, name: string, type: Type, options: RefPropertyOptions) {
+    constructor(modelType: Type<any>, name: string, type: Type<any>, options: RefPropertyOptions) {
         super(modelType, name, type, options);
 
         this.refName = options.refName;
@@ -294,7 +292,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 
 export class ModelMetadata {
 
-    static forType(type: Type): ModelMetadata {
+    static forType(type: Type<any>): ModelMetadata {
         let metadata = (type as any).__model_metadata__;
         if (!isDefined(metadata)) {
             throw new ModelNotFoundException(type);
@@ -319,10 +317,10 @@ export class ModelMetadata {
     /**
      * The annotated type of the model.
      */
-    type: Type;
+    type: Type<any>;
 
     /// Basic support for model extensions.
-    superType: Type;
+    superType: Type<any>;
     private get superTypeMetadata(): ModelMetadata {
         if (this.superType === undefined)
             return ModelMetadata._modelBaseMetadata;
@@ -399,7 +397,7 @@ export class ModelMetadata {
 
 
     constructor(
-        type: Type,
+        type: Type<any>,
         ownProperties: OrderedMap<string,BasePropertyMetadata>,
         options: ModelOptions
     ) {
@@ -476,7 +474,7 @@ export class ModelMetadata {
     }
 }
 
-function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadata> {
+function buildOwnPropertyMap(type: Type<any>): OrderedMap<string, BasePropertyMetadata> {
     let propArgs = List<{isRef: boolean, args: any[]}>(Reflect.getMetadata('model:properties', type))
         .skipWhile(arg => arg === null /* Ignore args for the supertype */);
 
@@ -513,7 +511,7 @@ function buildOwnPropertyMap(type: Type): OrderedMap<string, BasePropertyMetadat
  * The proxy that is being built for the type.
  * @returns {ModelMetadata}
  */
-export function buildModelMetadata(type: Type, receiver: any): ModelMetadata {
+export function buildModelMetadata(type: Type<any>, receiver: any): ModelMetadata {
 
     if (type === ModelBase) {
         return ModelMetadata._modelBaseMetadata;

@@ -28,27 +28,8 @@
         // packages tells the System loader how to load when no filename and/or no extension
         packages: {
             src: {
-                defaultExtension: 'js'
-            },
-            'src/json_codecs': {
-                main: 'index',
-                defaultExtension: 'js'
-            },
-            'src/manager': {
-                main: 'index',
-                defaultExtension: 'js'
-            },
-            'src/manager/search': {
-                main: 'index',
-                defaultExtension: 'js'
-            },
-            'src/manager/http': {
-                main: 'index',
-                defaultExtension: 'js'
-            },
-            'src/model': {
-                main: 'index',
-                defaultExtension: 'js'
+                defaultExtension: 'js',
+                main: 'index.js'
             },
             test: {
                 defaultExtension: 'js'

@@ -6,11 +6,11 @@ import {PropertyMetadata, RefPropertyMetadata} from '../../src/model/metadata';
 import {Model, Property} from '../../src/model/decorators';
 
 import {ModelBase} from '../../src/model/base';
-import {str} from '../../src/json_codecs';
+import {str} from '../../src/json_codecs/index';
 
 import * as Test from './models';
 
-function _getProxiedType(type: Type): Type {
+function _getProxiedType<T>(type: Type<T>): Type<T> {
     return (type as any).__type_ref__;
 
 }

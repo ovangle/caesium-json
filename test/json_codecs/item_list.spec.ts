@@ -1,6 +1,6 @@
 import {List} from 'immutable';
 import {identity} from 'caesium-core/codec';
-import {itemList} from '../../src/json_codecs';
+import {itemList} from '../../src/json_codecs/item_list';
 
 
 const A_TO_B_CODEC = {

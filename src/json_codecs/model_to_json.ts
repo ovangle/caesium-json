@@ -46,7 +46,7 @@ function kindPropertyRemover(metadata: ModelMetadata): Codec<JsonObject,JsonObje
     }
 }
 
-export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject> {
+export function model<T extends ModelBase>(modelType: Type<T>): Codec<T,JsonObject> {
     var metadata = ModelMetadata.forType(modelType);
     var propCodecs = propertyCodecs(metadata);
 

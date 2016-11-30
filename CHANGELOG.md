@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.2.1, 0.2.2, 0.2.3
+Fixes to imports to make modules load correctly when imported
 
 ## 0.2.0
 

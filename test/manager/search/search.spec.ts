@@ -8,9 +8,9 @@ import {async} from '@angular/core/testing';
 import {identityConverter} from 'caesium-core/converter';
 
 import {ModelMetadata} from '../../../src/model/metadata';
-import {JsonObject} from '../../../src/json_codecs';
-import {RequestFactory} from '../../../src/manager/http';
-import {Search, SearchParameter} from '../../../src/manager/search';
+import {JsonObject} from '../../../src/json_codecs/index';
+import {RequestFactory} from '../../../src/manager/http/index';
+import {Search, SearchParameter} from '../../../src/manager/search/index';
 
 import {MockRequestFactory, MockRequest} from '../request_factory.mock';
 

@@ -20,7 +20,7 @@ import {RequestFactory, Request} from './http/index';
 import {Search, SearchParameter,
     SEARCH_PAGE_SIZE, defaultSearchPageSize,
     SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
-} from './search';
+} from './search/index';
 
 /**
  * Provides a number of utility functions for models which meet the following criteria
@@ -55,7 +55,7 @@ export class ModelManager {
         this.searchPageQueryParam = isBlank(searchPageQueryParam) ? defaultSearchPageQueryParam : searchPageQueryParam;
     }
 
-    public getModelCodec<T extends ModelBase>(type: Type/*<T>*/ | T): Codec<T,JsonObject> {
+    public getModelCodec<T extends ModelBase>(type: Type<T> | T): Codec<T,JsonObject> {
         let metadata = this.metadatas.for(type);
         if (metadata.isAbstract) {
             let subtypeMetadatas = this.metadatas.leafMetadatasForType(metadata.type);
@@ -64,7 +64,7 @@ export class ModelManager {
         return model<T>(metadata.type);
     }
 
-    public getPath(type: Type/*<T>*/): Array<string> {
+    public getPath<T extends ModelBase>(type: Type<T>): Array<string> {
         let metadata = this.metadatas.for(type);
 
         if (!metadata.isManaged)
@@ -84,7 +84,7 @@ export class ModelManager {
         return managedModel.get(metadata.keyProperty.name);
     }
 
-    load<T extends ModelBase>(type: Type/*<T>*/, id: string | number, options?: {ignoreCache?: boolean}): Observable<T> {
+    load<T extends ModelBase>(type: Type<T>, id: string | number, options?: {ignoreCache?: boolean}): Observable<T> {
         let params: {[key: string]: string} = {};
 
         if (options && options.ignoreCache) {
@@ -97,7 +97,7 @@ export class ModelManager {
             .send(this.getModelCodec<T>(type));
     }
 
-    loadMany<T extends ModelBase>(type: Type/*<T>*/, ids: Iterable<any, string | number>, options?: {ignoreCache?: boolean}): Observable<List<T>> {
+    loadMany<T extends ModelBase>(type: Type<T>, ids: Iterable<any, string | number>, options?: {ignoreCache?: boolean}): Observable<List<T>> {
         let params: {[key: string]: string} = {
             'ids': ids.map(id => id.toString()).join(',')
         };
@@ -140,7 +140,7 @@ export class ModelManager {
         return request.send((_) => undefined);
     }
 
-    search<T extends ModelBase>(type: Type /*<T>*/, parameters: SearchParameter[]): Search<T> {
+    search<T extends ModelBase>(type: Type <T>, parameters: SearchParameter[]): Search<T> {
         return new Search<T>(
             this.requests,
             this.getPath(type),

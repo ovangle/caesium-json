@@ -10,8 +10,8 @@ import {Http, RequestMethod, Headers, Response, ResponseOptions} from '@angular/
 import {Converter} from 'caesium-core/converter';
 import {Codec, isCodec, getEncoder, getDecoder} from 'caesium-core/codec';
 
-import {JsonObject} from '../../src/json_codecs';
-import {Request, RequestFactory} from '../../src/manager/http';
+import {JsonObject} from '../../src/json_codecs/index';
+import {Request, RequestFactory} from '../../src/manager/http/index';
 
 export type RequestHandler<T> = (request: T) => {status: number, body: T};
 

@@ -7,16 +7,16 @@ import {RequestMethod, HttpModule} from '@angular/http';
 
 import {Type} from 'caesium-core/lang';
 
-import {JsonObject, num, itemList, model} from '../../src/json_codecs';
-import {Model, ModelBase, Property, RefProperty} from '../../src/model';
+import {JsonObject, num, itemList, model} from '../../src/json_codecs/index';
+import {Model, ModelBase, Property, RefProperty} from '../../src/model/index';
 import {Models} from '../../src/module';
 
-import {RequestFactory, ModelHttpModule} from '../../src/manager/http';
+import {RequestFactory, ModelHttpModule} from '../../src/manager/http/index';
 import {
     SEARCH_PAGE_SIZE, defaultSearchPageSize,
     SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam
-} from '../../src/manager/search';
-import {ModelManager, SearchParameter} from '../../src/manager';
+} from '../../src/manager/search/index';
+import {ModelManager, SearchParameter} from '../../src/manager/index';
 import {InvalidMetadata} from '../../src/model/exceptions';
 
 import {MockRequestFactory, MockRequest} from './request_factory.mock';

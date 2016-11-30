@@ -5,8 +5,8 @@ import 'rxjs/add/operator/reduce';
 import {async} from '@angular/core/testing';
 
 import {identityConverter} from 'caesium-core/converter';
-import {JsonObject} from '../../../src/json_codecs';
-import {RequestFactory, Request} from "../../../src/manager/http";
+import {JsonObject} from '../../../src/json_codecs/index';
+import {RequestFactory, Request} from "../../../src/manager/http/index";
 
 import {MockRequestFactory, MockRequest} from '../request_factory.mock';
 import {MockSearch} from './search.mock';

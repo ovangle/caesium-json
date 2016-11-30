@@ -13,10 +13,10 @@ import {Observable} from 'rxjs/Observable';
 import {Converter} from 'caesium-core/converter';
 import {memoize} from 'caesium-core/decorators';
 
-import {JsonObject} from '../../json_codecs';
+import {JsonObject} from '../../json_codecs/index';
 
 import {Search} from './search';
-import {Request, RequestFactory} from '../http';
+import {Request, RequestFactory} from '../http/index';
 import {SearchParameterMap} from './parameter_map';
 import {SearchResultPage, refinePage, searchResultPageHandler} from "./result_page";
 

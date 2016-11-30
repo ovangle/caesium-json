@@ -35,7 +35,7 @@ describe('model.metadata_provider', () => {
 
         it('should provide values for the SUBTYPE_METADATA token', inject(
             [SUBTYPE_METADATA],
-            (subtypeMetadata: ([Type, Set<ModelMetadata>][])) => {
+            (subtypeMetadata: ([Type<any>, Set<ModelMetadata>][])) => {
                 expect(subtypeMetadata).toEqual([
                     [Test.ModelSupertype, Set([ModelMetadata.forType(Test.ModelSubtype)])]
                 ])

@@ -5,7 +5,7 @@ import {ModelMetadata} from '../../src/model/metadata';
 
 import * as Test from './models';
 
-function getAccessor(type: Type, prop: string) {
+function getAccessor(type: Type<any>, prop: string) {
     let metadata = ModelMetadata.forType(type);
     return metadata.getProperty(prop).valueAccessor;
 }

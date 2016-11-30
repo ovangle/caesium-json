@@ -5,10 +5,11 @@ import 'rxjs/add/observable/throw';
 
 import {Iterable, List} from 'immutable';
 import {isDefined, isBlank, forEachOwnProperty} from 'caesium-core/lang';
+import {ArgumentError} from 'caesium-core/exception';
 
 import {itemList} from '../json_codecs/index';
 
-import {PropertyNotFoundException, ArgumentError} from './exceptions';
+import {PropertyNotFoundException} from './exceptions';
 import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
 import {copyModel, ModelConstructor} from './factory';
 import {initialModelValues, ModelValues, isModelValues, mutateModelValues} from './values';

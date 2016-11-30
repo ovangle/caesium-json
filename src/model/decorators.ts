@@ -11,25 +11,15 @@ import {modelTypeProxy} from './type_proxy';
 /// The options are
 export interface ModelOptions {
     kind: string;
-    superType?: Type;
+    superType?: Type<any>;
     isAbstract?: boolean;
-
-    /**
-     * Function which takes an encoded instance of the type and
-     * returns the appropriate subtype of the model.
-     *
-     * Only needs to be provided for abstract models.
-     *
-     * @param obj
-     */
-    selectSubtype?: (obj: any) => Type;
 }
 
 export function Model(options: ModelOptions): (cls: any) => any {
     if (!(Reflect && Reflect.getMetadata)) {
         throw 'reflect-metadata shim is required when using model decorators';
     }
-    function model(type: Type) {
+    return function model<T>(type: Type<T>) {
         //debugger;
         Reflect.defineMetadata('model:options', options, type);
 
@@ -38,7 +28,6 @@ export function Model(options: ModelOptions): (cls: any) => any {
         }
         return modelTypeProxy(type);
     }
-    return model;
 }
 
 export interface BasePropertyOptions {
@@ -83,8 +72,8 @@ export const defaultPropertyOptions: PropertyOptions = Object.assign({}, default
 });
 
 function _definePropertyMetadata(name: string, options: BasePropertyOptions, isRef: boolean) {
-    return function (type: Type, _: null, index: number) {
-        let paramTypes: Type[] = Reflect.getMetadata('design:paramtypes', type);
+    return function (type: Type<any>, _: null, index: number) {
+        let paramTypes: Type<any>[] = Reflect.getMetadata('design:paramtypes', type);
 
         let properties: any[];
         if (Reflect.hasMetadata('model:properties', type)) {
@@ -108,7 +97,7 @@ export function Property(name: string, options?: PropertyOptions) {
 
 export interface RefPropertyOptions {
     refName: string;
-    refType: Type;
+    refType: Type<any>;
     isMulti?: boolean;
 }
 

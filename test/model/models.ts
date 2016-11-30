@@ -8,7 +8,7 @@ import {createModelFactory, ModelFactory} from '../../src/model/factory';
 import {Model, Property, RefProperty} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 
-import {str, num, bool} from '../../src/json_codecs';
+import {str, num, bool} from '../../src/json_codecs/index';
 
 @Model({kind: 'model::ModelNoProperties'})
 export class ModelNoProperties extends ModelBase {
@@ -128,15 +128,8 @@ export class ManagedSubtype extends ManagedSupertype {
 
 @Model({kind: 'model::ModelOneRefProperty'})
 export class ModelOneRefProperty extends ModelBase {
-    // static create(args: {prop?: ModelNoProperties}): ModelOneRefProperty {
-    //     return <ModelOneRefProperty>modelFactory(ModelOneRefProperty)(args);
-    // }
-
-    // Alternately
-    //  static create: ModelFactory<T> = modelFactory(ModelOneProperty);
-
-    //FIXME: Should be constructor(@Property(ModelNoProperties) public prop: Observable<ModelNoProperties>
-    private constructor(
+    //FIXME: Should be constructor(@Property(ModelNoProperties) public prop: ModelNoProperties)
+    constructor(
         @RefProperty('propId', {refType: Managed, refName: 'prop'})
         public propId: number,
     ) {
@@ -146,9 +139,11 @@ export class ModelOneRefProperty extends ModelBase {
 
 // TODO: This is the desired form for References
 // @Model({
-//      key: 'id', // The property which holds the ID
-//      references: {
-//          toSelf: SELF_REFERENCE, // A special marker which represents a relation to the same type.
+//      references: [
+//         {to: forwardRef(() => ReferenceModel),
+//      ]
+
+//          to: SELF_REFERENCE, // A special marker which represents a relation to the same type.
 //          parent: ReferencedProperty, // Short hand for a one-to-one foreign key to another model.
 //          (also  parent: {target: ReferencedProperty} would be equivalent)
 
@@ -193,7 +188,7 @@ export class OneMultiRefProperty extends ModelBase {
 
 @Model({kind: 'model::ModelMixedProperties'})
 export class ModelMixedProperties extends ModelBase {
-    private constructor(
+    constructor(
         @RefProperty('propOne', {refType: Managed, refName: 'propOneRef'})
         public propOne: number = 4,
         @Property('propTwo',{codec: str})
@@ -220,7 +215,7 @@ export class WithFactory extends ModelBase {
 
 @Model({kind: 'model::PropertyOptions'})
 export class PropertyOptions extends ModelBase {
-    private constructor(
+    constructor(
         @Property('noOptions', {codec: bool})
         public noOptions: boolean,
         @Property('valueDefault', {codec: str, default: 'default value'})

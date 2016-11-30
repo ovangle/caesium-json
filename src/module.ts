@@ -8,12 +8,12 @@ import {Type} from 'caesium-core/lang';
 import {ModelMetadata} from './model/metadata';
 import {MetadataProvider, provideTypeMetadata, AbstractTypeConfig} from './model/metadata_provider';
 
-import {ModelHttpModule} from './manager/http';
-import {ModelManager} from './manager/manager';
+import {ModelHttpModule} from './manager/http/index';
+import {ModelManager} from './manager/index';
 import {
     SEARCH_PAGE_QUERY_PARAM, defaultSearchPageQueryParam,
     SEARCH_PAGE_SIZE, defaultSearchPageSize
-} from './manager/search';
+} from './manager/search/index';
 
 @NgModule({
     imports: [HttpModule, ModelHttpModule]
@@ -25,7 +25,7 @@ export class Models {
      *
      * @param types
      */
-    static provideMetadata(types: (Type | AbstractTypeConfig)[]): ModuleWithProviders {
+    static provideMetadata(types: (Type<any> | AbstractTypeConfig)[]): ModuleWithProviders {
         return {
             ngModule: Models,
             providers: [

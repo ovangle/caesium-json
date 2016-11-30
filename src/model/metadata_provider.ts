@@ -10,20 +10,20 @@ export const TYPE_METADATA = new OpaqueToken('cs_type_metadata');
 export const SUBTYPE_METADATA = new OpaqueToken('cs_subtype_metadata');
 
 export interface AbstractTypeConfig {
-    type: Type;
+    type: Type<any>;
 
-    subtypes: Type[];
+    subtypes: Type<any>[];
 }
 
-function provideType(type: Type | AbstractTypeConfig): Provider[] {
+function provideType(type: Type<any> | AbstractTypeConfig): Provider[] {
     if (isFunction(type)) {
-        let metadata = ModelMetadata.forType(<Type>type);
+        let metadata = ModelMetadata.forType(<Type<any>>type);
         metadata.checkValid();
         return [{provide: TYPE_METADATA, useValue: metadata, multi: true}];
     }
 
     let abstractType = <AbstractTypeConfig>type;
-    let subtypeMetadatas = Set<Type>(abstractType.subtypes)
+    let subtypeMetadatas = Set<Type<any>>(abstractType.subtypes)
         .map((subtype) => {
             let metadata = ModelMetadata.forType(subtype);
             metadata.checkValid();
@@ -37,34 +37,34 @@ function provideType(type: Type | AbstractTypeConfig): Provider[] {
 
 }
 
-export function provideTypeMetadata(types: (Type | AbstractTypeConfig)[]): Provider[] {
-    return List<Type | AbstractTypeConfig>(types).flatMap<number,Provider>(provideType).toArray();
+export function provideTypeMetadata(types: (Type<any> | AbstractTypeConfig)[]): Provider[] {
+    return List<Type<any> | AbstractTypeConfig>(types).flatMap<number,Provider>(provideType).toArray();
 }
 
 @Injectable()
 export class MetadataProvider {
 
-    private _map: Map<Type,ModelMetadata>;
-    private _leafMap: Map<Type, Set<ModelMetadata>>;
+    private _map: Map<Type<any>,ModelMetadata>;
+    private _leafMap: Map<Type<any>, Set<ModelMetadata>>;
 
     constructor(
         @Inject(TYPE_METADATA) metadatas: ModelMetadata/*<? extends ManagedModel>*/[],
-        @Inject(SUBTYPE_METADATA) subtypeMetadatas: [Type, Set<ModelMetadata>][]
+        @Inject(SUBTYPE_METADATA) subtypeMetadatas: [Type<any>, Set<ModelMetadata>][]
     ) {
         this._map = metadatas.reduce(
             (acc, metadata) => acc.set(metadata.type, metadata),
-            Map<Type,ModelMetadata>()
+            Map<Type<any>,ModelMetadata>()
         );
 
         this._leafMap = subtypeMetadatas.reduce(
             (acc, [abstractType, leafTypes]) => acc.set(abstractType, leafTypes.toSet()),
-            Map<Type, Set<ModelMetadata>>()
+            Map<Type<any>, Set<ModelMetadata>>()
         );
     }
 
-    for<T>(objOrType: Type /*<T>*/ | T): ModelMetadata /*<T>*/ {
+    for<T>(objOrType: Type<T> | T): ModelMetadata /*<T>*/ {
         return isFunction(objOrType)
-            ? this.forType(<Type/*<T>*/>objOrType)
+            ? this.forType(<Type<T>>objOrType)
             : this.forType(Object.getPrototypeOf(objOrType).constructor);
     }
 
@@ -74,7 +74,7 @@ export class MetadataProvider {
      *
      * @param type
      */
-    private forType<T>(type: Type /*<T>*/): ModelMetadata {
+    private forType<T>(type: Type<T>): ModelMetadata {
         let metadata: ModelMetadata;
         do {
             metadata = ModelMetadata.forType(type);
@@ -90,7 +90,7 @@ export class MetadataProvider {
      * Get all model metadatas which are assignable to the given type.
      * @param type
      */
-    leafMetadatasForType<T>(type: Type/*<T>*/): Set<ModelMetadata/*<? extends T>*/> {
+    leafMetadatasForType<T>(type: Type<T>): Set<ModelMetadata/*<? extends T>*/> {
         return this._leafMap.get(type, Set<ModelMetadata>());
     }
 

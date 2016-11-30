@@ -48,7 +48,7 @@ export const _DEFERRED_MODEL_FACTORY = <ModelFactory<any>>{};
  * @param objOrType
  * @returns {any}
  */
-export function createModelFactory<T extends ModelBase>(type: Type): ModelFactory<T> {
+export function createModelFactory<T extends ModelBase>(type: Type<T>): ModelFactory<T> {
     type = resolveForwardRef(type);
     let modelMeta: ModelMetadata = (type as any).__model_metadata__;
 

@@ -4,7 +4,7 @@ import {Model, Property, RefProperty} from "../../src/model/decorators";
 import {ModelMetadata} from '../../src/model/metadata';
 import {ModelBase} from '../../src/model/base';
 import {createModelFactory} from '../../src/model/factory';
-import {str, num} from '../../src/json_codecs';
+import {str, num} from '../../src/json_codecs/index';
 
 //TODO: Move all models defined here to models.
 import * as Test from './models';

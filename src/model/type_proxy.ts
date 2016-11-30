@@ -2,14 +2,14 @@ import {List, OrderedMap, Set} from 'immutable';
 
 import {resolveForwardRef} from '@angular/core';
 import {isDefined, Type, forEachOwnProperty} from 'caesium-core/lang';
+import {ArgumentError} from 'caesium-core/exception';
 
 import {ModelBase} from './base';
 import {ModelConstructor, createModelFactory, _DEFERRED_MODEL_FACTORY} from './factory';
 import {ModelMetadata, buildModelMetadata} from './metadata';
-import {ArgumentError} from './exceptions';
 
 
-export interface ModelTypeProxy extends Type {
+export interface ModelTypeProxy extends Type<any> {
     ___model_metadata__: ModelMetadata;
 }
 
@@ -44,14 +44,14 @@ const DO_NOT_INTERCEPT = Set<string | symbol>([
     'toSource'
 ]);
 
-export class ModelTypeProxyHandler implements ProxyHandler<Type> {
+export class ModelTypeProxyHandler implements ProxyHandler<Type<any>> {
     // A reference to the ModelMetadata of the type.
     private __model_metadata__: ModelMetadata;
 
     // The prepared prototype of the type.
     private prototype: any;
 
-    construct(type: Type, argArray: any[], receiver: any) {
+    construct(type: Type<any>, argArray: any[], receiver: any) {
         let metadata = this.get(type, '__model_metadata__', receiver);
 
         // See note on ModelBase.constructor
@@ -61,7 +61,7 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
         return Object.freeze(obj);
     }
 
-    get(type: Type, prop: string | symbol, receiver: any): any {
+    get(type: Type<any>, prop: string | symbol, receiver: any): any {
         if (DO_NOT_INTERCEPT.has(prop)) {
             return (type as any)[prop];
         }
@@ -106,7 +106,7 @@ export class ModelTypeProxyHandler implements ProxyHandler<Type> {
     }
 }
 
-function prepareType(type: Type, metadata: ModelMetadata, receiver: any) {
+function prepareType(type: Type<any>, metadata: ModelMetadata, receiver: any) {
     let prototype = type.prototype;
 
     // Override the prototype's constructor with the proxy.
@@ -136,7 +136,7 @@ function prepareType(type: Type, metadata: ModelMetadata, receiver: any) {
     return Object.defineProperties(prototype, descriptorMap.toObject());
 }
 
-export function modelTypeProxy(type: Type): Type {
+export function modelTypeProxy(type: Type<any>): Type<any> {
     let proxy = new Proxy(type, new ModelTypeProxyHandler());
     // Added just for testing purposes.
     (proxy as any).__type_ref__ = type;

@@ -1,14 +1,8 @@
 import {Exception} from 'caesium-core/exception';
-
 import {Type} from 'caesium-core/lang';
 
-// TODO: Promote this to caesium-core
-export class ArgumentError extends Exception {
-    toString() { return 'ArgumentError: ' + this.message; }
-}
-
 export class ModelNotFoundException extends Exception {
-    constructor(public type: Type) {
+    constructor(public type: Type<any>) {
         super('The given type was not an @Model annotated instance');
     }
 }

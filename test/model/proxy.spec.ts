@@ -1,7 +1,7 @@
 import {Model, Property} from '../../src/model/decorators';
 import {ModelBase} from '../../src/model/base';
 
-import {str} from '../../src/json_codecs';
+import {str} from '../../src/json_codecs/index';
 
 import * as Test from './models';
 

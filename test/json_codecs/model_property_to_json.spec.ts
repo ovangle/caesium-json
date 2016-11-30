@@ -1,7 +1,7 @@
 import {Codec} from 'caesium-core/codec';
 
 import {ModelMetadata} from '../../src/model/metadata';
-import {Model, Property, ModelBase} from '../../src/model';
+import {Model, Property, ModelBase} from '../../src/model/index';
 import {num} from '../../src/json_codecs/basic';
 import {PropertyCodec} from '../../src/json_codecs/model_property_to_json';
 
