@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+Upgrade peer dependency caesium-core to 0.2.0
+
 ## 0.2.1, 0.2.2, 0.2.3
 Fixes to imports to make modules load correctly when imported
 

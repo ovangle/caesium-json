@@ -1,4 +1,7 @@
-export {Request, RequestFactory} from './http/index';
+export {
+    Request, RequestFactory,
+    API_HOST_HREF, API_HEADERS, WITH_CREDENTIALS
+} from './http/index';
 export {ModelManager} from './manager';
 
 export {
