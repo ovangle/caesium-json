@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Breaking changes
+#### Miscelaneous
+- No longer exports `*.ts` files with package
+
+
+
 ## 0.2.4
 
 Upgrade peer dependency caesium-core to 0.2.0
