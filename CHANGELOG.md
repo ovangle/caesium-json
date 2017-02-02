@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+### Bugfixes
+- `ModelMetadata.forType` can now be called with a forward refs
+
 ### Breaking changes
 #### Miscelaneous
 - No longer exports `*.ts` files with package

@@ -293,6 +293,7 @@ export class RefPropertyMetadata extends BasePropertyMetadata {
 export class ModelMetadata {
 
     static forType(type: Type<any>): ModelMetadata {
+        type = resolveForwardRef(type);
         let metadata = (type as any).__model_metadata__;
         if (!isDefined(metadata)) {
             throw new ModelNotFoundException(type);
