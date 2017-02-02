@@ -48,6 +48,8 @@ export class RequestFactory {
         apiHostHref = isBlank(apiHostHref) ? defaultApiHostHref : apiHostHref;
         if (apiHostHref.endsWith('/')) {
             this.apiHostHref = apiHostHref.substr(0, apiHostHref.length - 1);
+        } else {
+            this.apiHostHref = apiHostHref;
         }
 
         let headers = new Headers(requestOptions.headers);

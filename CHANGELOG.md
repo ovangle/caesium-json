@@ -4,6 +4,7 @@
 
 ### Bugfixes
 - `ModelMetadata.forType` can now be called with a forward refs
+- `RequestFactory.apiHostHref` was not being set in all cases
 
 ### Breaking changes
 #### Miscelaneous
