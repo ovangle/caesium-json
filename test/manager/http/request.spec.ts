@@ -25,8 +25,6 @@ describe('manager.http.request', () => {
             });
         });
 
-
-
         it('should submit a request',
             inject([ConnectionBackend, Http], (backend: MockBackend, http: Http) => {
                 backend.connections.subscribe((connection: MockConnection) => {
@@ -58,6 +56,33 @@ describe('manager.http.request', () => {
                 });
             })
         );
+
+        it('should attach the default headers', () => {
+            inject([ConnectionBackend, Http], (backend: MockBackend, http: Http) => {
+                backend.connections.subscribe((connection: MockConnection) => {
+                    let request = connection.request;
+                    expect(request.headers.get('Content-Type')).toEqual('application/json; charset=utf-8');
+                    expect(request.headers.get('custom-header')).toEqual('Custom Header');
+
+                    let response = new Response(new ResponseOptions({
+                        status: 200,
+                        body: {decoded: false}
+                    }));
+                    connection.mockRespond(response);
+                });
+
+                let customHeaders = new Headers();
+                customHeaders.set('custom-header', 'Custom Header');
+
+                let request = new _Request(
+                    http, 'http://example', customHeaders, RequestMethod.Post, [], {}, false
+                );
+                request.setRequestBody('BODY', (body: any) => body);
+                request.send((body: any) => body).forEach((_: any) => {
+                });
+
+            });
+        })
 
         it('should error on response statuses outside the range 200-300',
             inject([ConnectionBackend, Http], (backend: MockBackend, http: Http) => {

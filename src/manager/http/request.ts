@@ -72,7 +72,7 @@ export class _Request implements Request {
         let request = new HttpRequest(new HttpRequestOptions({
             url: [this.apiHostHref, ...this.path].join('/'),
             method: this.method,
-            headers: new Headers(this.headers),
+            headers: headers,
             search: stringMapToURLSearchParams(this.query),
             body: this.body && JSON.stringify(this.body),
             withCredentials: this.withCredentials
