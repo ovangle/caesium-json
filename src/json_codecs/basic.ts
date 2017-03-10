@@ -1,5 +1,4 @@
-import moment = require('moment');
-import {Moment} from 'moment';
+import moment from 'moment';
 
 import {List, Map} from 'immutable';
 import {isBlank} from 'caesium-core/lang';
@@ -56,7 +55,7 @@ export const dateTime: Codec<Date,string> = {
     decode: (value: string) => {
         if (isBlank(value))
             return value as any;
-        var m: Moment = moment(value, moment.ISO_8601, true);
+        var m = moment(value, moment.ISO_8601, true);
         if (!m.isValid()) {
             throw new EncodingException(`Invalid iso8601 datetime (${str}`);
         }
