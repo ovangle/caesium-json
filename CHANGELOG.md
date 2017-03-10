@@ -5,6 +5,10 @@
 ### Bugfixes
 - `ModelMetadata.forType` can now be called with a forward refs
 - `RequestFactory.apiHostHref` was not being set in all cases
+- Set Content-Type header on all outgoing requests
+
+### Dependencies
+- `caesium-core` dependency upgraded to `^0.3.0`
 
 ### Breaking changes
 #### Miscelaneous
