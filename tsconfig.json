@@ -11,12 +11,8 @@
     //"outDir": "dist",
     "sourceMap": true,
     "noImplicitAny": true,
-    "typeRoots":  [
-      "node_modules/@types"
-    ],
     "allowSyntheticDefaultImports": true
   },
-  "compileOnSave": true,
   "exclude": [
     "node_modules",
     "dist"

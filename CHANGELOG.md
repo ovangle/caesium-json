@@ -2,17 +2,12 @@
 
 ## 0.3.0
 
-### Bugfixes
-- `ModelMetadata.forType` can now be called with a forward refs
-- `RequestFactory.apiHostHref` was not being set in all cases
-- Set Content-Type header on all outgoing requests
+Complete rewrite of `caesium-model` library.
 
-### Dependencies
-- `caesium-core` dependency upgraded to `^0.3.0`
+Library concerned with serialization of `Immutable.Record`-like objects to/from json.
 
-### Breaking changes
-#### Miscelaneous
-- No longer exports `*.ts` files with package
+Renamed npm package to '@caesium/json'
+
 
 
 

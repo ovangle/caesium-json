@@ -29,24 +29,6 @@ module.exports = function(config) {
             // System.js for module loading
             'node_modules/systemjs/dist/system.src.js',
 
-            // Polyfills
-            //'node_modules/core-js/client/shim.js',
-            //'node_modules/es6-shim/es6-shim.js',
-            'node_modules/reflect-metadata/Reflect.js',
-
-            // zone.js
-            'node_modules/zone.js/dist/zone.js',
-            'node_modules/zone.js/dist/long-stack-trace-zone.js',
-            'node_modules/zone.js/dist/proxy.js',
-            'node_modules/zone.js/dist/sync-test.js',
-            'node_modules/zone.js/dist/jasmine-patch.js',
-            'node_modules/zone.js/dist/async-test.js',
-            'node_modules/zone.js/dist/fake-async-test.js',
-
-            // RxJs
-            { pattern: 'node_modules/rxjs/**/*.js', included: false, watched: false },
-            { pattern: 'node_modules/rxjs/**/*.js.map', included: false, watched: false },
-
             // Immutable
             { pattern: 'node_modules/immutable/dist/immutable.js', included: false, watched: false},
 
@@ -55,11 +37,6 @@ module.exports = function(config) {
 
             // Caesium-core
             { pattern: 'node_modules/caesium-core/**/*.js', included: false, watched: false},
-
-            // Paths loaded via module imports:
-            // Angular itself
-            { pattern: 'node_modules/@angular/**/*.js', included: false, watched: false },
-            { pattern: 'node_modules/@angular/**/*.js.map', included: false, watched: false },
 
             { pattern: 'systemjs.config.js', included: false, watched: false },
             { pattern: 'systemjs.config.extras.js', included: false, watched: false },

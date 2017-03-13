@@ -1,13 +1,16 @@
-node_modules/
-test/
-dist/
-typings/
+.idea
+.gitignore
+
+node_modules/**/*
+npm-debug.log
+
+gulpfile.js
 karma.conf.js
 karma-test-shim.js
 systemjs.config.extras.js
 systemjs.config.js
 tsconfig.json
 
-**/*.ts
-!**/*.d.ts
+src/**/*.spec.ts
 **/*.js.map
+build/**/*
