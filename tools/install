@@ -5,7 +5,6 @@ import os
 import shutil
 
 DIST_DIR = os.path.join('.', 'dist')
-DISTSRC_DIR = os.path.join(DIST_DIR, 'src')
 
 ignore_src_maps = shutil.ignore_patterns('*.js.map');
 
@@ -13,9 +12,9 @@ def copy_dist_src_to_project_root():
     """
     Copy the dist/src directory to the project root, ignoring source maps
     """
-    src_maps = ignore_src_maps(DISTSRC_DIR, os.listdir(DISTSRC_DIR))
-    for fname in os.listdir(DISTSRC_DIR):
-        path = os.path.join(DISTSRC_DIR, fname)
+    src_maps = ignore_src_maps(DIST_DIR, os.listdir(DIST_DIR))
+    for fname in os.listdir(DIST_DIR):
+        path = os.path.join(DIST_DIR, fname)
         if fname in src_maps:
             continue
         elif os.path.isdir(path):
@@ -25,6 +24,7 @@ def copy_dist_src_to_project_root():
 
 if __name__ == '__main__':
     print('CURRENT WORKING DIRECTORY: {0}'.format(os.getcwd()))
+    print(os.listdir(DISTSRC_DIR))
     copy_dist_src_to_project_root()
 
 
