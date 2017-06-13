@@ -10,11 +10,11 @@ import {model} from './model_to_json';
 
 class UnionCodec implements Codec<any,JsonObject> {
 
-    private _modelEncoders: Map<Type, Converter<any,JsonObject>>;
+    private _modelEncoders: Map<Type<any>, Converter<any,JsonObject>>;
     private _kindDecoders: Map<string, Converter<JsonObject,any>>;
 
-    constructor(...types: Type[]) {
-        var modelCodecs = Map<Type, Codec<any,JsonObject>>(
+    constructor(...types: Type<any>[]) {
+        var modelCodecs = Map<Type<any>, Codec<any,JsonObject>>(
             types.map((type) => [type, model(type)])
         );
 
@@ -52,7 +52,7 @@ class UnionCodec implements Codec<any,JsonObject> {
     }
 }
 
-export function union(...types: Type[]): Codec<any,JsonObject> {
+export function union(...types: Type<any>[]): Codec<any,JsonObject> {
     return new UnionCodec(...types);
 }
 

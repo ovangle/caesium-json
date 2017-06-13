@@ -72,7 +72,6 @@ export class ModelHttp {
         return null;
     }
 
-
     request(options: RequestOptions): Observable<RawResponse> {
 
         var headers = new Headers();

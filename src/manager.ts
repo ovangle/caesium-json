@@ -1,4 +1,5 @@
-import {HTTP_PROVIDERS} from '@angular/http';
+import {NgModule} from '@angular/core';
+import {HttpModule} from '@angular/http';
 import {ModelHttp} from './manager/model_http';
 import {ManagerOptions} from './manager/base';
 
@@ -9,9 +10,16 @@ export {
 } from './manager/search';
 export {ManagerBase, ManagerOptions} from './manager/base';
 
-export const MANAGER_PROVIDERS = [
-    HTTP_PROVIDERS,
-    ModelHttp,
-    ManagerOptions
-];
+@NgModule({
+    imports: [
+        HttpModule
+    ],
+    providers: [
+        ModelHttp,
+        ManagerOptions
+    ]
+})
+export class ManagerModule {
+
+}
 

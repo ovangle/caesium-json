@@ -1,36 +1,31 @@
 import {List} from 'immutable';
+import {forwardRef} from '@angular/core';
 import {FactoryException} from '../../../src/exceptions';
-import {Model, Property, RefProperty, BackRefProperty} from '../../../src/model/decorators';
+import {Model, Property, RefProperty} from '../../../src/model/decorators';
 import {ModelBase} from '../../../src/model/base';
 import {ModelMetadata} from '../../../src/model/metadata';
 import {str, list} from '../../../src/json_codecs';
-import {createModelFactory, copyModel} from '../../../src/model/factory';
+import {modelFactory, copyModel} from '../../../src/model/factory';
 
 @Model({kind: 'test::MyModel'})
-abstract class MyModel extends ModelBase {
+class MyModel extends ModelBase {
     @Property({codec: str})
     prop: string;
 
     @Property({codec: list(str), defaultValue: List})
     listProp: List<string>;
 
-    @RefProperty({refName: 'ref', refType: MyBackRefModel})
+    @RefProperty({refName: 'ref', refType: forwardRef(() => MyModel)})
     refId: number;
-    ref: MyBackRefModel;
+    ref: MyModel;
 
     foo() { return this.prop; }
 }
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
-abstract class AbstractModel extends ModelBase {
+class AbstractModel extends ModelBase {
     @Property({codec: str})
     prop: string;
-}
-
-@Model({kind: 'test::MyModel'})
-abstract class MyBackRefModel extends ModelBase {
-    @BackRefProperty({to: MyModel, refProp: 'refId'})
-    backRef: MyModel;
 }
 
 export function modelFactoryTests() {
@@ -42,7 +37,7 @@ export function modelFactoryTests() {
 
 function createModelTests() {
     describe('createModel', () => {
-        var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
+        var factory = modelFactory(MyModel);
         it('should be possible to create a new instance of a model with no initial property values', () => {
             var instance = factory({});
             expect(instance).toEqual(jasmine.any(MyModel));
@@ -51,7 +46,7 @@ function createModelTests() {
 
         it('should provide default values for any properties with a defaultValue', () => {
             var instance = factory({});
-            expect(instance.listProp).toEqual(List());
+            expect(instance.listProp).toEqual(List<string>());
         });
 
         it('should be possible to provide initial values for properties', () => {
@@ -69,7 +64,7 @@ function createModelTests() {
 
             var instance = factory({ref: {id: 40}});
             expect(instance.refId).toBe(40, 'Set refId via ref');
-            expect(instance.ref).toEqual({id: 40}, 'Set ref property');
+            expect(instance.ref).toEqual(<MyModel>{id: 40}, 'Set ref property');
 
             var instance = factory({refId: null});
             expect(instance.refId).toBe(null, 'Can set refId to `null`');
@@ -77,18 +72,6 @@ function createModelTests() {
             var instance = factory({ref: null});
             expect(instance.refId).toBe(null, 'Can set ref to `null`');
             expect(instance.ref).toBe(null);
-        });
-
-        it('should not be possible to set initial values for a back reference', () => {
-            var backRefFactory = createModelFactory<MyBackRefModel>(ModelMetadata.forType(MyBackRefModel));
-            var myModelInstance = factory({id: 1, refId: 40});
-
-            // TODO: Ideally we'd like to be able to to this
-            expect(() => backRefFactory({backRef: myModelInstance})).toThrow();
-
-            var instance = backRefFactory({});
-            expect(instance.isResolved('backRef')).toBe(false);
-
         });
 
         it('should inherit all methods defined on the instance', () => {
@@ -106,7 +89,7 @@ function createModelTests() {
         });
 
         it('should not be possible to create a factory for an abstract model type', () => {
-            expect(() => createModelFactory(ModelMetadata.forType(AbstractModel)))
+            expect(() => modelFactory(AbstractModel))
                 .toThrow(jasmine.any(FactoryException));
         })
     });
@@ -114,7 +97,7 @@ function createModelTests() {
 
 function copyModelTests() {
     describe('copyModel', () => {
-        var factory = createModelFactory<MyModel>(ModelMetadata.forType(MyModel));
+        var factory = modelFactory(MyModel);
         var instance = factory({
             prop: 'hello world',
             listProp: List(['a', 'b', 'c'])

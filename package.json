@@ -1,5 +1,5 @@
 {
-  "name": "caesium-model",
+  "name": "caesium-json",
   "version": "0.1.3",
   "description": "Framework for dealing with the server-client interface in caesium projects",
   "keywords": [
@@ -11,32 +11,29 @@
   "scripts": {
     "build": "tsc",
     "test": "live-server --open=test/index.html",
-    "prepare": "python3 tools/prepare",
+    "release": "python3 tools/prepare",
     "clean": "python3 tools/clean"
   },
   "author": "Thomas Stephenson",
   "licence": "MIT",
   "peerDependencies": {
-    "es6-shim": "^0.35.0",
-    "zone.js": "0.6.12",
     "reflect-metadata": "0.1.2",
-    "rxjs": "5.0.0-beta.6",
     "moment": "^2.13.0",
     "immutable": "^3.8.1",
-    "caesium-core": "^0.1.1",
-    "@angular/core": "2.0.0-rc.4",
-    "@angular/http": "2.0.0-rc.4"
+    "caesium-core": "^0.3.0",
+    "@angular/core": "^4.0.0",
+    "@angular/http": "^4.0.0"
   },
   "devDependencies": {
+    "@angular/common": "^4.1.3",
+    "@angular/compiler": "^4.1.3",
+    "@angular/platform-browser": "^4.1.3",
+    "@angular/platform-browser-dynamic": "^4.1.3",
     "angular2-template-loader": "^0.4.0",
     "jasmine-core": "2.4.1",
     "live-server": "^0.8.2",
     "systemjs": "^0.19.27",
-    "typescript": "^1.6.2",
-    "@angular/common": "2.0.0-rc.4",
-    "@angular/compiler": "2.0.0-rc.4",
-    "@angular/platform-browser": "2.0.0-rc.4",
-    "@angular/platform-browser-dynamic": "2.0.0-rc.4",
+    "typescript": "^2.3.4",
     "webpack": "^1.13.0",
     "webpack-dev-server": "^1.14.1",
     "webpack-merge": "^0.14.0"

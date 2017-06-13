@@ -4,7 +4,7 @@ import {identity} from 'caesium-core/codec';
 
 import {ModelValues} from '../../../src/model/values';
 import {
-    ModelMetadata, PropertyMetadata, RefPropertyMetadata, BackRefPropertyMetadata
+    ModelMetadata, BasePropertyMetadata, PropertyMetadata, RefPropertyMetadata
 } from '../../../src/model/metadata';
 
 export function metadataTests() {
@@ -12,18 +12,7 @@ export function metadataTests() {
         modelMetadataTests();
         propertyMetadataTests();
         refPropertyMetadataTests();
-        backRefPropertyMetadataTests();
     });
-}
-
-function _mkModelMetadata(
-    kind: string,
-    type?: Type,
-    properties?: {[name: string]: PropertyMetadata}
-) {
-    var metadata = new ModelMetadata({kind: kind});
-    metadata.contribute(type, Map<string,PropertyMetadata>(properties));
-    return metadata;
 }
 
 function _mkModelValues(): ModelValues {
@@ -37,15 +26,18 @@ function _mkModelValues(): ModelValues {
 function modelMetadataTests() {
     describe('ModelMetadata', () => {
         it('should throw when trying to create a ModelMetadata with an invalid `kind`', () => {
-            expect(() => new ModelMetadata({kind: 'test'})).toThrow();
-            expect(() => new ModelMetadata({kind: 'test::MyModel'})).not.toThrow();
+            class Foo {}
+            const properties = Map<string,BasePropertyMetadata>();
+            expect(() => new ModelMetadata(Foo, properties, {kind: 'test'})).toThrow();
+            expect(() => new ModelMetadata(Foo, properties, {kind: 'test::MyModel'})).not.toThrow();
         });
 
         it('should be possible to check whether the model has a given property', () => {
             class Foo {}
-            var metadata = _mkModelMetadata('test::MyModel', Foo, {
-                'a': new PropertyMetadata({codec: identity})
+            const properties = Map({
+                'a': new PropertyMetadata('a', {codec: identity})
             });
+            const metadata = new ModelMetadata(Foo, properties, {kind: 'test::MyModel'});
 
             expect(() => metadata.checkHasPropertyOrRef('a')).not.toThrow();
             expect(() => metadata.checkHasPropertyOrRef('b')).toThrow();
@@ -53,9 +45,10 @@ function modelMetadataTests() {
 
         it('should be possible to get a name from an associated property name', () => {
             class Foo {}
-            var metadata = _mkModelMetadata('test::MyModel', Foo, {
-                'refId': new RefPropertyMetadata({refName: 'ref', refType: Foo})
+            const properties = Map({
+                'refId': new RefPropertyMetadata('refId', {refName: 'ref', refType: Foo})
             });
+            const metadata = new ModelMetadata(Foo, properties, {kind: 'test::MyModel'});
 
             expect(metadata.refNameMap.get('ref')).toBe('refId');
         });
@@ -64,18 +57,16 @@ function modelMetadataTests() {
 
 function propertyMetadataTests() {
     describe('PropertyMetadata', () => {
-        var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
+
         it('should not be possible to contribute a reserved name to a property', () => {
-            var property = new PropertyMetadata({codec: identity});
             for (let name of ['kind', 'metadata', 'get', 'set', 'delete']) {
-                expect(() => property.contribute(modelMeta, name)).toThrow();
+                expect(() => new PropertyMetadata(name, {codec: identity})).toThrow();
             }
-            expect(() => property.contribute(modelMeta, 'a')).not.toThrow();
+            expect(() => new PropertyMetadata('a', {codec: identity})).not.toThrow();
         });
 
         it('should be able to initialize a property', () => {
-            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
-            property.name = 'prop';
+            var property = new PropertyMetadata('prop', {codec: identity, defaultValue: () => false});
 
             var modelValues = {
                 initialValues: Map<string,any>(),
@@ -96,8 +87,7 @@ function propertyMetadataTests() {
         });
 
         it('should be able to mutate a property', () => {
-            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
-            property.name = 'prop';
+            var property = new PropertyMetadata('prop', {codec: identity, defaultValue: () => false});
 
             var modelValues = {
                 initialValues: Map<string,any>(),
@@ -112,9 +102,7 @@ function propertyMetadataTests() {
 
 
         it('should be able to access property', () => {
-
-            var property = new PropertyMetadata({codec: identity, defaultValue: () => false});
-            property.name = 'prop';
+            var property = new PropertyMetadata('prop', {codec: identity, defaultValue: () => false});
 
             var modelValues = {
                 initialValues: Map<string,any>({prop: false}),
@@ -132,7 +120,7 @@ function propertyMetadataTests() {
         });
 
         it('should have default values for the boolean property attributes', () => {
-            var property = new PropertyMetadata({codec: identity});
+            var property = new PropertyMetadata('prop', {codec: identity});
             expect(property.readOnly).toBe(false, 'readOnly default set');
             expect(property.writeOnly).toBe(false, 'writeOnly default set');
             expect(property.allowNull).toBe(false, 'allowNull default set');
@@ -143,36 +131,16 @@ function propertyMetadataTests() {
 
 function refPropertyMetadataTests() {
     describe('RefPropertyMetadata', () => {
-        var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
-
         it('should not be possible to contribute a reserved name to a property', () => {
-            var property = new RefPropertyMetadata({refName: 'valueProp', refType: null});
             for (let name of ['kind', 'metadata', 'get', 'set', 'delete']) {
-                expect(() => property.contribute(modelMeta, name)).toThrow();
+                expect(() => new RefPropertyMetadata(name, {refName: 'refProp', refType: null}));
             }
-            expect(() => property.contribute(modelMeta, 'a')).not.toThrow();
+            expect(() => new RefPropertyMetadata('a', {refName: 'refProp', refType: null}))
+                .not.toThrow();
         });
-
-        it('should not be possible to contribute to the model if one of the model properties is the referenced property', () => {
-            class Foo {}
-            var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
-            modelMeta.contribute(Foo, Map({prop: new PropertyMetadata({codec: identity})}));
-
-            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
-            expect(() => property.contribute(modelMeta, 'propName')).toThrow();
-        });
-
-        it('should have default values for the boolean property attributes', () => {
-            var property = new PropertyMetadata({codec: identity});
-            expect(property.readOnly).toBe(false, 'readOnly default set');
-            expect(property.writeOnly).toBe(false, 'writeOnly default set');
-            expect(property.allowNull).toBe(false, 'allowNull default set');
-            expect(property.required).toBe(true, 'required default set');
-        });
-
 
         it('should be able to initialize a property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
+            var property = new RefPropertyMetadata('propId', {refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -211,7 +179,7 @@ function refPropertyMetadataTests() {
         });
 
         it('should be able to mutate a property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
+            var property = new RefPropertyMetadata('propId', {refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -230,7 +198,7 @@ function refPropertyMetadataTests() {
 
 
         it('should be able to access property reference', () => {
-            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
+            var property = new RefPropertyMetadata('propId', {refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -252,7 +220,7 @@ function refPropertyMetadataTests() {
         });
 
         it('should not consider a ref value initialized to `undefined` to be resolved', () => {
-            var property = new RefPropertyMetadata({refName: 'prop', refType: null});
+            var property = new RefPropertyMetadata('propId', {refName: 'prop', refType: null});
             property.name = 'propId';
 
             var modelValues = {
@@ -268,30 +236,3 @@ function refPropertyMetadataTests() {
     });
 }
 
-function backRefPropertyMetadataTests() {
-    describe('BackRefPropertyMetadata', () => {
-        var modelMeta = new ModelMetadata({kind: 'test::MyModel'});
-        class MyModel { }
-
-        it('should not be possible to contribute a reserved name to a property', () => {
-            var property = new BackRefPropertyMetadata({to: MyModel, refProp: 'hello'});
-
-            for (let name of ['kind', 'metadata', 'get', 'set', 'delete']) {
-                expect(() => property.contribute(modelMeta, name)).toThrow();
-            }
-            expect(() => property.contribute(modelMeta, 'a')).not.toThrow();
-        });
-
-        it('should not be possible to initialize a single value backRef property', () => {
-            var property = new BackRefPropertyMetadata({to: MyModel, refProp: 'hello'});
-            property.contribute(modelMeta, 'name');
-
-            var modelValues = _mkModelValues();
-
-            var initializedNoValue = property.valueInitializer(modelValues, undefined);
-            expect(initializedNoValue).toBe(modelValues);
-
-            expect(() => property.valueInitializer(modelValues, {id: 42})).toThrow();
-        });
-    });
-}

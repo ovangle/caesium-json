@@ -1,13 +1,13 @@
 import {List} from 'immutable';
 import {Model, Property, ModelBase} from '../../../src/model';
-import {createModelFactory} from '../../../src/model/factory';
+import {modelFactory} from '../../../src/model/factory';
 import {str, date, num, list} from '../../../src/json_codecs/basic';
 import {model} from '../../../src/json_codecs/model_to_json';
 import {ModelMetadata} from "../../../src/model/metadata";
 
 // Models for model converter test.
 @Model({kind: 'test::MyModel', isAbstract: true})
-abstract class MyModel extends ModelBase {
+class MyModel extends ModelBase {
     @Property({codec: str})
     name:string;
 
@@ -19,7 +19,7 @@ abstract class MyModel extends ModelBase {
 }
 
 @Model({kind: 'test::Submodel', superType: MyModel})
-abstract class SubModel extends MyModel {
+class SubModel extends MyModel {
     @Property({codec: str})
     submodelProperty:string;
 }
@@ -34,10 +34,10 @@ export function modelToJsonTests() {
 function modelTests() {
     describe('model', () => {
         it('should be possible to encode a model as json', () => {
-            var codec = model(SubModel);
+            const codec = model(SubModel);
 
-            var modelFactory = createModelFactory<MyModel>(ModelMetadata.forType(SubModel));
-            var instance = modelFactory({
+            const factory = modelFactory(SubModel);
+            const instance = factory({
                 name: 'henry',
                 aliases: List(['hank']),
                 birthday: new Date(0),

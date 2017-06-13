@@ -21,9 +21,9 @@ export class MockSearch extends Search<{a: string}> {
 
     constructor(http:ModelHttp, parameters: SearchParameter[]) {
         super(
-            new RequestFactory(http, {kind: 'test::MyModel'} as ModelMetadata),
-            parameters, 
-            identityConverter, 
+            new RequestFactory(http, {kind: 'test::MyModel'} as ModelMetadata<{a: string}>),
+            parameters,
+            identityConverter,
             2,
             'p'
         );

@@ -1,15 +1,17 @@
 import 'rxjs/add/operator/toPromise';
-import {provide} from '@angular/core';
 import {
     Http, RequestOptions, RequestMethod, Response, ResponseOptions, BaseRequestOptions
 } from '@angular/http';
 
+/*
 import {beforeEachProviders, describe, it, inject} from '@angular/core/testing';
+*/
 
 import {MockBackend, MockConnection} from '@angular/http/testing';
 import {API_HOST_HREF, ModelHttp} from "../../../src/manager/model_http";
 
 
+/*
 export function modelHttpTests() {
     describe('model_http', () => {
         _testModelHttp();
@@ -101,3 +103,4 @@ function _testModelHttp() {
         }));
     });
 }
+*/

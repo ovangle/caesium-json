@@ -1,12 +1,12 @@
 import {Map} from 'immutable';
 
-import {forEachOwnProperty, isDefined} from 'caesium-core/lang';
+import {forEachOwnProperty, isDefined, Type} from 'caesium-core/lang';
 import {FactoryException} from '../exceptions';
 import {ModelBase} from './base';
-import {ModelMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
+import {ModelMetadata, RefPropertyMetadata} from './metadata';
 import {ModelValues} from "./values";
 
-export type ModelFactory<T extends ModelBase> = (properties: { [attr: string]: any}) => T;
+export type ModelFactory<T extends ModelBase> = (properties: {[attr: string]: any}) => T;
 
 export interface PropertyMutation {
     /*
@@ -19,7 +19,10 @@ export interface PropertyMutation {
     value: any;
 }
 
-export function createModelFactory<T extends ModelBase>(modelMeta: ModelMetadata): ModelFactory<T> {
+export function modelFactory<T extends ModelBase>(type: Type<T>): ModelFactory<T> {
+
+    let modelMeta = ModelMetadata.forType(type);
+
     if (modelMeta.isAbstract) {
         throw new FactoryException(`Cannot create a model factory for abstract type '${modelMeta.kind}'`);
     }
@@ -85,7 +88,7 @@ export function copyModel<T extends ModelBase>(
     return _createModel(modelMeta, _asImmutableModelValues(modelValues));
 }
 
-function _createModel(modelMeta: ModelMetadata, modelValues?: ModelValues) {
+function _createModel<T>(modelMeta: ModelMetadata<T>, modelValues?: ModelValues): T {
     modelValues = modelValues || _initModelValues();
     var descriptors: PropertyDescriptorMap = {};
 
@@ -106,7 +109,7 @@ function _createModel(modelMeta: ModelMetadata, modelValues?: ModelValues) {
         }
     });
 
-    return Object.create(new (modelMeta.type as any)(), descriptors);
+    return <T>Object.create(new (modelMeta.type as any)(), descriptors);
 }
 
 function _initModelValues(): ModelValues {

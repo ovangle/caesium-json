@@ -1,56 +1,50 @@
-//TODO: We should redefine these in 'utils'.
-//We shouldn't be relying on internal angular2 implementation details.
-
-//TODO: We really need to come up with our own definitions for these
-// We shouldn't be relying on angular implementation details.
-import {makeDecorator, makePropDecorator, TypeDecorator} from '@angular/core/src/util/decorators';
+import {Map} from 'immutable';
 import {Type} from 'caesium-core/lang';
 
 import {
-    ModelMetadata, PropertyMetadata, PropertyOptions, RefPropertyOptions,
-    RefPropertyMetadata, BackRefPropertyOptions, BackRefPropertyMetadata
+    ModelMetadata, ModelOptions,
+    BasePropertyMetadata,
+    PropertyMetadata, PropertyOptions,
+    RefPropertyOptions, RefPropertyMetadata
 } from './metadata';
 
-export interface ModelFactory {
-    (obj: {
-        kind: string,
-        superType?: Type,
-        isAbstract?: boolean
-    }): TypeDecorator;
-    new (obj: {
-        kind: string,
-        superType?: Type,
-        isAbstract?: boolean
-    }): ModelMetadata;
+export function Model(options: ModelOptions): ClassDecorator {
+    return function <T>(type: Type<T>) {
+        let ownProperties = getOwnModelProperties(type);
+        let metadata = new ModelMetadata(type, ownProperties, options);
+
+        (type as any).__model_metadata__ = metadata;
+        return type;
+    }
 }
 
-export interface PropertyFactory {
-    (obj: PropertyOptions): any;
-    new (obj: PropertyOptions): PropertyMetadata;
+export function Property<T>(options: PropertyOptions): PropertyDecorator {
+    return function (target: any, propertyKey: string) {
+        const metadata = new PropertyMetadata(propertyKey, options);
+        contributePropertyMetadata(target, metadata);
+    }
 }
 
-export interface RefPropertyFactory {
-    (obj: RefPropertyOptions): any;
-    new (obj: RefPropertyOptions): RefPropertyMetadata;
+export function RefProperty<T>(options: RefPropertyOptions): PropertyDecorator {
+    return function (target: any, propertyKey: string) {
+        const metadata = new RefPropertyMetadata(propertyKey, options);
+        contributePropertyMetadata(target, metadata);
+    }
 }
 
-export interface BackRefPropertyFactory {
-    (obj: BackRefPropertyOptions): any;
-    new (obj: BackRefPropertyOptions): BackRefPropertyMetadata;
+function contributePropertyMetadata(target: any, propertyMetadata: BasePropertyMetadata) {
+    let properties = getOwnModelProperties(target)
+        .set(propertyMetadata.name, propertyMetadata);
+    setOwnModelProperties(target, properties);
 }
 
 
-export const Model: ModelFactory =
-    <ModelFactory>makeDecorator(ModelMetadata);
+function getOwnModelProperties(target: any): Map<string,BasePropertyMetadata> {
+    return target.__own_model_properties__ || Map();
+}
 
-//FIXME: makePropDecorator prevents upgrading to --target ES6
-//makePropDecorator assumes that PropertyMetadata is a function, because ES6 classes
-//require the use of the `new` keyword. Target ES5 compiles typescript classes to functions.
-export const Property: PropertyFactory =
-    <PropertyFactory>makePropDecorator(PropertyMetadata);
+function setOwnModelProperties(target: any, properties: Map<string,BasePropertyMetadata>) {
+    target.__own_model_properties__ = properties;
+}
 
-export const RefProperty: RefPropertyFactory =
-    <RefPropertyFactory>makePropDecorator(RefPropertyMetadata);
 
-export const BackRefProperty: BackRefPropertyFactory = 
-    <BackRefPropertyFactory>makePropDecorator(BackRefPropertyMetadata);

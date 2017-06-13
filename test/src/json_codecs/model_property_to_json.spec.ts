@@ -11,7 +11,7 @@ const stringReversingCodec: Codec<string,string> = {
 };
 
 @Model({kind: 'test::PropertyRestrictions'})
-abstract class PropertyRestrictions extends ModelBase {
+class PropertyRestrictions extends ModelBase {
     @Property({codec: stringReversingCodec})
     customCodecProperty: string;
 
@@ -45,7 +45,7 @@ function codecTests() {
         });
 
         it('should error on decode when the property is writeOnly', () => {
-            var codec = new PropertyCodec(metadata.properties.get('writeOnlyProperty')); 
+            var codec = new PropertyCodec(metadata.properties.get('writeOnlyProperty'));
             expect(() => codec.decode(42)).toThrow();
             expect(codec.encode(42)).toBe(42);
         });
@@ -70,7 +70,7 @@ function codecTests() {
             expect(() => codec.encode(null)).toThrow();
             expect(codec.encode(42)).toBe(42, 'should encode normal values');
             expect(codec.encode(undefined)).toBeUndefined('should encode undefined');
-            
+
             expect(codec.decode(null)).toBeNull('should not error on decode');
         });
     });

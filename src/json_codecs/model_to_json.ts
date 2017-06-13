@@ -5,11 +5,11 @@ import {Codec, composeCodecs, getEncoder, getDecoder} from 'caesium-core/codec';
 import {JsonObject} from './interfaces';
 import {ModelMetadata, RefPropertyMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
-import {createModelFactory} from '../model/factory';
+import {modelFactory} from '../model/factory';
 import {PropertyCodec, RefPropertyCodec} from './model_property_to_json';
 import {objectToJson, jsonToObject} from './object_to_json';
 
-function propertyCodecs(modelMetadata: ModelMetadata): Map<string,Codec<any,any>> {
+function propertyCodecs(modelMetadata: ModelMetadata<any>): Map<string,Codec<any,any>> {
     var propCodecs = modelMetadata.properties
         .map((propertyMeta) => new PropertyCodec(propertyMeta))
         .toMap();
@@ -31,22 +31,26 @@ function propertyCodecs(modelMetadata: ModelMetadata): Map<string,Codec<any,any>
  * This encoder just deletes the kind property from incoming json objects
  * and adds it back into the outgoing objects.
  */
-function kindPropertyRemover(metadata: ModelMetadata): Codec<JsonObject,JsonObject>{
+function kindPropertyRemover(metadata: ModelMetadata<any>): Codec<JsonObject,JsonObject>{
     return {
         encode: (obj) => {
             if (isBlank(obj)) return obj;
+
+            obj = Object.assign({}, obj);
             obj['kind'] = metadata.kind;
             return obj;
         },
         decode: (obj) => {
             if (isBlank(obj)) return obj;
+
+            obj = Object.assign({}, obj);
             delete obj['kind'];
             return obj;
         }
     }
 }
 
-export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject> {
+export function model<T extends ModelBase>(modelType: Type<T>): Codec<T,JsonObject> {
     var metadata = ModelMetadata.forType(modelType);
     var propCodecs = propertyCodecs(metadata);
 
@@ -60,7 +64,7 @@ export function model<T extends ModelBase>(modelType: Type): Codec<T,JsonObject>
     var modelPropertyDecoder = jsonToObject<T>(
         encodeProperties,
         (propNameOrRefName: string) => getDecoder(propCodecs.get(propNameOrRefName)),
-        createModelFactory<T>(metadata)
+        modelFactory<T>(metadata.type)
     );
     return composeCodecs<T,JsonObject,JsonObject>(
         {encode: modelPropertyEncoder, decode: modelPropertyDecoder},

@@ -1,9 +1,6 @@
-///<reference path="../typings/es6-shim/es6-shim.d.ts"/>
-///<reference path="../typings/jasmine/jasmine.d.ts"/>
-///<reference path="../node_modules/zone.js/dist/zone.js.d.ts"/>
-
 import 'reflect-metadata';
 
+/*
 import {setBaseTestProviders} from "@angular/core/testing";
 import {
     TEST_BROWSER_DYNAMIC_PLATFORM_PROVIDERS,
@@ -25,3 +22,4 @@ jsonCodecsTests();
 modelTests();
 managerTests();
 
+*/

@@ -3,18 +3,18 @@ import {identity} from 'caesium-core/codec';
 import {ModelBase} from "../../../src/model/base";
 import {Model, Property} from "../../../src/model/decorators";
 import {union} from "../../../src/json_codecs/model_union_to_json";
-import {createModelFactory} from '../../../src/model/factory';
+import {modelFactory} from '../../../src/model/factory';
 import {ModelMetadata} from "../../../src/model/metadata";
 
 
 @Model({kind: 'test::ModelA'})
-abstract class ModelA extends ModelBase {
+class ModelA extends ModelBase {
     @Property({codec: identity})
     propOne: string
 }
 
 @Model({kind: 'test::ModelB'})
-abstract class ModelB extends ModelBase {
+class ModelB extends ModelBase {
     @Property({codec: identity})
     propTwo: string;
 }
@@ -49,9 +49,8 @@ function codecTests() {
         });
 
         it('should be possible to encode an instance based on its type', () => {
-            var modelFactoryA = createModelFactory<ModelA>(ModelMetadata.forType(ModelA));
+            var modelFactoryA = modelFactory(ModelA);
             var instanceA = modelFactoryA({propOne: 'hello world'});
-
 
             expect(codec.encode(instanceA)).toEqual({
                 kind: 'test::ModelA',
@@ -59,7 +58,7 @@ function codecTests() {
                 prop_one: 'hello world'
             });
 
-            var modelFactoryB = createModelFactory<ModelB>(ModelMetadata.forType(ModelB));
+            var modelFactoryB = modelFactory(ModelB);
             var instanceB = modelFactoryB({propTwo: 'goodbye'});
 
             expect(codec.encode(instanceB)).toEqual({

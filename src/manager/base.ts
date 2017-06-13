@@ -1,10 +1,11 @@
+import {List} from 'immutable';
 import {Injectable, Inject, Optional} from '@angular/core';
 
 import {Type, isDefined, isBlank} from 'caesium-core/lang';
 import {Codec} from 'caesium-core/codec';
 import {memoize} from 'caesium-core/decorators';
 
-import {ModelFactory, createModelFactory} from '../model/factory';
+import {ModelFactory, modelFactory} from '../model/factory';
 import {ModelMetadata} from '../model/metadata';
 import {ModelBase} from '../model/base';
 
@@ -57,35 +58,27 @@ export abstract class ManagerBase<T extends ModelBase> {
     searchPageSize: number;
     searchPageQueryParam: string;
 
-
-    abstract getModelType(): Type/*<T>*/;
+    modelType: Type<T>;
 
     /**
      * Get a list of the proper subtypes of the model.
      */
-    abstract getModelSubtypes(): Type/*<U extends T>*/[];
+    abstract getModelSubtypes(): Type<any>[];
 
-    /**
-     * Get the search parameters that are applicable to the `search` exposed by
-     * this manager.
-     *
-     * If the model does not support any search, should return `undefined`
-     */
-    abstract getSearchParameters(): SearchParameter[];
-
-    protected get __metadata(): ModelMetadata {
-        return ModelMetadata.forType(this.getModelType());
+    protected get __metadata(): ModelMetadata<T> {
+        return ModelMetadata.forType(this.modelType);
     }
 
-    constructor(options: ManagerOptions) {
+    constructor(type: Type<T>, options: ManagerOptions) {
+        this.modelType = type;
         this.http = options.http;
         this._requestFactory = new RequestFactory(this.http, this.__metadata);
         this.searchPageSize = options.searchPageSize;
         this.searchPageQueryParam = options.searchPageQueryParam;
     }
 
-    isManagerFor(type: Type): boolean {
-        if (type === this.getModelType())
+    isManagerFor(type: Type<any>): boolean {
+        if (type === this.modelType)
             return true;
         var subtypes = this.getModelSubtypes();
         if (!Array.isArray(subtypes))
@@ -93,25 +86,8 @@ export abstract class ManagerBase<T extends ModelBase> {
         return subtypes.some((stype) => stype === type);
     }
 
-    /// Create a new instance of the modelType.
-    create<U extends T>(subtype: Type/*<U>*/, args: {[propName: string]: any}): U {
-        var factory: ModelFactory<U>;
-        if (this.__metadata.isAbstract) {
-            var modelSubtypes = this.getModelSubtypes();
-            if (!Array.isArray(modelSubtypes) || !modelSubtypes.find((s) => s === subtype)) {
-                throw new FactoryException(
-                    `Subtype must be a registered subtype of model manager for '${this.__metadata.kind}'`
-                );
-            }
-            factory = createModelFactory<U>(ModelMetadata.forType(subtype));
-        } else {
-            factory = createModelFactory<U>(this.__metadata);
-        }
-        return factory(args);
-    }
-
     @memoize()
-    private _getDefaultJsonCodec(): Codec<T,JsonObject> {
+    get modelCodec(): Codec<T,JsonObject> {
         var modelSubtypes = this.getModelSubtypes();
         if (Array.isArray(modelSubtypes) && modelSubtypes.length > 0) {
             return union(...this.getModelSubtypes());
@@ -120,12 +96,8 @@ export abstract class ManagerBase<T extends ModelBase> {
                 'A manager for an abstract model type must provide a nonempty list of subtypes'
             );
         } else {
-            return model<T>(this.getModelType());
+            return model<T>(this.modelType);
         }
-    }
-
-    get modelCodec(): Codec<T,JsonObject> {
-        return this._getDefaultJsonCodec();
     }
 
     getById(id: any): Response {
@@ -178,13 +150,10 @@ export abstract class ManagerBase<T extends ModelBase> {
         return request.send();
     }
 
-    search(): Search<T> {
-        if (!isDefined(this.getSearchParameters())) {
-            throw new NotSupportedError(`${this.getModelType()} manager does not support search`);
-        }
+    search(parameters: SearchParameter[]): Search<T> {
         return new Search<T>(
             this._requestFactory,
-            this.getSearchParameters(),
+            parameters,
             this.modelCodec,
             this.searchPageSize,
             this.searchPageQueryParam

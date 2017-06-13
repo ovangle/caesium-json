@@ -3,6 +3,7 @@ import {List} from 'immutable';
 
 import {Type} from 'caesium-core/lang';
 
+import {modelFactory} from '../../../src/model';
 import {itemList} from '../../../src/json_codecs';
 import {Model, ModelBase, RefProperty} from '../../../src/model';
 import {ManagerOptions, ManagerBase, SearchParameter} from '../../../src/manager';
@@ -24,80 +25,51 @@ function _mkManagerOptions(requestHandler?: (options: RequestOptions) => RawResp
 
 
 @Model({kind: 'test::MyModel'})
-export abstract class MyModel extends ModelBase {}
+export class MyModel extends ModelBase {}
 
 export class MyModelManager extends ManagerBase<MyModel> {
     constructor(options: ManagerOptions) {
-        super(options);
+        super(MyModel, options);
     }
 
-    getModelType() { return MyModel; }
-    getModelSubtypes(): Type[] { return []; }
-    getSearchParameters(): SearchParameter[] { return undefined; }
+    getModelSubtypes(): Type<any>[] {return [];}
 }
 
 @Model({kind: 'test::AbstractModel', isAbstract: true})
-export abstract class AbstractModel extends ModelBase {}
+export class AbstractModel extends ModelBase {}
 
 @Model({kind: 'test::AbstractModelImpl1', superType: AbstractModel})
-export abstract class AbstractModelImpl1 extends AbstractModel {}
+export class AbstractModelImpl1 extends AbstractModel {}
 
 @Model({kind: 'test::AbstractModelImpl2', superType: AbstractModel})
-export abstract class AbstractModelImpl2 extends AbstractModel {}
+export class AbstractModelImpl2 extends AbstractModel {}
 
 export class AbstractModelManager extends ManagerBase<AbstractModel> {
-    getModelType(): Type { return AbstractModel; }
-    getModelSubtypes(): Type[] { return [AbstractModelImpl1, AbstractModelImpl2]; }
+    constructor(options: ManagerOptions) {
+        super(AbstractModel, options);
+    }
+
+    getModelType(): Type<any> { return AbstractModel; }
+    getModelSubtypes(): Type<any>[] { return [AbstractModelImpl1, AbstractModelImpl2]; }
     getSearchParameters(): SearchParameter[] { return undefined; }
 }
 
 export function managerBaseTests() {
     describe('ManagerBase', () => {
-        createTests();
         modelCodecTests();
         getByIdTests();
         getByReferenceTests();
     });
 }
 
-function createTests() {
-    describe('.create()', () => {
-        it('should create the model', () => {
-            var manager = new MyModelManager(_mkManagerOptions());
-            var instance = manager.create(MyModel, {});
-            expect(instance).toEqual(jasmine.any(MyModel));
-        });
-
-        it('should create the appropriate subtype of an abstract type', () => {
-            var manager = new AbstractModelManager(_mkManagerOptions());
-            var instance1 = manager.create(AbstractModelImpl1, {});
-            expect(instance1).toEqual(
-                jasmine.any(AbstractModelImpl1),
-                'should create an instance of AbstractModelImp1'
-            );
-
-            var instance2 = manager.create(AbstractModelImpl2, {});
-            expect(instance2).toEqual(
-                jasmine.any(AbstractModelImpl2),
-                'should create an instance of AbstractModelImpl2'
-            );
-        });
-
-        it('should throw if the type is not a registered subtype', () => {
-            var manager = new AbstractModelManager(_mkManagerOptions());
-            expect(() => manager.create(MyModel, {}))
-                .toThrow(jasmine.any(FactoryException));
-        });
-    });
-}
-
 function modelCodecTests() {
     describe('.modelCodec()', () => {
         it('should return a bare model codec for a non abstract type', () => {
+            let factory = modelFactory(MyModel);
             var manager = new MyModelManager(_mkManagerOptions());
             var codec = manager.modelCodec;
 
-            expect(codec.encode(manager.create(MyModel, {})))
+            expect(codec.encode(factory({})))
                 .toEqual({id: null, 'kind': 'test::MyModel'});
 
             expect(codec.decode({'kind': 'test::MyModel'}))
@@ -105,15 +77,17 @@ function modelCodecTests() {
         });
 
         it('should return a union codec for an abstract type', () => {
+            const factory1 = modelFactory(AbstractModelImpl1);
+            const factory2 = modelFactory(AbstractModelImpl2);
             var manager = new AbstractModelManager(_mkManagerOptions());
             var codec = manager.modelCodec;
 
-            expect(codec.encode(manager.create(AbstractModelImpl1, {})))
+            expect(codec.encode(factory1({})))
                 .toEqual(
                     {'kind': 'test::AbstractModelImpl1', id: null},
                     'should encode as AbstractModelImpl1'
                 );
-            expect(codec.encode(manager.create(AbstractModelImpl2, {})))
+            expect(codec.encode(factory2({})))
                 .toEqual(
                     {'kind': 'test::AbstractModelImpl2', id: null},
                     'should encode as AbstractModelImpl2'

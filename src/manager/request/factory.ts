@@ -14,11 +14,11 @@ import {Delete} from './delete';
 
 export class RequestFactory {
     http: ModelHttp;
-    modelMetadata: ModelMetadata;
+    modelMetadata: ModelMetadata<any>;
 
     constructor(
         http: ModelHttp,
-        modelMetadata: ModelMetadata
+        modelMetadata: ModelMetadata<any>
     ) {
         this.http = http;
         this.modelMetadata = modelMetadata;
@@ -29,19 +29,19 @@ export class RequestFactory {
         return new Get(this.http, this.modelMetadata.kind, endpoint, withCredentials);
     }
 
-    put<T>(endpoint: string, bodyEncoder: Codec<T,JsonObject>|Converter<T,JsonObject>,
+    put<U>(endpoint: string, bodyEncoder: Codec<U,JsonObject>|Converter<U,JsonObject>,
             withCredentials?: boolean) {
         var encoder = this.getEncoder(bodyEncoder);
         withCredentials = this.withCredentialsDefault(withCredentials);
-        return new Put<T>(this.http, this.modelMetadata.kind, endpoint,
+        return new Put<U>(this.http, this.modelMetadata.kind, endpoint,
                           encoder, withCredentials);
     }
 
-    post<T>(endpoint: string, bodyEncoder: Codec<T, JsonObject>|Converter<T,JsonObject>,
+    post<U>(endpoint: string, bodyEncoder: Codec<U, JsonObject>|Converter<U,JsonObject>,
             withCredentials?: boolean) {
         var encoder = this.getEncoder(bodyEncoder);
         withCredentials = this.withCredentialsDefault(withCredentials);
-        return new Post<T>(this.http, this.modelMetadata.kind, endpoint, encoder, withCredentials);
+        return new Post<U>(this.http, this.modelMetadata.kind, endpoint, encoder, withCredentials);
     }
 
     delete(endpoint: string, withCredentials?: boolean) {

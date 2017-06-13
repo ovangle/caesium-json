@@ -3,7 +3,7 @@ import {List} from 'immutable';
 import {isDefined, isBlank} from 'caesium-core/lang';
 
 import {itemList} from '../json_codecs';
-import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata, BackRefPropertyMetadata} from './metadata';
+import {ModelMetadata, BasePropertyMetadata, RefPropertyMetadata} from './metadata';
 import {ManagerBase} from '../manager';
 
 import {copyModel} from './factory';
@@ -17,7 +17,7 @@ export abstract class ModelBase {
      */
     id: any;
 
-    private __metadata: ModelMetadata;
+    private __metadata: ModelMetadata<any>;
     private __modelValues: ModelValues;
 
     /**
@@ -46,7 +46,7 @@ export abstract class ModelBase {
      * @param propNameOrRefName
      * @param value
      */
-    set(propNameOrRefName: string, value: any): ModelBase /* typeof this */{
+    set(propNameOrRefName: string, value: any): this {
         var property = this.__metadata.properties.get(propNameOrRefName);
         var updatedModelValues: ModelValues;
 
@@ -83,9 +83,9 @@ export abstract class ModelBase {
     }
 
     resolveProperty(
-        manager:ManagerBase<ModelBase /* typeof this */>,
+        manager:ManagerBase<any>,
         propNameOrRefName:string
-    ):Observable<ModelBase /* typeof this */> {
+    ):Observable<this> {
         if (this.isResolved(propNameOrRefName)) {
             return Observable.of(copyModel(this));
         }
@@ -110,68 +110,10 @@ export abstract class ModelBase {
 
         //TODO: What about 404 responses?
         return manager.getById(idValue).handle({select: 200, decoder: manager.modelCodec})
-            .map((foreignModel) => this._resolveWith(refProp.name, foreignModel));
-    }
-
-    /**
-     * Resolve the propName with the given value.
-     * The propName cannot be a refName
-     * @param propName
-     * @param model
-     * @returns {ModelBase}
-     * @private
-     */
-    private _resolveWith(propName: string, model: ModelBase): ModelBase /* this */ {
-        var prop = <RefPropertyMetadata>this.__metadata.properties.get(propName);
-        return this.set(prop.refName, model);
-    }
-
-    /**
-     * Returns all models which reference `this` via the given referencing property name.
-     * @param modelManager
-     * The manager of the foreign model type.
-     *
-     * @param propName
-     * @returns {Observable<List<ModelBase>>}
-     */
-    resolveBackRefProperty(
-        modelManager: ManagerBase<any>,
-        propName: string
-    ): Observable<ModelBase /* typeof this*/> {
-        if (this.isResolved(propName))
-            return Observable.of(this);
-
-        var prop = this.__metadata.properties.get(propName);
-        if (!isDefined(prop) || !prop.isBackRef) {
-            return Observable.throw(new PropertyNotFoundException(propName, this, 'BackReference'));
-        }
-
-        var backRefProp = prop as BackRefPropertyMetadata;
-        if (!modelManager.isManagerFor(backRefProp.to)) {
-            return Observable.throw(new ArgumentError(
-                'manager must be the manager for the foreign model type ' + backRefProp.to)
-            );
-        }
-
-        var foreignRefName = backRefProp.refProp;
-
-        return modelManager.getAllByReference(foreignRefName, this)
-            .handle<List<ModelBase>>({select: 200, decoder: itemList<ModelBase>(modelManager.modelCodec)})
-            .map((references: List<ModelBase>) => {
-                if (backRefProp.multi) {
-                    references = references
-                        .map((ref) => ref._resolveWith(foreignRefName, this))
-                        .toList();
-                    return this.set(backRefProp.name, references);
-                } else {
-                    var ref = references.get(0, null);
-                    if (ref !== null) {
-                        ref = ref._resolveWith(foreignRefName, this);
-                    }
-                    return this.set(backRefProp.name, ref);
-                }
+            .map((foreignModel) => {
+                let prop = <RefPropertyMetadata>this.__metadata.properties.get(propName);
+                return this.set(prop.refName, foreignModel);
             });
-
     }
 }
 
