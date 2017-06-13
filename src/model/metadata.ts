@@ -34,7 +34,8 @@ export interface ModelOptions {
 
 export class ModelMetadata<T> {
     static forType<U>(type: Type<U>): ModelMetadata<U> {
-        let metadata = (type as any).__model_metadata__;
+        const resolvedType = resolveForwardRef(type);
+        const metadata = (resolvedType as any).__model_metadata__;
         if (!metadata) {
             throw `${type} is not an @Model annotated type`;
         }
