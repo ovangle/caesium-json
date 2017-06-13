@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "test": "live-server --open=test/index.html",
-    "release": "python3 tools/prepare",
+    "install": "python3 tools/prepare",
     "clean": "python3 tools/clean"
   },
   "author": "Thomas Stephenson",
