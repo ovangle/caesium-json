@@ -23,18 +23,8 @@ def copy_dist_src_to_project_root():
         else:
             shutil.copyfile(path, os.path.join('.', fname))
 
-def backup_node_modules():
-    """
-    We move the node_modules folder to _node_modules, becuase the presence of the folder interferes with
-    typescript's type resolution when the folder is symlinked into another project as an npm linked dependency.
-
-    Remove this when we publish the module to npm properly
-    """
-    if os.path.isdir('./node_modules'):
-        shutil.move('./node_modules', './_node_modules');
-
 if __name__ == '__main__':
-    backup_node_modules()
+    print('CURRENT WORKING DIRECTORY: {0}'.format(os.getcwd()))
     copy_dist_src_to_project_root()
 
 
