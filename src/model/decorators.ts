@@ -21,30 +21,30 @@ export function Model(options: ModelOptions): ClassDecorator {
 export function Property<T>(options: PropertyOptions): PropertyDecorator {
     return function (target: any, propertyKey: string) {
         const metadata = new PropertyMetadata(propertyKey, options);
-        contributePropertyMetadata(target, metadata);
+        contributePropertyMetadata(target.constructor, metadata);
     }
 }
 
 export function RefProperty<T>(options: RefPropertyOptions): PropertyDecorator {
     return function (target: any, propertyKey: string) {
         const metadata = new RefPropertyMetadata(propertyKey, options);
-        contributePropertyMetadata(target, metadata);
+        contributePropertyMetadata(target.constructor, metadata);
     }
 }
 
-function contributePropertyMetadata(target: any, propertyMetadata: BasePropertyMetadata) {
-    let properties = getOwnModelProperties(target)
+function contributePropertyMetadata(type: Type<any>, propertyMetadata: BasePropertyMetadata) {
+    let properties = getOwnModelProperties(type)
         .set(propertyMetadata.name, propertyMetadata);
-    setOwnModelProperties(target, properties);
+    setOwnModelProperties(type, properties);
 }
 
 
-function getOwnModelProperties(target: any): Map<string,BasePropertyMetadata> {
-    return target.__own_model_properties__ || Map();
+function getOwnModelProperties(type: any): Map<string,BasePropertyMetadata> {
+    return type.__own_model_properties__ || Map();
 }
 
-function setOwnModelProperties(target: any, properties: Map<string,BasePropertyMetadata>) {
-    target.__own_model_properties__ = properties;
+function setOwnModelProperties(type: any, properties: Map<string,BasePropertyMetadata>) {
+    type.__own_model_properties__ = properties;
 }
 
 
