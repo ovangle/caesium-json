@@ -23,8 +23,6 @@ def copy_dist_src_to_project_root():
             shutil.copyfile(path, os.path.join('.', fname))
 
 if __name__ == '__main__':
-    print('CURRENT WORKING DIRECTORY: {0}'.format(os.getcwd()))
-    print(os.listdir(DISTSRC_DIR))
     copy_dist_src_to_project_root()
 
 
