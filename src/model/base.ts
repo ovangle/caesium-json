@@ -90,18 +90,19 @@ export abstract class ModelBase {
             return Observable.of(copyModel(this));
         }
 
-        var prop = this.__metadata.properties.get(propNameOrRefName);
+        let propName = propNameOrRefName;
+        let prop = this.__metadata.properties.get(propNameOrRefName);
 
         if (!isDefined(prop)) {
-            var propName = this.__metadata.refNameMap.get(propNameOrRefName);
+            propName = this.__metadata.refNameMap.get(propNameOrRefName);
             prop = this.__metadata.properties.get(propName);
         }
 
         if (!isDefined(prop) || !prop.isRef) {
             return Observable.throw(new PropertyNotFoundException(propName, this, 'Reference'));
         }
-        var refProp = prop as RefPropertyMetadata;
-        var idValue = refProp.valueAccessor(this.__modelValues);
+        let refProp = prop as RefPropertyMetadata;
+        let idValue = refProp.valueAccessor(this.__modelValues);
 
         if (isBlank(idValue)) {
             // A null id maps to a null reference.
