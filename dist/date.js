@@ -1,8 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const moment_1 = require("moment");
-const codec_1 = require("caesium-core/codec");
-const utils_1 = require("./utils");
+import moment from 'moment';
+import { EncodingException } from 'caesium-core/codec';
+import { assertNotNull } from './utils';
 /**
  * Codec between string representing a calendar date with no time information.
  *
@@ -11,31 +9,31 @@ const utils_1 = require("./utils");
  *
  * @type {{encode: ((date:Date)=>(any|string)); decode: ((value:string)=>(any|Date))}}
  */
-exports.date = {
+export const date = {
     encode: (date) => {
-        utils_1.assertNotNull(date);
-        var m = moment_1.default(date);
+        assertNotNull(date);
+        var m = moment(date);
         return m.utc().format('YYYY-MM-DD');
     },
     decode: (value) => {
-        utils_1.assertNotNull(value);
-        var m = moment_1.default.utc(value, 'YYYY-MM-DD', true);
+        assertNotNull(value);
+        var m = moment.utc(value, 'YYYY-MM-DD', true);
         if (!m.isValid()) {
-            throw new codec_1.EncodingException(`Not a valid date format (use YYYY-MM-DD) ${value}`);
+            throw new EncodingException(`Not a valid date format (use YYYY-MM-DD) ${value}`);
         }
         return m.toDate();
     }
 };
-exports.dateTime = {
+export const dateTime = {
     encode: (date) => {
-        utils_1.assertNotNull(date);
+        assertNotNull(date);
         return date.toISOString();
     },
     decode: (value) => {
-        utils_1.assertNotNull(value);
-        var m = moment_1.default(value, moment_1.default.ISO_8601, true);
+        assertNotNull(value);
+        var m = moment(value, moment.ISO_8601, true);
         if (!m.isValid()) {
-            throw new codec_1.EncodingException(`Invalid iso8601 datetime (${value})`);
+            throw new EncodingException(`Invalid iso8601 datetime (${value})`);
         }
         return m.toDate();
     }

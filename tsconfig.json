@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "module": "commonjs",
+    "module": "es6",
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -10,8 +10,7 @@
     "noLib": false,
     "outDir": "dist",
     "sourceMap": false,
-    "noImplicitAny": true,
-    "allowSyntheticDefaultImports": true
+    "noImplicitAny": true
   },
   "exclude": [
     "node_modules",

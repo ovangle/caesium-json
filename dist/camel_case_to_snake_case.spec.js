@@ -1,8 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const camel_case_to_snake_case_1 = require("./camel_case_to_snake_case");
+import { camelCaseToSnakeCase } from './camel_case_to_snake_case';
 describe('string_case_converters', () => {
-    const codec = camel_case_to_snake_case_1.camelCaseToSnakeCase;
+    const codec = camelCaseToSnakeCase;
     it('should convert a snake case string to a camel case string', () => {
         expect(codec.decode('hello_world')).toBe('helloWorld');
         expect(codec.decode('camel_case_string')).toBe('camelCaseString');

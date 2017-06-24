@@ -1,18 +1,15 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const codec_1 = require("caesium-core/codec");
-exports.stringReversingCodec = {
+import { EncodingException } from 'caesium-core/codec';
+export const stringReversingCodec = {
     encode: (s) => s.split('').reverse().join(''),
     decode: (s) => s.split('').reverse().join('')
 };
-exports.numberIncrementingCodec = {
+export const numberIncrementingCodec = {
     encode: (s) => s + 1,
     decode: (s) => s - 1
 };
-function expectThrowsOnNullOrUndefined(codec) {
-    expect(() => codec.encode(null)).toThrow(jasmine.any(codec_1.EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(codec_1.EncodingException));
-    expect(() => codec.decode(null)).toThrow(jasmine.any(codec_1.EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(codec_1.EncodingException));
+export function expectThrowsOnNullOrUndefined(codec) {
+    expect(() => codec.encode(null)).toThrow(jasmine.any(EncodingException));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
+    expect(() => codec.decode(null)).toThrow(jasmine.any(EncodingException));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
 }
-exports.expectThrowsOnNullOrUndefined = expectThrowsOnNullOrUndefined;
