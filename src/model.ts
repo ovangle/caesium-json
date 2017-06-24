@@ -87,7 +87,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
                 const options = propertyOptions(property);
                 const valueCodec = propertyCodec(property);
 
-                const objKey = this.propKey.decode(key);
+                const objKey = this.propKey.encode(key);
                 const objValue = obj[objKey];
 
                 if (objValue === undefined) {
