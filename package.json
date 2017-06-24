@@ -8,6 +8,7 @@
     "api",
     "rpc"
   ],
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
     "test": "karma start karma.conf.js",
