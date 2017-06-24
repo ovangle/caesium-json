@@ -8,8 +8,8 @@
     "removeComments": false,
     "declaration": true,
     "noLib": false,
-    //"outDir": "dist",
-    "sourceMap": true,
+    "outDir": "dist",
+    "sourceMap": false,
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true
   },
