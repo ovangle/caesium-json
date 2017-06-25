@@ -1,4 +1,4 @@
-export { Codec, EncodingException } from 'caesium-core/codec';
+export { Codec, EncodingException, identity } from 'caesium-core/codec';
 export { Json } from './interfaces';
 export { bool, str, num } from './primitives';
 export { date, dateTime } from './date';
