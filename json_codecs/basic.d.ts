@@ -1,0 +1,10 @@
+import { List, Map } from 'immutable';
+import { Codec } from 'caesium-core/codec';
+import { JsonObject } from "./interfaces";
+export declare const str: Codec<string, string>;
+export declare const num: Codec<number, number>;
+export declare const bool: Codec<boolean, boolean>;
+export declare const date: Codec<Date, string>;
+export declare const dateTime: Codec<Date, string>;
+export declare function list<T>(itemCodec: Codec<T, any>): Codec<List<T>, any[]>;
+export declare function map<T>(valueCodec: Codec<T, any>): Codec<Map<string, T>, JsonObject>;
