@@ -8,9 +8,10 @@
     "removeComments": false,
     "declaration": true,
     "noLib": false,
-    "outDir": "dist",
+    "outDir": "dist/.build",
     "sourceMap": false,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "node_modules",

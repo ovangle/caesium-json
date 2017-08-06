@@ -2,8 +2,8 @@
 npm-debug.log
 .sass-cache
 node_modules/*
-lib/*
-bundles/*
+
+dist/*
 
 src/**/*.js
 src/**/*.js.map
