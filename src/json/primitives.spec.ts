@@ -1,13 +1,13 @@
 
 import {List, Map} from 'immutable';
-import {Codec, identity, EncodingException} from 'caesium-core/codec';
-import {str, bool, num} from './primitives';
+import {Codec} from '../codec';
+import {str, bool, num, date, dateTime} from './primitives';
 
 export function expectThrowsOnNullOrUndefined(codec: Codec<any,any>) {
-    expect(() => codec.encode(null)).toThrow(jasmine.any(EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
-    expect(()=> codec.decode(null)).toThrow(jasmine.any(EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
+    expect(() => codec.encode(null)).toThrow(jasmine.any(Error));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(Error));
+    expect(()=> codec.decode(null)).toThrow(jasmine.any(Error));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(Error));
 }
 
 describe('primitives', () => {
@@ -32,6 +32,7 @@ describe('primitives', () => {
             expect(num.decode(128)).toBe(128);
         })
     });
+
     describe('bool', () => {
         it('should throw on null or undefined ', () => {
             expectThrowsOnNullOrUndefined(bool);
@@ -42,4 +43,26 @@ describe('primitives', () => {
             expect(bool.decode(false)).toBe(false);
         })
     });
+
+  describe('dateTime', () => {
+    it('should be able to encode and decode blank values', () => {
+      expectThrowsOnNullOrUndefined(dateTime);
+    });
+
+    it('should be able to encode/decode a date', () => {
+      expect(dateTime.encode(new Date(0))).toBe('1970-01-01T00:00:00.000Z');
+      expect(dateTime.decode('1970-01-01T00:00:00Z')).toEqual(new Date(0));
+    });
+  });
+
+  describe('date', () => {
+    it('should be able to encode and decode blank values', () => {
+      expectThrowsOnNullOrUndefined(date);
+    });
+
+    it('should be able to encode a date in the format YYYY-MM-DD', () => {
+      expect(date.encode(new Date(0))).toBe('1970-01-01');
+      expect(date.decode('1970-01-01')).toEqual(new Date(0));
+    });
+  });
 });

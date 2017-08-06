@@ -1,12 +1,11 @@
 import {Map, Record} from 'immutable';
-import {Type, isBlank} from 'caesium-core/lang';
-import {Codec, EncodingException} from 'caesium-core/codec';
 
-import {assertNotNull} from './utils';
+import {Codec} from '../codec';
+import {assertNotNull} from '../utils';
 import {Json} from './interfaces';
 import {str} from './primitives';
 
-export interface ModelType<T extends Model> extends Type<T> {
+export interface ModelType<T extends Model = Model> {
     new (args: {[k: string]: any}): T;
 }
 
@@ -64,7 +63,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
 
                 if (modelValue === undefined) {
                     if (options.required)
-                        throw new EncodingException(`Required property '${key}' of '${this.typeName}' codec not present on model`);
+                        throw new Error(`Required property '${key}' of '${this.typeName}' codec not present on model`);
                     return [objKey, undefined];
                 }
                 return [objKey, valueCodec.encode(modelValue)];
@@ -79,7 +78,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
         for (let key of Object.keys(obj)) {
             const modelKey = this.propKey.decode(key);
             if (!this.properties.has(modelKey))
-                throw new EncodingException(`'${modelKey}' not found on '${this.typeName}' codec`);
+                throw new Error(`'${modelKey}' not found on '${this.typeName}' codec`);
         }
 
         const modelArgs = this.properties
@@ -92,7 +91,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
 
                 if (objValue === undefined) {
                     if (options.required)
-                        throw new EncodingException(
+                        throw new Error(
                             `Required property '${key}' of '${this.typeName}' codec not present on object`
                         );
                     return [key, undefined];

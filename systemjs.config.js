@@ -10,7 +10,6 @@
             // other libraries
             'immutable':                    'npm:immutable/dist/immutable.js',
             'moment':                       'npm:moment/moment.js',
-            'caesium-core':                 'npm:caesium-core',
         },
         // packages tells the System loader how to load when no filename and/or no extension
         packages: {

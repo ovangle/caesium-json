@@ -1,4 +1,4 @@
-import {Codec, EncodingException} from 'caesium-core/codec';
+import {Codec} from './codec';
 
 export const stringReversingCodec = {
     encode: (s: string) => s.split('').reverse().join(''),
@@ -11,8 +11,8 @@ export const numberIncrementingCodec = {
 };
 
 export function expectThrowsOnNullOrUndefined(codec: Codec<any,any>) {
-    expect(() => codec.encode(null)).toThrow(jasmine.any(EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
-    expect(()=> codec.decode(null)).toThrow(jasmine.any(EncodingException));
-    expect(() => codec.encode(undefined)).toThrow(jasmine.any(EncodingException));
+    expect(() => codec.encode(null)).toThrow(jasmine.any(Error));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(Error));
+    expect(()=> codec.decode(null)).toThrow(jasmine.any(Error));
+    expect(() => codec.encode(undefined)).toThrow(jasmine.any(Error));
 }
