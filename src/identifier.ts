@@ -3,7 +3,7 @@
  */
 
 
-import {Iterable, List} from 'immutable';
+import {List} from 'immutable';
 import {Codec, compose, invert, identity} from './codec';
 
 export type PrivacyLevel = number;
@@ -81,9 +81,9 @@ export const snakeCase = {
 function parseCamelCaseWords(input: string): List<Word> {
   let words = List(input.split(/(?=[A-Z])/));
 
-  let remainingWords: Iterable<number,string> = words;
+  let remainingWords: List<string> = words;
 
-  return words.flatMap<number, string>(word => {
+  return words.flatMap<string>(word => {
     // The above regex will match SimpleHTTPRequest as ['Simple', 'H', 'T', 'T', 'P', 'Request']
     // This merges contiguous groups of single letter words and lower cases the multi-letter words,
     // yielding ['simple', 'HTTP', 'request']
@@ -102,7 +102,7 @@ function parseCamelCaseWords(input: string): List<Word> {
 
     currWords.push(word.toLowerCase());
     return currWords;
-  }).toList();
+  });
 }
 
 /**
