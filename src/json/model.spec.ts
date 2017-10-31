@@ -35,7 +35,6 @@ describe('model', () => {
             stringProperty: 'hello world',
             numListProperty: List.of(1,2,3,4,5)
         });
-        debugger;
         codec.encode(value);
         const encodedValue = {
             stringProperty: 'dlrow olleh',
@@ -86,7 +85,7 @@ describe('model', () => {
 
         const codecMissingProperty = model(MyModel, {
             missingProperty: str
-        });
+        } as any);
 
         const value = new MyModel();
 
@@ -97,7 +96,7 @@ describe('model', () => {
     it('should ignore optional properties if there is no value on the object', () => {
         const codec = model(MyModel, {
             optionalProperty: [str, {required: false}],
-        });
+        } as any);
 
         expect(codec.encode(new MyModel())).toEqual({});
         expect(codec.decode({})).toEqual(new MyModel());

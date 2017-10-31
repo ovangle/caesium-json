@@ -5,14 +5,6 @@ import {assertNotNull} from '../utils';
 import {Json} from './interfaces';
 import {str} from './primitives';
 
-export interface ModelType<T extends Model = Model> {
-    new (args: {[k: string]: any}): T;
-}
-
-export interface Model {
-    get(key: string): any;
-}
-
 export interface PropertyOptions {
     required?: boolean;
 }
@@ -20,9 +12,8 @@ const propertyOptionDefaults = {
     required: true
 }
 
-
 export type Property = Codec<any,Json> | [Codec<any,Json>, PropertyOptions];
-function propertyCodec(prop: Property): Codec<any,Json> {
+function propertyCodec<K>(prop: Property): Codec<any,Json> {
     if (Array.isArray(prop)) {
         return prop[0];
     } else {
@@ -38,11 +29,16 @@ function propertyOptions(prop: Property): PropertyOptions {
     }
 }
 
+export interface ModelFactory<TProps, U extends Record<TProps>> {
+  name: string;
+  new (props: Partial<TProps>): U;
+}
 
-class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
+
+class ModelCodec<TProps, TModel extends Record<TProps>> implements Codec<TModel, {[k: string]: any}> {
     constructor(
-        public type: ModelType<T>,
-        public properties: Map<string,Property>,
+        public type: ModelFactory<TProps, TModel>,
+        public properties: Map<keyof TProps, Property>,
         public propKey: Codec<string,string>
     ) {}
 
@@ -50,7 +46,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
         return this.type.name;
     }
 
-    encode(model: T): {[k: string]: any} {
+    encode(model: TModel): {[k: string]: any} {
         assertNotNull(model);
         return this.properties
             .mapEntries(([key,property]) => {
@@ -58,8 +54,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
                 const valueCodec = propertyCodec(property);
 
                 const objKey = this.propKey.encode(key);
-
-                const modelValue = model.get(key);
+                const modelValue = model.get(key, undefined);
 
                 if (modelValue === undefined) {
                     if (options.required)
@@ -77,7 +72,7 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
 
         for (let key of Object.keys(obj)) {
             const modelKey = this.propKey.decode(key);
-            if (!this.properties.has(modelKey))
+            if (!this.properties.has(<keyof TProps>modelKey))
                 throw new Error(`'${modelKey}' not found on '${this.typeName}' codec`);
         }
 
@@ -101,19 +96,19 @@ class ModelCodec<T extends Model> implements Codec<T, {[k: string]: any}> {
             })
             .filter((v: any) => v !== undefined)
             .toObject();
-        return new this.type(modelArgs);
+        return new this.type(<Partial<TProps>>modelArgs);
     }
 }
 
-export function model<T extends Model>(
-    type: ModelType<T>,
-    properties: {[prop: string]: Property},
+export function model<TProps, TModel extends Record<TProps>>(
+    type: ModelFactory<TProps, TModel>,
+    properties: Partial<{[K in keyof TProps]: Property}>,
     keyCodec?: Codec<string,string>
-): Codec<T,Json> {
+): Codec<TModel,Json> {
     return new ModelCodec(
-        type,
-        Map<string,Property>(properties),
-        keyCodec || str
+      type,
+      Map(properties) as Map<keyof TProps, Property>,
+      keyCodec || str
     );
 }
 
