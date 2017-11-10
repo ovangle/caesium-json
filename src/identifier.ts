@@ -29,7 +29,7 @@ export interface Identifier {
 
 export type IdentifierFormat = Codec<Identifier,string>
 
-export function identifierCodec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string,string> {
+export function codec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string,string> {
   return compose(invert(src), dest);
 }
 
