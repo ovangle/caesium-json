@@ -11,7 +11,7 @@ const leadingDashes = {
     decode: (input) => input.match(/^-*/)[0].length,
     encode: (input) => new Array(input + 1).join('-')
 };
-export function identifierCodec(src, dest) {
+export function codec(src, dest) {
     return compose(invert(src), dest);
 }
 /**

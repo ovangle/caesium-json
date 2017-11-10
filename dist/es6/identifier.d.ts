@@ -10,7 +10,7 @@ export interface Identifier {
     words: List<Word>;
 }
 export declare type IdentifierFormat = Codec<Identifier, string>;
-export declare function identifierCodec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string, string>;
+export declare function codec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string, string>;
 /**
  * - PrivacyLevel is indicated by a lower undercore prefix
  * - Words are strictly lower case, except for upper case words

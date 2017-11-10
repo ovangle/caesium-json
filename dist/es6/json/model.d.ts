@@ -6,7 +6,7 @@ export interface PropertyOptions {
 }
 export declare type Property = Codec<any, Json> | [Codec<any, Json>, PropertyOptions];
 export interface ModelFactory<TProps, U extends Record<TProps>> {
-    name: string;
+    name?: string;
     new (props: Partial<TProps>): U;
 }
 export declare function model<TProps, TModel extends Record<TProps>>(type: ModelFactory<TProps, TModel>, properties: Partial<{

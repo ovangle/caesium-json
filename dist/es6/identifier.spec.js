@@ -1,5 +1,5 @@
 import { List } from 'immutable';
-import { identifierCodec, underscoreCase, lowerCamelCase, snakeCase, upperCamelCase } from './identifier';
+import { codec, underscoreCase, lowerCamelCase, snakeCase, upperCamelCase } from './identifier';
 function immutableEqual(obj_a, obj_b) {
     if (List.isList(obj_a) && List.isList(obj_b)) {
         return obj_a.equals(obj_b);
@@ -88,21 +88,21 @@ describe('object-identifiers', () => {
             expect(codec.encode(input)).toEqual(output, `${reason} (encode)`);
             expect(codec.decode(output)).toEqual(input, `${reason} (decode)`);
         }
-        test('underscore_case -> underscore_case', identifierCodec(underscoreCase, underscoreCase), '__sample_underscore_STRING_value', '__sample_underscore_STRING_value');
-        test('underscore_case -> snake-case', identifierCodec(underscoreCase, snakeCase), '__sample_underscore_STRING_value', '--sample-underscore-STRING-value');
-        test('underscore_case -> lowerCamelCase', identifierCodec(underscoreCase, lowerCamelCase), '__sample_underscore_STRING_value', '__sampleUnderscoreSTRINGValue');
-        test('underscore_case -> UpperCamelCase', identifierCodec(underscoreCase, upperCamelCase), '__sample_underscore_STRING_value', '__SampleUnderscoreSTRINGValue');
-        test('snake-case -> underscore_case', identifierCodec(snakeCase, underscoreCase), '--sample-snake-STRING-value', '__sample_snake_STRING_value');
-        test('snake-case -> snake-case', identifierCodec(snakeCase, snakeCase), '--sample-snake-STRING-value', '--sample-snake-STRING-value');
-        test('snake-case -> lowerCamelCase', identifierCodec(snakeCase, lowerCamelCase), '--sample-snake-STRING-value', '__sampleSnakeSTRINGValue');
-        test('snake-case -> UpperCamelCase', identifierCodec(snakeCase, upperCamelCase), '--sample-snake-STRING-value', '__SampleSnakeSTRINGValue');
-        test('lowerCamelCase -> underscoreCase', identifierCodec(lowerCamelCase, underscoreCase), '__sampleLowerCamelSTRINGValue', '__sample_lower_camel_STRING_value');
-        test('lowerCamelCase -> snake-case', identifierCodec(lowerCamelCase, snakeCase), '__sampleLowerCamelSTRINGValue', '--sample-lower-camel-STRING-value');
-        test('lowerCamelCase -> lowerCamelCase', identifierCodec(lowerCamelCase, lowerCamelCase), '__sampleLowerCamelSTRINGValue', '__sampleLowerCamelSTRINGValue');
-        test('lowerCamelCase -> UpperCamelCase', identifierCodec(lowerCamelCase, upperCamelCase), '__sampleLowerCamelSTRINGValue', '__SampleLowerCamelSTRINGValue');
-        test('UpperCamelCase -> underscore_case', identifierCodec(upperCamelCase, underscoreCase), '__SampleUpperCamelSTRINGValue', '__sample_upper_camel_STRING_value');
-        test('UpperCamelCase -> snake-case', identifierCodec(upperCamelCase, snakeCase), '__SampleUpperCamelSTRINGValue', '--sample-upper-camel-STRING-value');
-        test('UpperCamelCase -> lowerCamelCase', identifierCodec(upperCamelCase, lowerCamelCase), '__SampleUpperCamelSTRINGValue', '__sampleUpperCamelSTRINGValue');
-        test('UpperCamelCase -> UpperCamelCase', identifierCodec(upperCamelCase, upperCamelCase), '__SampleUpperCamelSTRINGValue', '__SampleUpperCamelSTRINGValue');
+        test('underscore_case -> underscore_case', codec(underscoreCase, underscoreCase), '__sample_underscore_STRING_value', '__sample_underscore_STRING_value');
+        test('underscore_case -> snake-case', codec(underscoreCase, snakeCase), '__sample_underscore_STRING_value', '--sample-underscore-STRING-value');
+        test('underscore_case -> lowerCamelCase', codec(underscoreCase, lowerCamelCase), '__sample_underscore_STRING_value', '__sampleUnderscoreSTRINGValue');
+        test('underscore_case -> UpperCamelCase', codec(underscoreCase, upperCamelCase), '__sample_underscore_STRING_value', '__SampleUnderscoreSTRINGValue');
+        test('snake-case -> underscore_case', codec(snakeCase, underscoreCase), '--sample-snake-STRING-value', '__sample_snake_STRING_value');
+        test('snake-case -> snake-case', codec(snakeCase, snakeCase), '--sample-snake-STRING-value', '--sample-snake-STRING-value');
+        test('snake-case -> lowerCamelCase', codec(snakeCase, lowerCamelCase), '--sample-snake-STRING-value', '__sampleSnakeSTRINGValue');
+        test('snake-case -> UpperCamelCase', codec(snakeCase, upperCamelCase), '--sample-snake-STRING-value', '__SampleSnakeSTRINGValue');
+        test('lowerCamelCase -> underscoreCase', codec(lowerCamelCase, underscoreCase), '__sampleLowerCamelSTRINGValue', '__sample_lower_camel_STRING_value');
+        test('lowerCamelCase -> snake-case', codec(lowerCamelCase, snakeCase), '__sampleLowerCamelSTRINGValue', '--sample-lower-camel-STRING-value');
+        test('lowerCamelCase -> lowerCamelCase', codec(lowerCamelCase, lowerCamelCase), '__sampleLowerCamelSTRINGValue', '__sampleLowerCamelSTRINGValue');
+        test('lowerCamelCase -> UpperCamelCase', codec(lowerCamelCase, upperCamelCase), '__sampleLowerCamelSTRINGValue', '__SampleLowerCamelSTRINGValue');
+        test('UpperCamelCase -> underscore_case', codec(upperCamelCase, underscoreCase), '__SampleUpperCamelSTRINGValue', '__sample_upper_camel_STRING_value');
+        test('UpperCamelCase -> snake-case', codec(upperCamelCase, snakeCase), '__SampleUpperCamelSTRINGValue', '--sample-upper-camel-STRING-value');
+        test('UpperCamelCase -> lowerCamelCase', codec(upperCamelCase, lowerCamelCase), '__SampleUpperCamelSTRINGValue', '__sampleUpperCamelSTRINGValue');
+        test('UpperCamelCase -> UpperCamelCase', codec(upperCamelCase, upperCamelCase), '__SampleUpperCamelSTRINGValue', '__SampleUpperCamelSTRINGValue');
     });
 });
