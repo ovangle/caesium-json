@@ -30,7 +30,7 @@ function propertyOptions(prop: Property): PropertyOptions {
 }
 
 export interface ModelFactory<TProps, U extends Record<TProps>> {
-  name: string;
+  name?: string;
   new (props: Partial<TProps>): U;
 }
 
