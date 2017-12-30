@@ -42,13 +42,11 @@ describe('codec', () => {
         });
     });
     describe('contextValue', () => {
-        it('should add the specified value to the context on encode', () => {
+        it('should encode all inputs as `undefined`', () => {
             let context = {};
             let codec = contextValue('fromContext');
             expect(codec.encode({ fromContext: 42 }, context))
                 .toBeUndefined();
-            console.log('context', context);
-            expect(context['fromContext']).toBe(42);
         });
         it('should read the value from the context on decode', () => {
             let codec = contextValue('fromContext');

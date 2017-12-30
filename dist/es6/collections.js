@@ -21,11 +21,19 @@ const setToArray = {
 export function set(codec) {
     return compose(setToArray, array(codec));
 }
+/**
+ * Encodes an arbitrary object as a
+ * @param {{[K in keyof T]?: Codec<T[K], any>}} codecs
+ * @returns {Codec<T, {[K in keyof T]: any}>}
+ */
 export function object(codecs) {
     const propertyKeys = Object.keys(codecs);
     return {
         encode: (obj, context) => {
             let result = {};
+            if (Object.getPrototypeOf(obj) !== Object.prototype) {
+                throw `Can only encode objects with the prototype 'Object.prototype'`;
+            }
             propertyKeys.forEach(key => {
                 let codec = codecs[key];
                 let encoded = codec.encode(obj[key]);
@@ -37,7 +45,7 @@ export function object(codecs) {
             return result;
         },
         decode: (obj, context) => {
-            let result = {};
+            let result = Object.create(Object.prototype);
             propertyKeys.forEach(key => {
                 let codec = codecs[key];
                 result[key] = codec.decode(obj[key], context);

@@ -4,11 +4,11 @@ import {Codec} from "./codec";
 import {Identifier, PrivacyLevel, Word} from './identifier';
 
 const leadingUnderscores: Codec<PrivacyLevel,string> = {
-  decode: (input: string) => input.match(/^_*/)[0].length,
+  decode: (input: string) => (<string[]>input.match(/^_*/))[0].length,
   encode: (input: PrivacyLevel) => new Array(input + 1).join('_')
 }
 const leadingDashes: Codec<PrivacyLevel,string> = {
-  decode: (input: string) => input.match(/^-*/)[0].length,
+  decode: (input: string) => (<string[]>input.match(/^-*/))[0].length,
   encode: (input: PrivacyLevel) => new Array(input + 1).join('-')
 }
 

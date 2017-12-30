@@ -1,4 +1,4 @@
-import {nullable} from "./codec";
+import {nullable} from "./nullable";
 
 describe('nullable', () => {
   it('should convert a codec which does not accept \'null\' values into one which does', () => {

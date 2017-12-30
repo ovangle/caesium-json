@@ -36,7 +36,6 @@ export function identity() {
 export function contextValue(identifier) {
     return {
         encode: (input, context) => {
-            context[identifier] = input;
             return undefined;
         },
         decode: (input, context) => {

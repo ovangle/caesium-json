@@ -53,6 +53,13 @@ describe('object', () => {
         expect(() => codec.decode(encodedValue))
             .toThrow('No codec provided for \'missingProperty\'');
     });
+    it('should throw when encoding an object with a prototype which isn\'t Object.prototype', () => {
+        let codec = object({});
+        let complexPrototype = Object.create({});
+        expect(() => codec.encode(complexPrototype)).toThrow('Can only encode objects with the prototype \'Object.prototype\'');
+        let nullPrototype = Object.create(null);
+        expect(() => codec.encode(nullPrototype)).toThrow('Can only encode objects with the prototype \'Object.prototype\'');
+    });
 });
 describe('record', () => {
     it('should throw on null or undefined', () => {

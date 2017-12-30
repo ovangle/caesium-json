@@ -3,6 +3,11 @@ import { Codec } from "./codec";
 export declare function array<T, U>(codec: Codec<T, U>): Codec<Array<T>, Array<U>>;
 export declare function list<T, U>(codec: Codec<T, U>): Codec<List<T>, Array<U>>;
 export declare function set<T, U>(codec: Codec<T, U>): Codec<Set<T>, Array<U>>;
+/**
+ * Encodes an arbitrary object as a
+ * @param {{[K in keyof T]?: Codec<T[K], any>}} codecs
+ * @returns {Codec<T, {[K in keyof T]: any}>}
+ */
 export declare function object<T>(codecs: {
     [K in keyof T]?: Codec<T[K], any>;
 }): Codec<T, {

@@ -1,6 +1,8 @@
+import { compose, identity, isCodec, invert, error } from "./codec";
+import { nullable } from './nullable';
+export { compose, identity, isCodec, invert, error, nullable };
 import { bool, num, str, date } from './json';
 import { array, list, object, map, record, set } from './collections';
-import { nullable } from './codec';
 export const json = {
     bool,
     num,

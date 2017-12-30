@@ -1,16 +1,27 @@
 import {List, Map, Record, Set} from 'immutable';
 import {Codec, compose, identity, isCodec, invert, error} from "./codec";
+import {nullable} from './nullable';
+
+export {
+  Codec,
+  compose,
+  identity,
+  isCodec,
+  invert,
+  error,
+  nullable
+}
 
 export {
   Json,
   JsonPrimitive,
   JsonArray,
-  JsonObject
+  JsonObject,
 } from './json';
 
 import {bool, num, str, date} from './json';
 import {array, list, object, map, record, set} from './collections';
-import {nullable} from './codec';
+
 
 export const json = {
   bool,

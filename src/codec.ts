@@ -52,8 +52,7 @@ export function identity<T>(): Codec<T,T> {
  */
 export function contextValue<T>(identifier: string): Codec<T, undefined> {
   return {
-    encode: (input, context) => {
-      context[identifier] = input;
+    encode: (input: T, context) => {
       return undefined;
     },
     decode: (input, context) => {

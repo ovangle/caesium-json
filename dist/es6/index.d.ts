@@ -1,5 +1,7 @@
 import { List, Map, Record, Set } from 'immutable';
-import { Codec } from "./codec";
+import { Codec, compose, identity, isCodec, invert, error } from "./codec";
+import { nullable } from './nullable';
+export { Codec, compose, identity, isCodec, invert, error, nullable };
 export { Json, JsonPrimitive, JsonArray, JsonObject } from './json';
 export declare const json: {
     bool: Codec<boolean, boolean>;
@@ -20,7 +22,7 @@ export declare const json: {
         [K in keyof TProps]: any;
     }>;
     set: <T, U>(codec: Codec<T, U>) => Codec<Set<T>, U[]>;
-    nullable: any;
+    nullable: <T, U>(codec: Codec<T, U>) => Codec<T | null, U | null>;
 };
 export { PrivacyLevel, Word, Identifier, IdentifierFormat, identifier, rewriteObjectIdentifiers } from './identifier';
 import { Identifier } from './identifier';

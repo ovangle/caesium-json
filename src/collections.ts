@@ -43,7 +43,7 @@ export function object<T>(
       let result = <{[K in keyof T]: any}>{};
 
       if (Object.getPrototypeOf(obj) !== Object.prototype) {
-        throw `'object' codec can only encode objects with a prototype of 'Object.prototype'`;
+        throw `Can only encode objects with the prototype 'Object.prototype'`;
       }
 
       propertyKeys.forEach(key => {
