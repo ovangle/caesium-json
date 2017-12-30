@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "module": "es6",
+    "strictNullChecks": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -10,8 +11,7 @@
     "noLib": false,
     "outDir": "dist/.build",
     "sourceMap": false,
-    "noImplicitAny": true,
-    "allowSyntheticDefaultImports": true
+    "noImplicitAny": true
   },
   "exclude": [
     "node_modules",

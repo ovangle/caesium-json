@@ -64,9 +64,7 @@ gulp.task('test', ['build:tests'], function (done) {
   watchTests.on('change', function (event) {
     "use strict";
     console.log(`File ${event.path} was ${event.type}, running tasks...`);
-    server.refreshFiles().then(function () {
-      server.run();
-    });
+    server.refreshFiles();
   });
 });
 

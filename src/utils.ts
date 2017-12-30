@@ -1,4 +1,5 @@
 import {Codec} from './codec';
+import {identifier, IdentifierFormat} from "./identifier";
 
 export function assertNotNull(value: any) {
     if (value == null)
@@ -15,3 +16,9 @@ export const nullSafeIdentity: Codec<any,any> = {
         return input;
     }
 }
+
+export function objectKeys<T>(obj: T) {
+    return <Array<keyof T>>Object.keys(obj);
+}
+
+

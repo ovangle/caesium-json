@@ -5,17 +5,10 @@
 
 import {List} from 'immutable';
 import {Codec, compose, invert, identity} from './codec';
+import {objectKeys} from "./utils";
+
 
 export type PrivacyLevel = number;
-
-const leadingUnderscores: Codec<PrivacyLevel,string> = {
-  decode: (input: string) => input.match(/^_*/)[0].length,
-  encode: (input: PrivacyLevel) => new Array(input + 1).join('_')
-}
-const leadingDashes: Codec<PrivacyLevel,string> = {
-  decode: (input: string) => input.match(/^-*/)[0].length,
-  encode: (input: PrivacyLevel) => new Array(input + 1).join('-')
-}
 
 export type Word = string;
 
@@ -27,138 +20,68 @@ export interface Identifier {
   words: List<Word>;
 }
 
-export type IdentifierFormat = Codec<Identifier,string>
-
-export function codec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string,string> {
-  return compose(invert(src), dest);
-}
+export type IdentifierFormat<K extends string = string> = Codec<Identifier,K>;
 
 /**
  * - PrivacyLevel is indicated by a lower undercore prefix
  * - Words are strictly lower case, except for upper case words
  * - Words are joined by a single underscore letter.
  *
- * - A word is capitalized if at least one letter is capitalized.
  *
- * eg:
- *   __the_little_BROWN_fox:   privacy 2, words: ['the', 'little', 'BROWN', 'fox']
- *   __the_little_Brown_fox:   privacy 2, words: ['the', 'little', 'BROWN', fox']
- *   the_little_fox: privacy 0, words: ['the', 'little', 'fox']
+ * @param {IdentifierFormat} src
+ * @param {IdentifierFormat} dest
+ * @returns {Codec<string, string>}
  */
-export const underscoreCase = {
-  decode(input: string) {
-    let privacy = leadingUnderscores.decode(input);
-    input = input.substr(privacy);
-    let words = List(input.split(/_/))
-        .filter(word => word.length > 0)
-        .map(word => /[A-Z]/.test(word) ? word.toUpperCase(): word)
-        .toList();
-    return <Identifier>{privacy, words};
-  },
-  encode(identifier: Identifier) {
-    return leadingUnderscores.encode(identifier.privacy) + identifier.words.join('_');
-  }
+export function identifier<K1 extends string = string,K2 extends string = string>(
+    src: IdentifierFormat<K1>,
+    dest: IdentifierFormat<K2>
+): Codec<K1,K2> {
+  return compose(invert(src), dest);
 }
 
 /**
- * Words similarly to UnderscoreCase except with dashes
+ * Writes a new object, replacing the keys on an input object (whose keys match the source format)
+ * into an object with keys in the output identifier format.
+ *
+ * e.g.
+ * given the codec
+ *
+ *  codec = rewriteObjectIdentifiers(snakeCase, upperCamelCase)
+ *
+ * the object `{--variable-name: '420'}` would be encoded as `{__VariableName: '420'}`
+ *
+ *
+ * @param {IdentifierFormat<T>} src
+ * @param {IdentifierFormat<any>} dest
+ * @returns {Codec<T, {[p: string]: any}>}
  */
-export const snakeCase = {
-  decode(input: string) {
-    let privacy = leadingDashes.decode(input);
-    input = input.substr(privacy);
-    let words = List(input.split(/[-]/))
-      .filter(word => word.length > 0)
-      .map(word => /[A-Z]/.test(word) ? word.toUpperCase(): word)
-      .toList();
-    return {privacy, words};
-  },
-  encode(identifier: Identifier) {
-    return leadingDashes.encode(identifier.privacy) + identifier.words.join('-');
-  }
-}
+export function rewriteObjectIdentifiers<K1 extends string = string, K2 extends string = string, V = any>(
+    src: IdentifierFormat<K1>,
+    dest: IdentifierFormat<K2>,
+): Codec<{[k in K1]: V}, {[k in K2]: V}> {
+  const identifierCodec = identifier<K1,K2>(src, dest);
+  return {
+    encode: (input: {[k in K1]: V}) => {
+      let result = <{[k in K2]: V}> {};
 
-function parseCamelCaseWords(input: string): List<Word> {
-  let words = List(input.split(/(?=[A-Z])/));
+      for (let prop of objectKeys(input)) {
+        let encodedProp = identifierCodec.encode(prop);
+        result[encodedProp] = input[prop];
+      }
 
-  let remainingWords: List<string> = words;
+      return result;
+    },
+    decode: (input: {[k in K2]: V}) => {
 
-  return words.flatMap<string>(word => {
-    // The above regex will match SimpleHTTPRequest as ['Simple', 'H', 'T', 'T', 'P', 'Request']
-    // This merges contiguous groups of single letter words and lower cases the multi-letter words,
-    // yielding ['simple', 'HTTP', 'request']
-    if (word.length <= 1)
-      return [];
+      let result = <{[k in K1]: V}> {};
 
-    let currWords = [];
-
-    let preceedingCapitals = remainingWords.takeWhile(word => word.length === 1);
-    if (!preceedingCapitals.isEmpty()) {
-      remainingWords = remainingWords.skip(preceedingCapitals.count());
-      currWords.push(preceedingCapitals.join(''));
+      for (let prop of objectKeys(input)) {
+        let decodedProp = identifierCodec.decode(prop);
+        result[decodedProp] = input[prop];
+      }
+      return result;
     }
-
-    remainingWords = remainingWords.skip(1);
-
-    currWords.push(word.toLowerCase());
-    return currWords;
-  });
-}
-
-/**
- * The `UpperCamelCase` identifier format
- * - Privacy level is indicated by optional leading underscores
- *   e.g. __HelloWorld has privacy 2
- * - Words are separated by the following capital letter and lowercased,
- *   _unless_ a consecutive group of capital letters is encountered, in which case
- *   they are emitted as the capital word.
- *   e.g. SimpleHTTPResponse would be words ['simple', 'HTTP', 'response']
- */
-export const upperCamelCase = {
-  decode(input: string) {
-    let privacy = leadingUnderscores.decode(input);
-    input = input.substr(privacy);
-    let words = parseCamelCaseWords(input);
-
-    return {privacy, words};
-  },
-  encode(input: Identifier) {
-    let camelWords = input.words
-      .map(word => word[0].toUpperCase() + word.substr(1));
-
-    console.log('identifier', input);
-    let leading = leadingUnderscores.encode(input.privacy);
-    console.log('leading underscores', leading);
-
-    return leadingUnderscores.encode(input.privacy) + camelWords.join('');
   }
 }
-
-/**
- * Same as UpperCamelCase, except that the first letter of the identifier
- * is always lower case.
- */
-export const lowerCamelCase = {
-  decode(input: string) {
-    let privacy = leadingUnderscores.decode(input);
-    input = input.substr(privacy);
-    let words = parseCamelCaseWords(input);
-    return {privacy, words};
-  },
-  encode(input: Identifier) {
-    let camelWords = input.words
-      .map((word, index) => {
-        if (index === 0) {
-          // Don't upper case the first word.
-          return word;
-        }
-        return word[0].toUpperCase() + word.substr(1);
-      })
-
-    return leadingUnderscores.encode(input.privacy) + camelWords.join('');
-  }
-}
-
-
 
 

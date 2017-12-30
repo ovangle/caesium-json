@@ -1,4 +1,3 @@
-import { List } from "immutable";
 export function isCodec(obj) {
     return obj != null
         && typeof obj.encode === 'function'
@@ -6,43 +5,52 @@ export function isCodec(obj) {
 }
 export function invert(codec) {
     return {
-        encode: (input) => codec.decode(input),
-        decode: (input) => codec.encode(input)
+        encode: (input, context) => codec.decode(input, context),
+        decode: (input, context) => codec.encode(input, context)
     };
 }
 export function compose(codec_a, codec_b) {
     return {
-        encode: (input) => codec_b.encode(codec_a.encode(input)),
-        decode: (input) => codec_a.decode(codec_b.decode(input))
+        encode: (input, context) => codec_b.encode(codec_a.encode(input, context), context),
+        decode: (input, context) => codec_a.decode(codec_b.decode(input, context), context)
     };
 }
 export function identity() {
     return { encode: (input) => input, decode: (input) => input };
 }
 ;
-export function nullable(codec) {
+/**
+ * Uses the value stored in the context as identifier
+ * in order to supply a codecs value.
+ *
+ * On encode, the input's value is written to the context identifier,
+ * mutating the context.
+ *
+ * On decode, a value is read from the context.
+ * If the contextual value is a function, it is called with no arguments
+ * in order to generate a value for the field.
+ *
+ * @param {string} identifier
+ * @returns {Codec<T, undefined>}
+ */
+export function contextValue(identifier) {
     return {
-        encode: (input) => input != null ? codec.encode(input) : null,
-        decode: (input) => input != null ? codec.decode(input) : null
-    };
-}
-export function array(codec) {
-    return {
-        encode: (input) => input.map((item) => codec.encode(item)),
-        decode: (input) => input.map((item) => codec.decode(item))
-    };
-}
-const listToArray = {
-    encode: (input) => input.toArray(),
-    decode: (input) => List(input)
-};
-export function list(codec) {
-    return compose(listToArray, array(codec));
-}
-export function map(codec) {
-    return {
-        encode: (input) => input.map(codec.encode).toMap(),
-        decode: (input) => input.map(codec.decode).toMap()
+        encode: (input, context) => {
+            context[identifier] = input;
+            return undefined;
+        },
+        decode: (input, context) => {
+            let value = context[identifier];
+            if (value === undefined) {
+                throw `No value provided for identifier '${identifier}' in context.`;
+            }
+            if (typeof value === "function") {
+                return value();
+            }
+            else {
+                return value;
+            }
+        }
     };
 }
 /**

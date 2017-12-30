@@ -1,12 +1,34 @@
 # Changelog
 
+## 1.0.0-alpha.0
+
+- Added optional `context` argument to `Codec.encode` and `Codec.decode`
+- Added `contextValue` codec
+    - On encode, writes all inputs to `undefined`
+    - On decode, reads the value from the provided context.
+- Moved `nullable` codec to it's own module.
+- Split `json` module into `json` and `collections` modules
+    - `json` module defines interfaces and codecs for json primitives (num, str, bool, date)
+    - `collections` defines `array`, `list`, `map` codecs
+- Removed `json.model` codec
+- Added `collections.object`, `collections.record`, `collections.set` codecs
+    - `collections.set` behaves like `collections.list`, except encoding to/from `Immutable.Set`
+    - `collections.object` encodes an arbitrary javascript object by using the key in the provided `codecs`
+    - `collections.record` behaves like old `json.model`, except it does not encode object keys.
+      Compose with `identifier.rewriteObjectIdentifiers` to obtain the old behaviour
+- Split `identifiers` module into `identifier` and `identifier-formats`
+    - `identifier` defines interfaces and utility functions
+    - `identifier-formats` defines common js and css identifier formats
+- Added `identifier.rewriteObjectIdentifier` codec
+  Encode the keys of an object using the given source and destination formats
+
 ## 0.3.0
 
 Complete rewrite of `caesium-model` library.
 
 Library concerned with serialization of `Immutable.Record`-like objects to/from json.
 
-Renamed npm package to '@caesium/json'
+Renamed npm package to 'caesium-json'
 
 
 

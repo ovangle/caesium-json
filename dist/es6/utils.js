@@ -12,3 +12,6 @@ export const nullSafeIdentity = {
         return input;
     }
 };
+export function objectKeys(obj) {
+    return Object.keys(obj);
+}

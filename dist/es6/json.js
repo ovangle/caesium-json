@@ -1,7 +1,7 @@
-import { assertNotNull, nullSafeIdentity } from '../utils';
-export const str = nullSafeIdentity;
-export const num = nullSafeIdentity;
+import { assertNotNull, nullSafeIdentity } from "./utils";
 export const bool = nullSafeIdentity;
+export const num = nullSafeIdentity;
+export const str = nullSafeIdentity;
 export const date = {
     encode: (date) => {
         assertNotNull(date);

@@ -1,108 +1,52 @@
 import { List } from 'immutable';
-import { codec, underscoreCase, lowerCamelCase, snakeCase, upperCamelCase } from './identifier';
-function immutableEqual(obj_a, obj_b) {
-    if (List.isList(obj_a) && List.isList(obj_b)) {
-        return obj_a.equals(obj_b);
+import { rewriteObjectIdentifiers, identifier } from './identifier';
+import { stringReversingCodec } from "./test-utils";
+class ReverseCase {
+    decode(input) {
+        let inputWords = List(input.split('-'));
+        return {
+            privacy: 0,
+            words: inputWords.map(stringReversingCodec.decode)
+        };
+    }
+    encode(identifier) {
+        let reversedWords = identifier.words.map(stringReversingCodec.encode);
+        return reversedWords.join('-');
     }
 }
-describe('object-identifiers', () => {
-    beforeEach(() => {
-        jasmine.addCustomEqualityTester(immutableEqual);
-    });
-    function testDecodePrivacy(codec, ...inputs) {
-        let privacies = inputs.map((input) => codec.decode(input).privacy);
-        expect(privacies[0]).toEqual(0, 'should be privacy level 0');
-        expect(privacies[1]).toEqual(1, 'should be privacy level 1');
-        expect(privacies[2]).toEqual(2, 'should be privacy level 2');
-        expect(privacies[3]).toEqual(3, 'should be privacy level 3');
+const reverseCase = new ReverseCase();
+class UnderscoreCase {
+    decode(input) {
+        return { privacy: 0, words: List(input.split('_')) };
     }
-    function testDecodeEmptyString(codec) {
-        expect(codec.decode('').words).toEqual(List());
+    encode(input) {
+        return input.words.join('_');
     }
-    function testEncodeIdentifier(codec, publicHelloWorld, privateHelloWorld, publicWithCapital) {
-        expect(codec.encode({ privacy: 0, words: List.of('public', 'hello', 'world') })).toEqual(publicHelloWorld);
-        expect(codec.encode({ privacy: 1, words: List.of('private', 'hello', 'world') })).toEqual(privateHelloWorld);
-        expect(codec.encode({ privacy: 0, words: List.of('public', 'WITH', 'capital') })).toEqual(publicWithCapital);
-    }
-    describe('underscoreCase', () => {
-        it('should decode the privacy of an underscore_case identifer', () => {
-            testDecodePrivacy(underscoreCase, 'public', '_priv_one', '__priv_two', '___priv_three');
-        });
-        it('should decode an empty string', () => {
-            testDecodeEmptyString(underscoreCase);
-        });
-        it('should uppercase any words with at least one capital', () => {
-            expect(underscoreCase.decode('hello_woRld').words).toEqual(List.of('hello', 'WORLD'));
-            expect(underscoreCase.decode('HELLO_world').words).toEqual(List.of('HELLO', 'world'));
-        });
-        it('should encode an identifier', () => {
-            testEncodeIdentifier(underscoreCase, 'public_hello_world', '_private_hello_world', 'public_WITH_capital');
-        });
+}
+const underscoreCase = new UnderscoreCase();
+describe('identifier', () => {
+    it('should encode/decode a string', () => {
+        const identifierCodec = identifier(reverseCase, underscoreCase);
+        expect(identifierCodec.encode('twas-the-best-of-times'))
+            .toEqual('sawt_eht_tseb_fo_semit');
     });
-    describe('snakeCase', () => {
-        it('should decode the privacy of a snake-case identifier', () => {
-            testDecodePrivacy(snakeCase, 'public', '-priv-one', '--priv-two', '---priv-three');
+});
+describe('rewriteObjectIdentifiers()', () => {
+    it('should encode/decode the keys of the object', () => {
+        const objCodec = rewriteObjectIdentifiers(reverseCase, underscoreCase);
+        expect(objCodec.encode({
+            'hello-world': '1 2 3 4 5',
+            'whats-happening': 'goodbye-world'
+        })).toEqual({
+            'olleh_dlrow': '1 2 3 4 5',
+            'stahw_gnineppah': 'goodbye-world'
         });
-        it('should decode an empty string', () => {
-            testDecodeEmptyString(snakeCase);
+        expect(objCodec.decode({
+            'sit_eht': 'winter-of-my-discontent',
+            'edam_suoirolg_remmus': 'by-the-son-of-york'
+        })).toEqual({
+            'tis-the': 'winter-of-my-discontent',
+            'made-glorious-summer': 'by-the-son-of-york'
         });
-        it('should uppercase any words with at least one capital', () => {
-            expect(snakeCase.decode('hello-woRld').words).toEqual(List.of('hello', 'WORLD'));
-            expect(snakeCase.decode('HELLO-world').words).toEqual(List.of('HELLO', 'world'));
-        });
-        it('should encode an identifier', () => {
-            testEncodeIdentifier(snakeCase, 'public-hello-world', '-private-hello-world', 'public-WITH-capital');
-        });
-    });
-    describe('lowerCamelCase', () => {
-        it('should decode the privacy of a lowerCamelCase identifier', () => {
-            testDecodePrivacy(lowerCamelCase, 'public', '_privOne', '__privTwo', '___privThree');
-        });
-        it('should decode an empty string', () => {
-            testDecodeEmptyString(lowerCamelCase);
-        });
-        it('should group of capital letters and lowercase everything else', () => {
-            expect(lowerCamelCase.decode('simpleHTTPRequest').words)
-                .toEqual(List.of('simple', 'HTTP', 'request'));
-        });
-        it('should encode an identifier', () => {
-            testEncodeIdentifier(lowerCamelCase, 'publicHelloWorld', '_privateHelloWorld', 'publicWITHCapital');
-        });
-    });
-    describe('upperCamelCase', () => {
-        it('should decode the privacy of an UpperCamelCase identifier', () => {
-            testDecodePrivacy(upperCamelCase, 'Public', '_PrivOne', '__PrivTwo', '___PrivThree');
-        });
-        it('should decode an empty string', () => {
-            testDecodeEmptyString(upperCamelCase);
-        });
-        it('should group capital leters and lowercase everything else', () => {
-            expect(lowerCamelCase.decode('SimpleHTTPRequest').words).toEqual(List.of('simple', 'HTTP', 'request'));
-        });
-        it('should encode an identifier', () => {
-            testEncodeIdentifier(upperCamelCase, 'PublicHelloWorld', '_PrivateHelloWorld', 'PublicWITHCapital');
-        });
-    });
-    it('should be possible to encode between formats', () => {
-        function test(reason, codec, input, output) {
-            expect(codec.encode(input)).toEqual(output, `${reason} (encode)`);
-            expect(codec.decode(output)).toEqual(input, `${reason} (decode)`);
-        }
-        test('underscore_case -> underscore_case', codec(underscoreCase, underscoreCase), '__sample_underscore_STRING_value', '__sample_underscore_STRING_value');
-        test('underscore_case -> snake-case', codec(underscoreCase, snakeCase), '__sample_underscore_STRING_value', '--sample-underscore-STRING-value');
-        test('underscore_case -> lowerCamelCase', codec(underscoreCase, lowerCamelCase), '__sample_underscore_STRING_value', '__sampleUnderscoreSTRINGValue');
-        test('underscore_case -> UpperCamelCase', codec(underscoreCase, upperCamelCase), '__sample_underscore_STRING_value', '__SampleUnderscoreSTRINGValue');
-        test('snake-case -> underscore_case', codec(snakeCase, underscoreCase), '--sample-snake-STRING-value', '__sample_snake_STRING_value');
-        test('snake-case -> snake-case', codec(snakeCase, snakeCase), '--sample-snake-STRING-value', '--sample-snake-STRING-value');
-        test('snake-case -> lowerCamelCase', codec(snakeCase, lowerCamelCase), '--sample-snake-STRING-value', '__sampleSnakeSTRINGValue');
-        test('snake-case -> UpperCamelCase', codec(snakeCase, upperCamelCase), '--sample-snake-STRING-value', '__SampleSnakeSTRINGValue');
-        test('lowerCamelCase -> underscoreCase', codec(lowerCamelCase, underscoreCase), '__sampleLowerCamelSTRINGValue', '__sample_lower_camel_STRING_value');
-        test('lowerCamelCase -> snake-case', codec(lowerCamelCase, snakeCase), '__sampleLowerCamelSTRINGValue', '--sample-lower-camel-STRING-value');
-        test('lowerCamelCase -> lowerCamelCase', codec(lowerCamelCase, lowerCamelCase), '__sampleLowerCamelSTRINGValue', '__sampleLowerCamelSTRINGValue');
-        test('lowerCamelCase -> UpperCamelCase', codec(lowerCamelCase, upperCamelCase), '__sampleLowerCamelSTRINGValue', '__SampleLowerCamelSTRINGValue');
-        test('UpperCamelCase -> underscore_case', codec(upperCamelCase, underscoreCase), '__SampleUpperCamelSTRINGValue', '__sample_upper_camel_STRING_value');
-        test('UpperCamelCase -> snake-case', codec(upperCamelCase, snakeCase), '__SampleUpperCamelSTRINGValue', '--sample-upper-camel-STRING-value');
-        test('UpperCamelCase -> lowerCamelCase', codec(upperCamelCase, lowerCamelCase), '__SampleUpperCamelSTRINGValue', '__sampleUpperCamelSTRINGValue');
-        test('UpperCamelCase -> UpperCamelCase', codec(upperCamelCase, upperCamelCase), '__SampleUpperCamelSTRINGValue', '__SampleUpperCamelSTRINGValue');
     });
 });

@@ -25,6 +25,7 @@ System.import('systemjs.config.js')
 // Import all spec files and start karma
 function initTesting (changedFiles) {
     jasmine.MAX_PRETTY_PRINT_DEPTH = 2;
+
     return Promise.all(specFiles.map((moduleName) => System.import(moduleName)))
         .then(__karma__.start, __karma__.error);
 }

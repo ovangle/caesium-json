@@ -9,58 +9,36 @@ export interface Identifier {
     privacy: PrivacyLevel;
     words: List<Word>;
 }
-export declare type IdentifierFormat = Codec<Identifier, string>;
-export declare function codec(src: IdentifierFormat, dest: IdentifierFormat): Codec<string, string>;
+export declare type IdentifierFormat<K extends string = string> = Codec<Identifier, K>;
 /**
  * - PrivacyLevel is indicated by a lower undercore prefix
  * - Words are strictly lower case, except for upper case words
  * - Words are joined by a single underscore letter.
  *
- * - A word is capitalized if at least one letter is capitalized.
  *
- * eg:
- *   __the_little_BROWN_fox:   privacy 2, words: ['the', 'little', 'BROWN', 'fox']
- *   __the_little_Brown_fox:   privacy 2, words: ['the', 'little', 'BROWN', fox']
- *   the_little_fox: privacy 0, words: ['the', 'little', 'fox']
+ * @param {IdentifierFormat} src
+ * @param {IdentifierFormat} dest
+ * @returns {Codec<string, string>}
  */
-export declare const underscoreCase: {
-    decode(input: string): Identifier;
-    encode(identifier: Identifier): string;
-};
+export declare function identifier<K1 extends string = string, K2 extends string = string>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<K1, K2>;
 /**
- * Words similarly to UnderscoreCase except with dashes
+ * Writes a new object, replacing the keys on an input object (whose keys match the source format)
+ * into an object with keys in the output identifier format.
+ *
+ * e.g.
+ * given the codec
+ *
+ *  codec = rewriteObjectIdentifiers(snakeCase, upperCamelCase)
+ *
+ * the object `{--variable-name: '420'}` would be encoded as `{__VariableName: '420'}`
+ *
+ *
+ * @param {IdentifierFormat<T>} src
+ * @param {IdentifierFormat<any>} dest
+ * @returns {Codec<T, {[p: string]: any}>}
  */
-export declare const snakeCase: {
-    decode(input: string): {
-        privacy: number;
-        words: List<string>;
-    };
-    encode(identifier: Identifier): string;
-};
-/**
- * The `UpperCamelCase` identifier format
- * - Privacy level is indicated by optional leading underscores
- *   e.g. __HelloWorld has privacy 2
- * - Words are separated by the following capital letter and lowercased,
- *   _unless_ a consecutive group of capital letters is encountered, in which case
- *   they are emitted as the capital word.
- *   e.g. SimpleHTTPResponse would be words ['simple', 'HTTP', 'response']
- */
-export declare const upperCamelCase: {
-    decode(input: string): {
-        privacy: number;
-        words: List<string>;
-    };
-    encode(input: Identifier): string;
-};
-/**
- * Same as UpperCamelCase, except that the first letter of the identifier
- * is always lower case.
- */
-export declare const lowerCamelCase: {
-    decode(input: string): {
-        privacy: number;
-        words: List<string>;
-    };
-    encode(input: Identifier): string;
-};
+export declare function rewriteObjectIdentifiers<K1 extends string = string, K2 extends string = string, V = any>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<{
+    [k in K1]: V;
+}, {
+    [k in K2]: V;
+}>;

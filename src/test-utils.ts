@@ -1,4 +1,5 @@
 import {Codec} from './codec';
+import {List} from 'immutable';
 
 export const stringReversingCodec = {
     encode: (s: string) => s.split('').reverse().join(''),
@@ -16,3 +17,4 @@ export function expectThrowsOnNullOrUndefined(codec: Codec<any,any>) {
     expect(()=> codec.decode(null)).toThrow(jasmine.any(Error));
     expect(() => codec.encode(undefined)).toThrow(jasmine.any(Error));
 }
+
