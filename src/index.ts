@@ -1,5 +1,5 @@
 import {List, Map, Record, Set} from 'immutable';
-import {Codec, compose, identity, isCodec, invert, error} from "./codec";
+import {Codec, compose, identity, isCodec, invert, error, contextValue} from "./codec";
 import {nullable} from './nullable';
 
 export {
@@ -9,7 +9,8 @@ export {
   isCodec,
   invert,
   error,
-  nullable
+  nullable,
+  contextValue
 }
 
 export {
