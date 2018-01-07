@@ -5,8 +5,8 @@ import {list, record} from "./collections";
 import {stringReversingCodec} from "./test-utils";
 
 
-class ReverseCase<T extends string = string> implements IdentifierFormat<T> {
-  decode(input: T) {
+class ReverseCase<T> implements IdentifierFormat<T> {
+  decode(input: keyof T) {
     let inputWords = List<string>(input.split('-'));
     return {
       privacy: 0,
@@ -14,17 +14,17 @@ class ReverseCase<T extends string = string> implements IdentifierFormat<T> {
   }
   encode(identifier: Identifier) {
     let reversedWords = identifier.words.map(stringReversingCodec.encode);
-    return <T>reversedWords.join('-');
+    return <keyof T>reversedWords.join('-');
   }
 }
 const reverseCase = new ReverseCase();
 
-class UnderscoreCase<T extends string = string> implements IdentifierFormat<T> {
-  decode(input: T) {
+class UnderscoreCase<T> implements IdentifierFormat<T> {
+  decode(input: keyof T) {
     return {privacy: 0, words: List(input.split('_'))}
   }
   encode(input: Identifier) {
-    return <T>input.words.join('_');
+    return <keyof T>input.words.join('_');
   }
 }
 const underscoreCase = new UnderscoreCase();

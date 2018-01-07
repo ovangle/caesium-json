@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-alpha.1
+
+- Export 'contextValue' from index
+- Improved type declarations
+- JsonObject is now a parameterised type
+- Added `partialObject` codec
+
+
 ## 1.0.0-alpha.0
 
 - Added optional `context` argument to `Codec.encode` and `Codec.decode`

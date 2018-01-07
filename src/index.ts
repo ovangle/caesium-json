@@ -21,7 +21,7 @@ export {
 } from './json';
 
 import {bool, num, str, date} from './json';
-import {array, list, object, map, record, set} from './collections';
+import {array, list, object, map, record, set, partialObject} from './collections';
 
 
 export const json = {
@@ -34,6 +34,7 @@ export const json = {
   array,
   list,
   object,
+  partialObject,
   map,
   record,
   set,

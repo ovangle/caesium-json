@@ -10,17 +10,42 @@ export declare const json: {
     date: Codec<Date, string>;
     array: <T, U>(codec: Codec<T, U>) => Codec<T[], U[]>;
     list: <T, U>(codec: Codec<T, U>) => Codec<List<T>, U[]>;
-    object: <T>(codecs: {
-        [K in keyof T]?: Codec<T[K], any> | undefined;
-    }) => Codec<T, {
-        [K in keyof T]: any;
-    }>;
+    object: <T, TObject extends {
+        [K in keyof T]: string | number | boolean | any[] | {
+            [k: string]: any;
+        } | null;
+    } = {
+        [K in keyof T]: string | number | boolean | any[] | {
+            [k: string]: any;
+        } | null;
+    }>(codecs: {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    }) => Codec<T, TObject> & {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    };
+    partialObject: <T, TObject extends {
+        [K in keyof T]: string | number | boolean | any[] | {
+            [k: string]: any;
+        } | null;
+    } = {
+        [K in keyof T]: string | number | boolean | any[] | {
+            [k: string]: any;
+        } | null;
+    }>(codecs: {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    }) => Codec<Partial<T>, TObject> & {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    };
     map: <K, V1, V2>(codec: Codec<V1, V2>) => Codec<Map<K, V1>, Map<K, V2>>;
-    record: <TProps, U extends Record<TProps>>(ctor: new (params?: Partial<TProps> | undefined) => U, codecs: {
-        [K in keyof TProps]: Codec<TProps[K], any>;
-    }) => Codec<U, {
-        [K in keyof TProps]: any;
-    }>;
+    record: <T, TRecord extends Record<T>, TObject extends {
+        [K in keyof T]: string | number | boolean | any[] | {
+            [k: string]: any;
+        } | null;
+    }>(ctor: new (params?: Partial<T> | undefined) => TRecord, codecs: {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    }) => Codec<TRecord, TObject> & {
+        [K in (keyof T) & (keyof TObject)]: Codec<T[K], TObject[K] | undefined>;
+    };
     set: <T, U>(codec: Codec<T, U>) => Codec<Set<T>, U[]>;
     nullable: <T, U>(codec: Codec<T, U>) => Codec<T | null, U | null>;
 };
