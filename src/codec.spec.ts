@@ -1,5 +1,11 @@
 import {compose, contextValue, error, identity, invert, isCodec} from "./codec";
 
+function multiplyBy(multiple: number) {
+  return {
+    encode: (val: number) => val * multiple,
+    decode: (val: number) => val / multiple
+  }
+}
 
 describe('codec', () => {
   describe('isCodec', () => {
@@ -26,17 +32,19 @@ describe('codec', () => {
   });
 
   describe('compose', () => {
-    it('should apply multiple codecs in succession', () => {
-      function multiplyBy(multiple: number) {
-        return {
-          encode: (val: number) => val * multiple,
-          decode: (val: number) => val / multiple
-        }
-      }
+    it('should combine two codecs, applying them in sequence', () => {
+
 
       let multiplyByTen = compose(multiplyBy(5), multiplyBy(2));
       expect(multiplyByTen.encode(10)).toBe(100);
       expect(multiplyByTen.decode(10)).toBe(1);
+    });
+
+    it('should apply multiple codecs in sequence', () => {
+      let multiplyBy50 = compose(multiplyBy(5), multiplyBy(5), multiplyBy(2));
+      expect(multiplyBy50.encode(50)).toBe(2500);
+      expect(multiplyBy50.decode(50)).toBe(1);
+
     });
   });
 

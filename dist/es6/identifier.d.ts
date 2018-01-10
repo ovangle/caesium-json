@@ -3,14 +3,14 @@
  */
 import { List } from 'immutable';
 import { Codec } from './codec';
-import { JsonObject } from "./json";
+import { Json } from "./json";
 export declare type PrivacyLevel = number;
 export declare type Word = string;
 export interface Identifier {
     privacy: PrivacyLevel;
     words: List<Word>;
 }
-export declare type IdentifierFormat<K> = Codec<Identifier, keyof K>;
+export declare type IdentifierFormat<K extends string = string> = Codec<Identifier, K>;
 /**
  * - PrivacyLevel is indicated by a lower undercore prefix
  * - Words are strictly lower case, except for upper case words
@@ -21,7 +21,7 @@ export declare type IdentifierFormat<K> = Codec<Identifier, keyof K>;
  * @param {IdentifierFormat} dest
  * @returns {Codec<string, string>}
  */
-export declare function identifier<K1 = any, K2 = any>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<keyof K1, keyof K2>;
+export declare function identifier<K1 extends string = string, K2 extends string = string>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<K1, K2>;
 /**
  * Writes a new object, replacing the keys on an input object (whose keys match the source format)
  * into an object with keys in the output identifier format.
@@ -38,4 +38,8 @@ export declare function identifier<K1 = any, K2 = any>(src: IdentifierFormat<K1>
  * @param {IdentifierFormat<any>} dest
  * @returns {Codec<T, {[p: string]: any}>}
  */
-export declare function rewriteObjectIdentifiers<K1, K2>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<JsonObject<K1>, JsonObject<K2>>;
+export declare function rewriteObjectIdentifiers<K1 extends string = string, K2 extends string = string>(src: IdentifierFormat<K1>, dest: IdentifierFormat<K2>): Codec<{
+    [K in K1]: Json | null;
+}, {
+    [K in K2]: Json | null;
+}>;

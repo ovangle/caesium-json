@@ -33,6 +33,7 @@ describe('identifier', () => {
 });
 describe('rewriteObjectIdentifiers()', () => {
     it('should encode/decode the keys of the object', () => {
+        debugger;
         const objCodec = rewriteObjectIdentifiers(reverseCase, underscoreCase);
         expect(objCodec.encode({
             'hello-world': '1 2 3 4 5',

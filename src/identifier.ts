@@ -6,7 +6,7 @@
 import {List} from 'immutable';
 import {Codec, compose, invert, identity} from './codec';
 import {objectKeys} from "./utils";
-import {JsonObject} from "./json";
+import {Json, JsonObject} from "./json";
 
 
 export type PrivacyLevel = number;
@@ -21,7 +21,7 @@ export interface Identifier {
   words: List<Word>;
 }
 
-export type IdentifierFormat<K> = Codec<Identifier,keyof K>;
+export type IdentifierFormat<K extends string = string> = Codec<Identifier,K>;
 
 /**
  * - PrivacyLevel is indicated by a lower undercore prefix
@@ -33,10 +33,10 @@ export type IdentifierFormat<K> = Codec<Identifier,keyof K>;
  * @param {IdentifierFormat} dest
  * @returns {Codec<string, string>}
  */
-export function identifier<K1=any,K2=any>(
+export function identifier<K1 extends string = string,K2 extends string = string>(
     src: IdentifierFormat<K1>,
     dest: IdentifierFormat<K2>
-): Codec<keyof K1,keyof K2> {
+): Codec<K1,K2> {
   return compose(invert(src), dest);
 }
 
@@ -56,14 +56,14 @@ export function identifier<K1=any,K2=any>(
  * @param {IdentifierFormat<any>} dest
  * @returns {Codec<T, {[p: string]: any}>}
  */
-export function rewriteObjectIdentifiers<K1, K2>(
+export function rewriteObjectIdentifiers<K1 extends string = string, K2 extends string = string>(
     src: IdentifierFormat<K1>,
     dest: IdentifierFormat<K2>,
-): Codec<JsonObject<K1>,JsonObject<K2>> {
+): Codec<{[K in K1]: Json | null}, {[K in K2]: Json | null}> {
   const identifierCodec = identifier<K1,K2>(src, dest);
   return {
-    encode: (input: JsonObject<K1>) => {
-      let result = <JsonObject<K2>>{};
+    encode: (input: {[K in K1]: Json | null}) => {
+      let result = <{[K in K2]: Json | null}>{};
 
       for (let prop of objectKeys(input)) {
         let encodedProp = identifierCodec.encode(prop);
@@ -72,8 +72,8 @@ export function rewriteObjectIdentifiers<K1, K2>(
 
       return result;
     },
-    decode: (input: JsonObject<K2>) => {
-      let result = <JsonObject<K1>>{};
+    decode: (input: {[K in K2]: Json | null}) => {
+      let result = <{[K in K1]: Json | null}>{};
 
       for (let prop of objectKeys(input)) {
         let decodedProp = identifierCodec.decode(prop);

@@ -20,9 +20,13 @@ export {
   JsonObject,
 } from './json';
 
-import {bool, num, str, date} from './json';
-import {array, list, object, map, record, set, partialObject} from './collections';
+export {
+  CodecMap, isCodecMap
+} from './mappings';
 
+import {bool, num, str, date} from './json';
+import {array, dict, list, set} from './collections';
+import {partialObject, object, record} from './mappings';
 
 export const json = {
   bool,
@@ -33,11 +37,12 @@ export const json = {
 
   array,
   list,
+  dict,
+  set,
+
   object,
   partialObject,
-  map,
   record,
-  set,
 
   nullable
 };

@@ -4,8 +4,8 @@ import {Codec} from "./codec";
 export type Json = boolean | number | string | any[] | {[k: string]: any};
 
 export type JsonPrimitive = boolean | number | string;
-export type JsonObject<T> = {[K in keyof T]: Json | null };
-export type JsonArray  = Array<Json>;
+export type JsonObject<K extends string = string> = {[k in K]?: Json | null};
+export type JsonArray = Array<Json | null>;
 
 export const bool: Codec<boolean,boolean> = nullSafeIdentity;
 export const num: Codec<number,number> = nullSafeIdentity;

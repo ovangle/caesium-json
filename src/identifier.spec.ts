@@ -1,12 +1,13 @@
 import {List} from 'immutable';
 import {num} from "./json";
 import {Identifier, IdentifierFormat, rewriteObjectIdentifiers, identifier} from './identifier';
-import {list, record} from "./collections";
+import {list} from "./collections";
+import {record} from './mappings';
 import {stringReversingCodec} from "./test-utils";
 
 
-class ReverseCase<T> implements IdentifierFormat<T> {
-  decode(input: keyof T) {
+class ReverseCase<T extends string = string> implements IdentifierFormat<T> {
+  decode(input: T) {
     let inputWords = List<string>(input.split('-'));
     return {
       privacy: 0,
@@ -14,17 +15,17 @@ class ReverseCase<T> implements IdentifierFormat<T> {
   }
   encode(identifier: Identifier) {
     let reversedWords = identifier.words.map(stringReversingCodec.encode);
-    return <keyof T>reversedWords.join('-');
+    return <T>reversedWords.join('-');
   }
 }
 const reverseCase = new ReverseCase();
 
-class UnderscoreCase<T> implements IdentifierFormat<T> {
-  decode(input: keyof T) {
+class UnderscoreCase<T extends string = string> implements IdentifierFormat<T> {
+  decode(input: T) {
     return {privacy: 0, words: List(input.split('_'))}
   }
   encode(input: Identifier) {
-    return <keyof T>input.words.join('_');
+    return <T>input.words.join('_');
   }
 }
 const underscoreCase = new UnderscoreCase();
@@ -39,6 +40,7 @@ describe('identifier', () => {
 
 describe('rewriteObjectIdentifiers()', () => {
   it('should encode/decode the keys of the object', () => {
+    debugger;
     const objCodec = rewriteObjectIdentifiers(reverseCase, underscoreCase);
 
     expect(objCodec.encode({

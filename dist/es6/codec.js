@@ -1,3 +1,4 @@
+import { List } from "immutable";
 export function isCodec(obj) {
     return obj != null
         && typeof obj.encode === 'function'
@@ -9,10 +10,11 @@ export function invert(codec) {
         decode: (input, context) => codec.encode(input, context)
     };
 }
-export function compose(codec_a, codec_b) {
+export function compose(...codecs) {
+    const codecList = List(codecs);
     return {
-        encode: (input, context) => codec_b.encode(codec_a.encode(input, context), context),
-        decode: (input, context) => codec_a.decode(codec_b.decode(input, context), context)
+        encode: (input, context) => codecList.reduce((acc, codec) => codec.encode(acc), input),
+        decode: (input, context) => codecList.reduceRight((acc, codec) => codec.decode(acc), input)
     };
 }
 export function identity() {

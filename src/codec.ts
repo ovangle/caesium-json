@@ -18,16 +18,18 @@ export function invert<T1,T2>(codec: Codec<T1,T2>): Codec<T2,T1> {
   };
 }
 
-export function compose<T1,T2,T3>(codec_a: Codec<T1,T2>, codec_b: Codec<T2,T3>): Codec<T1,T3> {
+export function compose<T1,T2>(a: Codec<T1,T2>): Codec<T1,T2>;
+export function compose<T1,T2,T3>(a: Codec<T1,T2>, b: Codec<T2,T3>): Codec<T1,T3>;
+export function compose<T1,T2,T3,T4>(a: Codec<T1,T2>, b: Codec<T2,T3>, c: Codec<T3,T4>): Codec<T1,T4>;
+export function compose<T1,T2,T3,T4,T5>(a: Codec<T1,T2>, b: Codec<T2,T3>, c: Codec<T3,T4>, d: Codec<T4,T5>): Codec<T1,T5>;
+export function compose<T1,T2,T3,T4,T5,T6>(a: Codec<T1,T2>, b: Codec<T2,T3>, c: Codec<T3,T4>, d: Codec<T4,T5>, e: Codec<T5,T6>): Codec<T1,T6>;
+export function compose(...codecs: Codec<any,any>[]): Codec<any,any> {
+  const codecList = List(codecs);
   return {
-    encode: (input, context) => codec_b.encode(
-      codec_a.encode(input, context),
-      context
-    ),
-    decode: (input, context) => codec_a.decode(
-        codec_b.decode(input, context),
-        context
-    )
+    encode: (input, context) =>
+      codecList.reduce((acc, codec) => codec.encode(acc), input),
+    decode: (input, context) =>
+      codecList.reduceRight((acc, codec) => codec.decode(acc), input)
   }
 }
 
