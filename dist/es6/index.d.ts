@@ -27,7 +27,7 @@ export declare const json: {
                 } | null | undefined;
             }[K] | undefined>;
         };
-    }, factory?: ((args: T) => T) | undefined) => Codec<T, {
+    }, maybeFactory?: ((args: T) => T) | undefined) => Codec<T, {
         [k in keyof T]?: string | number | boolean | any[] | {
             [k: string]: any;
         } | null | undefined;

@@ -17,7 +17,7 @@ export declare function partialObject<T>(codecsOrMap: CodecMap<T> | {
 };
 export declare function object<T>(mapOrCodecs: CodecMap<T> | {
     codecs: CodecMap<T>;
-}, factory?: (args: T) => T): Codec<T, JsonObject<keyof T>> & {
+}, maybeFactory?: (args: T) => T): Codec<T, JsonObject<keyof T>> & {
     codecs: CodecMap<T>;
 };
 export declare function record<T, TRecord extends Record<T>>(ctor: {

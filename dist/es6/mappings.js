@@ -32,9 +32,6 @@ export function partialObject(codecsOrMap, maybeFactory) {
          */
         encode: (obj, context) => {
             let result = {};
-            if (Object.getPrototypeOf(obj) !== Object.prototype) {
-                throw `Can only encode objects with the prototype 'Object.prototype'`;
-            }
             propertyKeys.intersect(objectKeys(obj)).forEach(key => {
                 let codec = codecs[key];
                 let encoded = codec.encode(obj[key], context);
@@ -74,10 +71,10 @@ function validatePartial(propKeys) {
         }
     };
 }
-export function object(mapOrCodecs, factory) {
+export function object(mapOrCodecs, maybeFactory) {
     const codecs = getCodecMap(mapOrCodecs);
     let codecKeys = objectKeys(codecs);
-    let baseCodec = compose(validatePartial(codecKeys), partialObject(codecs));
+    let baseCodec = compose(validatePartial(codecKeys), partialObject(codecs, maybeFactory));
     return Object.assign({ codecs }, compose(validatePartial(objectKeys(codecs)), partialObject(codecs)));
 }
 export function record(ctor, map) {

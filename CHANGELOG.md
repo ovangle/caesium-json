@@ -6,6 +6,14 @@
 - Improved type declarations
 - JsonObject is now a parameterised type
 - Added `partialObject` codec
+- Added `CodecMap` type, and expose the mapping codecs for `partialObject`, `record` and `object` codecs,
+  so that mapping codecs can be instantiated from each other.
+
+  e.g. given a `record` codec, it is possible to obtain the corresponding `object` and `partialObject` types
+  using the codecs for each of the record keys
+
+- `object` codec now accepts a factory constructor, removed restriction that objects must have a prototype of
+  `Object.prototype`, unless a factory is not provided
 
 
 ## 1.0.0-alpha.0

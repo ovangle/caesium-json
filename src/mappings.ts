@@ -46,8 +46,10 @@ export function partialObject<T>(
     encode: (obj: Partial<T>, context?: any) => {
       let result = <JsonObject<keyof T>>{};
 
-      if (Object.getPrototypeOf(obj) !== Object.prototype) {
-        throw `Can only encode objects with the prototype 'Object.prototype'`;
+      // TODO: Are objects with a null prototype OK?
+      if (maybeFactory === undefined && Object.getPrototypeOf(obj) !== Object.prototype) {
+        throw 'If a factory is not provided, object codec can only apply to instances with the prototype'
+          + 'Object.prototype (got \'' + Object.getPrototypeOf(obj)
       }
 
       propertyKeys.intersect(objectKeys(obj)).forEach(key => {
@@ -100,14 +102,14 @@ function validatePartial<T>(propKeys: Iterable<keyof T>): Codec<T, Partial<T>> {
 
 export function object<T>(
   mapOrCodecs: CodecMap<T> | {codecs: CodecMap<T>},
-  factory?: (args: T) => T
+  maybeFactory?: (args: T) => T
 ): Codec<T,JsonObject<keyof T>> & {codecs: CodecMap<T>} {
   const codecs = getCodecMap(mapOrCodecs);
 
   let codecKeys = objectKeys(codecs);
   let baseCodec = compose(
     validatePartial<T>(codecKeys),
-    partialObject(codecs)
+    partialObject(codecs, maybeFactory)
   );
   return {
     codecs,
