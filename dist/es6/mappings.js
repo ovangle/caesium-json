@@ -32,6 +32,11 @@ export function partialObject(codecsOrMap, maybeFactory) {
          */
         encode: (obj, context) => {
             let result = {};
+            // TODO: Are objects with a null prototype OK?
+            if (maybeFactory === undefined && Object.getPrototypeOf(obj) !== Object.prototype) {
+                throw 'If a factory is not provided, object codec can only apply to instances with the prototype'
+                    + 'Object.prototype (got \'' + Object.getPrototypeOf(obj);
+            }
             propertyKeys.intersect(objectKeys(obj)).forEach(key => {
                 let codec = codecs[key];
                 let encoded = codec.encode(obj[key], context);
