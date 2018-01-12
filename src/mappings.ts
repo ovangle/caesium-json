@@ -67,8 +67,7 @@ export function partialObject<T>(
       let result = Object.create(Object.prototype);
 
       let objKeys = objectKeys(obj);
-
-      propertyKeys.intersect(objKeys).forEach(key => {
+      propertyKeys.forEach(key => {
         let codec = <Codec<any,any>>codecs[key];
         result[key] = codec.decode(obj[key], context);
       });
